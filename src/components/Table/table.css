@@ -1,0 +1,128 @@
+table {
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.th {
+  border-right: 1px solid #d0cecf;
+  border-left: 1px solid transparent;
+  font-weight: 700;
+  height: 24px;
+  white-space: nowrap;
+  overflow: hidden;
+  vertical-align: middle;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  position: relative;
+}
+
+.div {
+  padding: 5px;
+  border-left: 0 solid transparent;
+  font-size: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+  user-select: none;
+}
+
+.asc::before {
+  content: "\eaea  ";
+  font-family: "uxwing-iconsfont";
+  font-weight: 400;
+  text-align: center;
+  color: #464646;
+  font-size: 7px;
+}
+
+.desc::before {
+  content: "\eaef  ";
+  font-family: "uxwing-iconsfont";
+  font-weight: 400;
+  text-align: center;
+  color: #464646;
+  font-size: 7px;
+}
+
+.prevAll::before {
+  content: "\ea11\ea11";
+  font-family: "uxwing-iconsfont";
+  font-size: 8px;
+}
+
+.nextAll::before {
+  content: "\ea12\ea12";
+  font-family: "uxwing-iconsfont";
+  font-size: 8px;
+}
+
+.prev::before {
+  content: "\ea11";
+  font-family: "uxwing-iconsfont";
+  font-size: 8px;
+}
+
+.next::before {
+  content: "\ea12";
+  font-family: "uxwing-iconsfont";
+  font-size: 8px;
+}
+
+.div-row {
+  padding: 5px;
+  padding-bottom: 4px;
+  border-top: 0 solid transparent;
+  border-left: 0 solid transparent;
+  font-size: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+}
+
+.text-center {
+  text-align: center !important;
+}
+
+.td {
+  border-right: 1px solid #d0cecf;
+  border-left: 1px solid transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  vertical-align: middle;
+  padding: 0px;
+  border-bottom: 1px solid #e2e2e2;
+}
+
+table thead th:hover {
+  background-color: #e2e2e2;
+}
+
+.tbody-tr:hover {
+  background-color: #e2e2e2 !important;
+}
+
+.table-foot {
+  background-color: transparent !important;
+}
+
+.td-empty {
+  border: none;
+  background-color: #fff !important;
+  cursor: default;
+  user-select: none;
+}
+
+.resizer {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 5px;
+  background-color: red;
+  cursor: col-resize;
+  user-select: none;
+  touch-action: none;
+}
+
+.resizer.isResizing {
+  opacity: 1;
+}

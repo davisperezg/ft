@@ -1,0 +1,47 @@
+export const MENU_MODULOS = "Modulos";
+export const MENU_PERMISOS = "Permisos";
+export const MENU_ROLES = "Roles";
+export const MENU_USUARIOS = "Usuarios";
+export const MODS = [
+  {
+    nombre: "Administración de sistema - PRINCIPAL",
+    estado: true,
+    menus: [
+      {
+        nombre: "Modulos",
+        estado: true,
+      },
+      {
+        nombre: "Permisos",
+        estado: true,
+      },
+      {
+        nombre: "Roles",
+        estado: true,
+      },
+      {
+        nombre: "Usuarios",
+        estado: true,
+      },
+    ],
+  },
+  {
+    nombre: "Perfiles",
+    estado: true,
+    menus: [
+      {
+        nombre: "Usuarios",
+        estado: true,
+      },
+      {
+        nombre: "Oferta",
+        estado: true,
+      },
+    ],
+  },
+  {
+    nombre: "Tickets",
+    estado: true,
+    menus: [],
+  },
+];
