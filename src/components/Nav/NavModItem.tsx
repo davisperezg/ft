@@ -1,26 +1,33 @@
-import { useCallback, useContext, useEffect, useState } from "react";
-import { ModalContext } from "../../context/modalContext";
-import { initialMenuContext } from "../../utils/initials";
+import { useState } from "react";
+import { IModuloAccess } from "../../interface/modulo.interface";
+import { NavLeftWithItem } from "../../interface/navleft_item.modulos.interface";
+
 import NavMenuItem from "./NavMenuItem";
+
+interface Props {
+  totalMenus: any[];
+  menus: NavLeftWithItem;
+  handleTab: (name: string) => void;
+  modulo: IModuloAccess;
+  setNroTab: React.Dispatch<React.SetStateAction<any[]>>;
+  nroTab: any[];
+  clicked: number;
+  setNameMenuInit: React.Dispatch<React.SetStateAction<string>>;
+}
 
 const NavModItem = ({
   totalMenus,
   menus,
   handleTab,
-  chupetin,
+  modulo,
   setNroTab,
   nroTab,
   clicked,
   setNameMenuInit,
-}: any) => {
+}: Props) => {
   const endObject = totalMenus[totalMenus.length - 1];
   const [index, setIndex] = useState(0);
-  const { menuContext } = useContext(ModalContext);
-  const [test, setTest] = useState("");
-
-  const onClickMenu = (item: number) => {
-    setIndex(item);
-  };
+  const onClickMenu = (item: number) => setIndex(item);
 
   return (
     <>
@@ -28,18 +35,18 @@ const NavModItem = ({
         onClick={() => {
           if (!menus?.item.active) {
             setIndex(0);
-            return handleTab(chupetin.nombre, "UserList");
+            return handleTab(modulo.nombre);
           }
         }}
         className={`flex-[0_0_auto] ${
-          endObject?.item.name === chupetin.nombre ? "border-b " : ""
+          endObject?.item.name === modulo.nombre ? "border-b " : ""
         }${
           menus?.item.active
             ? "bg-primary text-[#fff] font-bold cursor-default"
             : "bg-default hover:bg-hover text-[#000] cursor-pointer border-t border-l border-r border-solid"
         } leading-[20px]  p-[2px_10px] text-center select-none`}
       >
-        {chupetin.nombre}
+        {modulo.nombre}
       </dt>
       <dd
         className={`transition-all ease-linear duration-[300ms] ${
@@ -54,13 +61,12 @@ const NavModItem = ({
                   index={i}
                   open={index === i}
                   key={i}
-                  modulo={chupetin}
+                  modulo={modulo}
                   menu={a}
                   onClickMenu={() => onClickMenu(i)}
                   setNroTab={setNroTab}
                   nroTab={nroTab}
                   clicked={clicked}
-                  setTest={setTest}
                   setNameMenuInit={setNameMenuInit}
                 />
               );

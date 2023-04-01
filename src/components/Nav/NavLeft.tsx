@@ -1,30 +1,23 @@
 import { useContext } from "react";
 import { ModalContext } from "../../context/modalContext";
+import { NavLeftWithItem } from "../../interface/navleft_item.modulos.interface";
 import { DialogActionKind } from "../../reducers/dialogReducer";
 import { MODS } from "../../utils/const";
 import UserCreate from "../User/UserCreate";
 import NavModItem from "./NavModItem";
 
 interface Props {
-  setMenus: any;
-  menus: any[];
-  handleTab: (title: string, nameComponent: string) => void;
-  setNroTab: any;
-  nroTab: any;
+  menus: NavLeftWithItem[];
+  handleTab: (title: string) => void;
+  setNroTab: React.Dispatch<React.SetStateAction<any[]>>;
+  nroTab: any[];
   clicked: number;
-  setNameMenuInit: any;
+  setNameMenuInit: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const NavLeft = (props: Props) => {
-  const {
-    setMenus,
-    menus,
-    handleTab,
-    setNroTab,
-    nroTab,
-    clicked,
-    setNameMenuInit,
-  } = props;
+  const { menus, handleTab, setNroTab, nroTab, clicked, setNameMenuInit } =
+    props;
   const { dialogState, dispatch } = useContext(ModalContext);
 
   return (
@@ -43,8 +36,7 @@ const NavLeft = (props: Props) => {
             return (
               <NavModItem
                 key={i + 1}
-                chupetin={a}
-                setMenus={setMenus}
+                modulo={a}
                 menus={menus[i]}
                 totalMenus={menus}
                 handleTab={handleTab}

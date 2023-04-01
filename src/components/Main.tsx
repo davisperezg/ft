@@ -1,60 +1,39 @@
-/* eslint-disable jsx-a11y/anchor-is-valid */
-import {
-  createElement,
-  Fragment,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import { useContext, useEffect, useState } from "react";
 import { ModalContext } from "../context/modalContext";
+import { ITabItem } from "../interface/tab.interface";
 import { ComponentByName } from "../utils";
-import {
-  MENU_MODULOS,
-  MENU_PERMISOS,
-  MENU_ROLES,
-  MENU_USUARIOS,
-  MODS,
-} from "../utils/const";
-import { ListComponents } from "../utils/ListComponents";
+import { MODS } from "../utils/const";
 import ContentEmpty from "./Content/ContentEmpty";
 import Header from "./Header/Index";
 import NavLeft from "./Nav/NavLeft";
 import TabItem from "./Tab/Views/TabItem";
-import UserList from "./User/UserList";
 
 const initial_tab = {
   index: 0,
   title: "Tab",
 };
 
-const Test1 = () => {
-  return <h1>ga</h1>;
-};
-
-const Test2 = () => {
-  return <h1>ga2</h1>;
-};
-
 //https://codesandbox.io/s/dynamic-components-ngtnx7
 const Main = () => {
-  //tab-create
-  const [nameComponent, setNameComponent] = useState("Tab");
-
   //tab-init
-  const [nameComponentInit, setNameComponentInit] = useState(MODS[0].nombre);
-  const [nameMenuInit, setNameMenuInit] = useState(MODS[0].menus[0].nombre);
+  const [nameComponentInit, setNameComponentInit] = useState<string>(
+    MODS[0].nombre
+  );
+  const [nameMenuInit, setNameMenuInit] = useState<string>(
+    MODS[0].menus[0].nombre
+  );
 
-  const [nroTab, setNroTab] = useState<any[]>([]);
+  const [nroTab, setNroTab] = useState<ITabItem[]>([]);
 
   const [menus, setMenus] = useState<any[]>([]);
-  const [clicked, setClicked] = useState(0);
-  const { dialogState, menuContext, setMenuContext } = useContext(ModalContext);
+  const [clicked, setClicked] = useState<number>(0);
+  const { dialogState } = useContext(ModalContext);
 
   //Controlamos los tabs que se encuentran en el top(TabItem)
   const handleToggle = (index: number) => {
     if (index !== 0) {
       const findIndex = nroTab.find((a) => a.index === index);
-      const { title } = findIndex;
+      const { title } = findIndex!;
       if (title !== "Tab") {
         const filter = menus.map((a, i) => {
           return {
@@ -65,6 +44,7 @@ const Main = () => {
         setMenus(filter);
       }
     } else {
+      //Entra a este codigo so el tab es 0 o el principal
       const filter = menus.map((a, i) => {
         return {
           ...a,
@@ -88,12 +68,12 @@ const Main = () => {
     } else {
       const TabSelected = nroTab.find((a) => a.index === clicked);
 
-      return TabSelected.component;
+      return TabSelected!.component;
     }
   };
 
   //Controlamos los tabs del Modulo que se encuentra en el NavLeft
-  const handleTab = (name: string, component: string) => {
+  const handleTab = (name: string) => {
     const findModuleSelectedNavLeft = MODS.find((a) => a.nombre === name);
     if (clicked === 0) {
       //Si tiene menus el modulo usara el menu 0 x defecto de lo contrario usara un menu empty como vacio o no existe
@@ -212,7 +192,6 @@ const Main = () => {
       <Header />
       <div className="flex absolute top-[60px] bottom-[10px] left-[10px] right-[10px]">
         <NavLeft
-          setMenus={setMenus}
           menus={menus}
           handleTab={handleTab}
           setNroTab={setNroTab}

@@ -1,5 +1,7 @@
-import { useCallback, useContext, useEffect } from "react";
+import { useContext } from "react";
 import { ModalContext } from "../../context/modalContext";
+import { IMenuAccess } from "../../interface/menu.interface";
+import { IModuloAccess } from "../../interface/modulo.interface";
 import { DialogActionKind } from "../../reducers/dialogReducer";
 import {
   MENU_MODULOS,
@@ -10,6 +12,18 @@ import {
 import ContentEmpty from "../Content/ContentEmpty";
 import UserList from "../User/UserList";
 
+interface Props {
+  open: boolean;
+  menu: IMenuAccess;
+  onClickMenu: (i: number) => void;
+  modulo: IModuloAccess;
+  setNroTab: React.Dispatch<React.SetStateAction<any[]>>;
+  nroTab: any[];
+  clicked: number;
+  setNameMenuInit: React.Dispatch<React.SetStateAction<string>>;
+  index: number;
+}
+
 const NavMenuItem = ({
   open,
   menu,
@@ -18,11 +32,10 @@ const NavMenuItem = ({
   setNroTab,
   nroTab,
   clicked,
-  setTest,
   setNameMenuInit,
   index,
-}: any) => {
-  const { dialogState, dispatch, setMenuContext } = useContext(ModalContext);
+}: Props) => {
+  const { dialogState, dispatch } = useContext(ModalContext);
 
   const loadMenuContext = (menu: string) => {
     const personalizedComponent = (Component: any) => {

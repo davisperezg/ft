@@ -1,34 +1,24 @@
-/* eslint-disable jsx-a11y/anchor-is-valid */
-import { useContext, useEffect, useState } from "react";
-import { ModalContext } from "../../../context/modalContext";
-import {
-  MENU_MODULOS,
-  MENU_PERMISOS,
-  MENU_ROLES,
-  MENU_USUARIOS,
-} from "../../../utils/const";
-import { initialMenuContext } from "../../../utils/initials";
+import { useEffect, useState } from "react";
+import { ITabItem } from "../../../interface/tab.interface";
+
 import ContentEmpty from "../../Content/ContentEmpty";
-import UserList from "../../User/UserList";
 
 interface Props {
-  onclick: any;
-  active: any;
-  onClose: any;
-  entity: any;
+  onclick: () => void;
+  active: boolean;
+  onClose: () => void;
+  entity: ITabItem;
 }
 
 const init = {
   index: 0,
   title: "Tab",
-  content: "Empty",
+  component: <ContentEmpty />,
 };
 
 const TabItem = (props: Props) => {
   const { onclick, onClose, active, entity } = props;
-  const [tab, setTab] = useState(init);
-  const { setMenuContext, menuContext } = useContext(ModalContext);
-  const [componentInit, setComponentInit] = useState(<ContentEmpty />);
+  const [tab, setTab] = useState<ITabItem>(init);
 
   useEffect(() => {
     if (entity) {
