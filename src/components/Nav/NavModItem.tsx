@@ -51,7 +51,7 @@ const NavModItem = ({
       <dd
         className={`transition-all ease-linear duration-[300ms] ${
           menus?.item.active ? "flex-[1_1_auto] h-[300px]" : "flex-none h-0"
-        } w-full overflow-hidden bg-[url('https://cms.wialon.us/frontend/static/accounts_bg-0e7eac36bc526877ef2a6868d8250e04.svg')] bg-no-repeat bg-bottom hue-rotate-[0deg]`}
+        } w-full overflow-hidden bg-[url('https://cms.wialon.us/frontend/static/accounts_bg-6388b70e60291c855f5295c9db6353e0.svg')] bg-no-repeat bg-bottom hue-rotate-[0deg]`}
       >
         <div className="p-[5px]">
           <ol className="font-bold list-decimal pl-3">

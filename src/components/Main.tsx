@@ -2,9 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { ModalContext } from "../context/modalContext";
 import { ITabItem } from "../interface/tab.interface";
 import { ComponentByName } from "../utils";
-import { MODS } from "../utils/const";
 import ContentEmpty from "./Content/ContentEmpty";
-import Header from "./Header/Index";
 import NavLeft from "./Nav/NavLeft";
 import TabItem from "./Tab/Views/TabItem";
 
@@ -15,19 +13,14 @@ const initial_tab = {
 
 //https://codesandbox.io/s/dynamic-components-ngtnx7
 const Main = () => {
-  //tab-init
-  const [nameComponentInit, setNameComponentInit] = useState<string>(
-    MODS[0].nombre
-  );
-  const [nameMenuInit, setNameMenuInit] = useState<string>(
-    MODS[0].menus[0].nombre
-  );
-
   const [nroTab, setNroTab] = useState<ITabItem[]>([]);
 
   const [menus, setMenus] = useState<any[]>([]);
   const [clicked, setClicked] = useState<number>(0);
-  const { dialogState } = useContext(ModalContext);
+  const { dialogState, userGlobal } = useContext(ModalContext);
+
+  const [nameComponentInit, setNameComponentInit] = useState<string>("");
+  const [nameMenuInit, setNameMenuInit] = useState<string>("");
 
   //Controlamos los tabs que se encuentran en el top(TabItem)
   const handleToggle = (index: number) => {
@@ -59,7 +52,8 @@ const Main = () => {
 
   //Render components
   const renderComponent = (props?: any) => {
-    const justNamesMods = MODS.map((a) => a.nombre);
+    const justNamesMods =
+      userGlobal?.rol?.modulos.map((a: any) => a.nombre) || [];
 
     if (clicked === 0) {
       if (justNamesMods.includes(nameComponentInit)) {
@@ -74,7 +68,9 @@ const Main = () => {
 
   //Controlamos los tabs del Modulo que se encuentra en el NavLeft
   const handleTab = (name: string) => {
-    const findModuleSelectedNavLeft = MODS.find((a) => a.nombre === name);
+    const findModuleSelectedNavLeft = userGlobal?.rol?.modulos.find(
+      (a: any) => a.nombre === name
+    );
     if (clicked === 0) {
       //Si tiene menus el modulo usara el menu 0 x defecto de lo contrario usara un menu empty como vacio o no existe
       setNameMenuInit(
@@ -164,32 +160,36 @@ const Main = () => {
   };
 
   useEffect(() => {
-    const lengthMods = MODS.map((a, i) => {
-      return {
-        item:
-          i + 1 === 1
-            ? {
-                name: a.nombre,
-                active: true,
-                subitem: {
-                  menus: a.menus,
+    if (userGlobal) {
+      console.log("userGlobal", userGlobal.rol.modulos);
+      setNameComponentInit(userGlobal.rol.modulos[0].nombre);
+      setNameMenuInit(userGlobal.rol.modulos[0].menus[0].nombre);
+      const lengthMods = userGlobal.rol.modulos.map((a: any, i: number) => {
+        return {
+          item:
+            i + 1 === 1
+              ? {
+                  name: a.nombre,
+                  active: true,
+                  subitem: {
+                    menus: a.menus,
+                  },
+                }
+              : {
+                  name: a.nombre,
+                  active: false,
+                  subitem: {
+                    menus: a.menus,
+                  },
                 },
-              }
-            : {
-                name: a.nombre,
-                active: false,
-                subitem: {
-                  menus: a.menus,
-                },
-              },
-      };
-    });
-    setMenus(lengthMods);
-  }, []);
+        };
+      });
+      setMenus(lengthMods);
+    }
+  }, [userGlobal]);
 
   return (
     <>
-      <Header />
       <div className="flex absolute top-[60px] bottom-[10px] left-[10px] right-[10px]">
         <NavLeft
           menus={menus}
@@ -256,9 +256,9 @@ const Main = () => {
           </div>
         </div>
       </div>
-      {dialogState.open && (
+      {/* {dialogState.open && (
         <div className="absolute transition-all duration-1000 ease-in-out overflow-hidden w-full h-full top-0 left-0 bg-dialog z-[3]"></div>
-      )}
+      )} */}
     </>
   );
 };

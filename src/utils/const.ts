@@ -1,8 +1,9 @@
+export const BASE_API = import.meta.env.VITE_API_URL;
 export const MENU_MODULOS = "Modulos";
 export const MENU_PERMISOS = "Permisos";
 export const MENU_ROLES = "Roles";
 export const MENU_USUARIOS = "Usuarios";
-export const MODS = [
+export const MODS_TEST = [
   {
     nombre: "Administración de sistema - PRINCIPAL",
     estado: true,
