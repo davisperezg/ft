@@ -161,9 +161,8 @@ const Main = () => {
 
   useEffect(() => {
     if (userGlobal) {
-      console.log("userGlobal", userGlobal.rol.modulos);
-      setNameComponentInit(userGlobal.rol.modulos[0].nombre);
-      setNameMenuInit(userGlobal.rol.modulos[0].menus[0].nombre);
+      setNameComponentInit(userGlobal.rol.modulos[0]?.nombre);
+      setNameMenuInit(userGlobal.rol.modulos[0].menus[0]?.nombre);
       const lengthMods = userGlobal.rol.modulos.map((a: any, i: number) => {
         return {
           item:
@@ -256,9 +255,9 @@ const Main = () => {
           </div>
         </div>
       </div>
-      {/* {dialogState.open && (
-        <div className="absolute transition-all duration-1000 ease-in-out overflow-hidden w-full h-full top-0 left-0 bg-dialog z-[3]"></div>
-      )} */}
+      {dialogState.open && (
+        <div className="absolute transition-all duration-1000 ease-in-out overflow-hidden w-full h-full top-0 left-0 bg-dialog z-[11]"></div>
+      )}
     </>
   );
 };

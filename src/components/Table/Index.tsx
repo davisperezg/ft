@@ -13,11 +13,12 @@ import {
   ColumnOrderState,
   Column,
 } from "@tanstack/react-table";
-import { Table } from "@tanstack/table-core";
+import { getPaginationRowModel, Table } from "@tanstack/table-core";
 import {
   Dispatch,
   RefObject,
   UIEvent,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -25,6 +26,7 @@ import {
 } from "react";
 import { useDrop, useDrag } from "react-dnd";
 import { useVirtual } from "react-virtual";
+import { ModalContext } from "../../context/modalContext";
 
 interface ITHeadItemProps<T> {
   header: Header<T, unknown>;
@@ -46,12 +48,16 @@ interface ITBodyItemProps<T> {
   cell: Cell<any, unknown>;
   row: Row<any>;
   table: Table<T>;
+  openEdit?: (value: boolean, row: T) => void;
 }
 
 interface Props<T> {
   data: T[];
   columns: ColumnDef<T, unknown>[];
   footerVisible?: boolean;
+  getItemsRemoves?: (props: any) => void;
+  getItemsRestores?: (props: any) => void;
+  openEdit?: (value: boolean, row: T) => void;
 }
 
 interface PropsHead<T> {
@@ -70,10 +76,13 @@ interface PropsBody<T> {
   handleScroll: (e: UIEvent<HTMLDivElement>) => void;
   configTable: Table<T>;
   refContentTBody: RefObject<HTMLDivElement>;
+  openEdit?: (value: boolean, row: T) => void;
 }
 
 interface PropsFooter<T> extends Omit<Props<T>, "columns"> {
   configTable: Table<any>;
+  getItemsRemoves?: (props: any) => void;
+  getItemsRestores?: (props: any) => void;
 }
 
 const ShowOptions = (table: any) => {
@@ -174,10 +183,7 @@ const THead = <T extends object>({
   }, [configTable]);
 
   return (
-    <div
-      ref={refTHeader}
-      className="flex flex-[0_0_auto] bg-[#f4f4f4] relative "
-    >
+    <div ref={refTHeader} className="flex flex-[0_0_auto] relative ">
       <div className="float-left pr-[40px] text-[#464646]">
         <table className="border-r border-solid border-[#444]">
           <thead>
@@ -349,14 +355,14 @@ const THeadItem = <T extends object>({
   return (
     <th
       ref={dropRef}
-      className={`border-r border-solid font-bold h-[24px] whitespace-nowrap align-middle text-left p-0 relative hover:bg-[#e2e2e2] ${
+      className={`border-r border-solid font-bold h-[24px] whitespace-nowrap align-middle text-left p-0 relative hover:!bg-[#e2e2e2] ${
         table.getState().columnSizingInfo.deltaOffset !== null
           ? "cursor-col-resize"
           : "cursor-pointer"
       }`}
       {...{
         style: {
-          backgroundColor: isClicked ? "#e2e2e2" : "",
+          backgroundColor: isClicked ? "#e2e2e2" : "#f4f4f4",
           opacity: isDragging ? 0.5 : 1,
         },
         colSpan: header.colSpan,
@@ -456,7 +462,10 @@ const TBodyItem = <T extends object>({
   cell,
   row,
   table,
+  openEdit,
 }: ITBodyItemProps<T>) => {
+  const { dispatch } = useContext(ModalContext);
+
   return (
     <td
       className={`${
@@ -466,10 +475,18 @@ const TBodyItem = <T extends object>({
       } ${
         table.getState().columnSizingInfo.deltaOffset !== null
           ? "cursor-col-resize"
+          : !row.original.status
+          ? ""
           : "cursor-pointer"
       }`}
       {...{
         key: cell.id,
+      }}
+      onClick={() => {
+        if (row.original.status && cell.id !== row.id + "_select") {
+          dispatch({ type: "OPEN_EDIT", payload: row.original });
+          openEdit && openEdit(true, row.original);
+        }
       }}
     >
       <div
@@ -487,6 +504,7 @@ const TBody = <T extends object>({
   configTable,
   handleScroll,
   refContentTBody,
+  openEdit,
 }: PropsBody<T>) => {
   //configTable.getRowModel().rows
 
@@ -528,7 +546,6 @@ const TBody = <T extends object>({
         <tbody>
           {virtualRows.map((virtualRow, i) => {
             const row = rows[virtualRow.index] as Row<any>;
-
             return (
               <tr
                 style={
@@ -541,7 +558,11 @@ const TBody = <T extends object>({
                       }
                 }
                 key={row.id}
-                className="hover:!bg-hover"
+                className={`${
+                  !row.original.status
+                    ? " text-borders cursor-default"
+                    : "hover:!bg-hover"
+                }`}
                 // [#e2e2e2]
               >
                 {row.getVisibleCells().map((cell, i) => {
@@ -551,6 +572,7 @@ const TBody = <T extends object>({
                       cell={cell}
                       row={row}
                       table={configTable}
+                      openEdit={openEdit}
                     />
                   );
                 })}
@@ -568,10 +590,67 @@ const TBody = <T extends object>({
   );
 };
 
-const TFooter = <T extends object>({ configTable, data }: PropsFooter<T>) => {
+const TFooter = <T extends object>({
+  configTable,
+  data,
+  getItemsRestores,
+  getItemsRemoves,
+}: PropsFooter<T>) => {
+  const selects = configTable
+    .getSelectedRowModel()
+    .flatRows.map((a) => a.original);
+
   return (
     <div className="bg-none overflow-hidden whitespace-nowrap relative flex-[0_0_auto] gap-2 flex items-center p-2">
       <div className="m-[6px_3px_6px_6px] float-left w-full whitespace-nowrap select-none">
+        {getItemsRemoves && (
+          <div className="float-left bg-none h-[24px] m-[0_10px_0_0] align-middle whitespace-nowrap flex items-center">
+            <label
+              className={`${
+                selects.filter((a) => !a.status).length > 0 ||
+                selects.length === 0
+                  ? "text-borders cursor-default"
+                  : "text-primary cursor-pointer"
+              } text-[16px]`}
+              onClick={() => {
+                if (selects.length > 0 && !selects.find((a) => !a.status)) {
+                  if (getItemsRemoves) {
+                    return getItemsRemoves(
+                      configTable.getSelectedRowModel().flatRows
+                    );
+                  }
+                }
+              }}
+            >
+              x
+            </label>
+          </div>
+        )}
+
+        {getItemsRestores && (
+          <div className="float-left bg-none h-[24px] m-[0_10px_0_0] align-middle whitespace-nowrap flex items-center">
+            <label
+              className={`${
+                selects.filter((a) => a.status).length > 0 ||
+                selects.length === 0
+                  ? "text-borders cursor-default"
+                  : "text-[#464646] cursor-pointer"
+              }`}
+              onClick={() => {
+                if (selects.length > 0 && !selects.find((a) => a.status)) {
+                  if (getItemsRestores) {
+                    return getItemsRestores(
+                      configTable.getSelectedRowModel().flatRows
+                    );
+                  }
+                }
+              }}
+            >
+              <i className="gg-undo w-[11px] h-[11px]"></i>
+            </label>
+          </div>
+        )}
+
         <div className="float-left bg-none h-[24px] m-[0_5px_0_0] align-middle whitespace-nowrap">
           <select
             value={configTable.getState().pagination.pageSize}
@@ -690,6 +769,9 @@ const ComponentTable = <T extends object>({
   data,
   columns,
   footerVisible = true,
+  getItemsRemoves,
+  getItemsRestores,
+  openEdit,
 }: Props<T>) => {
   const refContentTHeader = useRef<HTMLDivElement>(null);
 
@@ -705,6 +787,8 @@ const ComponentTable = <T extends object>({
   const [spacing, setSpacing] = useState<boolean>(false);
   const [scrolled, setScrolled] = useState<boolean>(false);
   const [showOptions, setShowOptions] = useState<boolean>(false);
+  const [rowSelection, setRowSelection] = useState({});
+
   const refContentTable = useRef<HTMLDivElement>(null);
   const refContentTBody = useRef<HTMLDivElement>(null);
 
@@ -719,8 +803,8 @@ const ComponentTable = <T extends object>({
 
   const dataQuery = {
     rows: data
-      .map((_: any, i: number) => {
-        return { ..._, index: i + 1 };
+      .map((column: any, i: number) => {
+        return { ...column, index: i + 1, status: column.status };
       })
       .slice(pageIndex * pageSize, (pageIndex + 1) * pageSize) as any[],
     pageCount: Math.ceil(data.length / pageSize),
@@ -737,8 +821,7 @@ const ComponentTable = <T extends object>({
   const handleScroll = (e: UIEvent<HTMLDivElement>) => {
     if (typeof refContentTHeader === "object") {
       if (refContentTHeader.current) {
-        refContentTHeader.current.scrollLeft = e.currentTarget.scrollLeft;
-        //refContentTHeader.current.scrollTop = e.currentTarget.scrollTop;
+        refContentTHeader.current.style.transform = `translateX(-${e.currentTarget.scrollLeft}px)`;
       }
     }
   };
@@ -749,17 +832,28 @@ const ComponentTable = <T extends object>({
     pageCount: dataQuery.pageCount,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     state: {
       sorting,
       pagination,
       columnOrder,
+      rowSelection,
     },
+    enableRowSelection: true, //enable row selection for all rows
+    //enableRowSelection: row => row.original.age > 18, // or enable row selection conditionally per row
+    onRowSelectionChange: setRowSelection,
     onColumnOrderChange: setColumnOrder,
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
     columnResizeMode,
     manualPagination: true,
   });
+
+  useEffect(() => {
+    if (refContentTHeader.current) {
+      refContentTHeader.current.scrollLeft = 100; // Establece el scrollLeft a 100 píxeles
+    }
+  }, [refContentTHeader]);
 
   return (
     <div className="flex flex-col flex-[1_1_auto] overflow-hidden border border-solid relative">
@@ -790,9 +884,15 @@ const ComponentTable = <T extends object>({
         configTable={table}
         handleScroll={handleScroll}
         refContentTBody={refContentTBody}
+        openEdit={openEdit}
       />
       {footerVisible === true && data.length > 0 && (
-        <TFooter configTable={table} data={data} />
+        <TFooter
+          configTable={table}
+          data={data}
+          getItemsRemoves={getItemsRemoves}
+          getItemsRestores={getItemsRestores}
+        />
       )}
     </div>
   );

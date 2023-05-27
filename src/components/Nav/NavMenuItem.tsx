@@ -9,6 +9,10 @@ import {
   MENU_ROLES,
   MENU_USUARIOS,
 } from "../../utils/const";
+import ModulosScreen from "../../views/ModulosScreen";
+import PermisosScreen from "../../views/PermisosScreen";
+import RolesScreen from "../../views/RolesScreen";
+import UserScreen from "../../views/UserScreen";
 import ContentEmpty from "../Content/ContentEmpty";
 import UserList from "../User/UserList";
 
@@ -35,7 +39,7 @@ const NavMenuItem = ({
   setNameMenuInit,
   index,
 }: Props) => {
-  const { dialogState, dispatch } = useContext(ModalContext);
+  const { dispatch } = useContext(ModalContext);
 
   const loadMenuContext = (menu: string) => {
     const personalizedComponent = (Component: any) => {
@@ -55,16 +59,16 @@ const NavMenuItem = ({
     //Config to TABS>0
     switch (menu) {
       case MENU_MODULOS:
-        setNroTab(personalizedComponent(<h1>MODULOS</h1>));
+        setNroTab(personalizedComponent(<ModulosScreen />));
         break;
       case MENU_PERMISOS:
-        setNroTab(personalizedComponent(<h1>PERMSISOS</h1>));
+        setNroTab(personalizedComponent(<PermisosScreen />));
         break;
       case MENU_ROLES:
-        setNroTab(personalizedComponent(<h1>ROLES</h1>));
+        setNroTab(personalizedComponent(<RolesScreen />));
         break;
       case MENU_USUARIOS:
-        setNroTab(personalizedComponent(<UserList />));
+        setNroTab(personalizedComponent(<UserScreen />));
         break;
       default:
         setNroTab(personalizedComponent(<ContentEmpty />));
@@ -97,6 +101,9 @@ const NavMenuItem = ({
           {menu.nombre === MENU_MODULOS && (
             <div className="p-[10px] text-center">
               <button
+                onClick={() =>
+                  dispatch({ type: DialogActionKind.DIALOG_MODULE_SYSTEM })
+                }
                 type="button"
                 className="w-[180px] mb-[5px] border  min-h-[24px] text-secondary dark:text-white hover:bg-hover"
               >
@@ -122,9 +129,7 @@ const NavMenuItem = ({
           {menu.nombre === MENU_ROLES && (
             <div className="p-[10px] text-center">
               <button
-                // onClick={() =>
-                //   dispatch({ type: DialogActionKind.DIALOG_USER })
-                // }
+                onClick={() => dispatch({ type: DialogActionKind.DIALOG_ROLE })}
                 type="button"
                 className="w-[180px] mb-[5px] border  min-h-[24px] text-secondary dark:text-white hover:bg-hover"
               >

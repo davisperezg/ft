@@ -12,19 +12,22 @@ import { DndProvider } from "react-dnd";
 function App() {
   const [sessionActive, setSession] = useState(false);
   const [isEnabled, setIsEnabled] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   const {
     data: result,
     error,
     isLoading,
     refetch,
+    status,
+    fetchStatus,
   } = useQuery({
     queryKey: ["auth"],
     queryFn: async () => await whois(),
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchIntervalInBackground: true,
-    refetchInterval: 20000,
+    refetchInterval: 60000 * 60 * 24,
     enabled: isEnabled,
   });
 
@@ -32,10 +35,22 @@ function App() {
     if (storage.getItem("access_token", "SESSION")) {
       const interval = setInterval(() => {
         setIsEnabled(true);
-      }, 20000); // habilitar el query después de 20 segundos
+      }, 60000 * 60 * 24); // habilitar el query después de 20 segundos
 
       return () => clearInterval(interval);
     }
+
+    if (storage.getItem("c_server", "LOCAL")) {
+      storage.removeItem("c_server", "LOCAL");
+    }
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
   }, [storage]);
 
   useLayoutEffect(() => {
@@ -44,6 +59,9 @@ function App() {
       refetch();
     }
   }, [storage]);
+
+  const handleOnline = () => setIsOnline(true);
+  const handleOffline = () => setIsOnline(false);
 
   if (window.location.pathname.toString().substring(1)) {
     return (

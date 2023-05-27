@@ -2,15 +2,21 @@ export enum DialogActionKind {
   INIT = "INIT",
   DIALOG_USER = "DIALOG_USER",
   DIALOG_RESORUCE = "DIALOG_RESORUCE",
+  DIALOG_MODULE_SYSTEM = "DIALOG_MODULE_SYSTEM",
+  DIALOG_ROLE = "DIALOG_ROLE",
+  OPEN_EDIT = "OPEN_EDIT",
+  OPEN_EDIT_ROL = "OPEN_EDIT_ROL",
 }
 
 export interface DialogState {
   open: boolean;
   nameDialog: string;
+  origen?: any;
 }
 
 interface DialogActions {
   type: DialogActionKind;
+  payload?: {};
   // payload: values
 }
 
@@ -36,6 +42,26 @@ export const dialogReducer = (state: DialogState, action: DialogActions) => {
         ...state,
         open: true,
         nameDialog: "DIALOG_RESORUCE",
+      };
+
+    case DialogActionKind.DIALOG_MODULE_SYSTEM:
+      return {
+        ...state,
+        open: true,
+        nameDialog: "DIALOG_MODULE_SYSTEM",
+      };
+
+    case DialogActionKind.DIALOG_ROLE:
+      return {
+        ...state,
+        open: true,
+        nameDialog: "DIALOG_ROLE",
+      };
+
+    case DialogActionKind.OPEN_EDIT:
+      return {
+        ...state,
+        open: true,
       };
 
     default:

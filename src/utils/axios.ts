@@ -23,12 +23,21 @@ export function jwtInterceptor() {
       return response;
     },
     async function (error) {
+      if (error.code === "ERR_NETWORK" || error.code === "ECONNREFUSED") {
+        storage.setItem("c_server", "close.app", "LOCAL");
+        storage.clear("SESSION");
+        location.reload();
+      }
+
       const originalRequest = error.config;
 
       if (
-        error.status === 401 &&
-        originalRequest.url === `${BASE_API}/api/v1/auth/login/token`
+        error.response.status === 401 &&
+        originalRequest.url === `${BASE_API}/api/v1/auth/token`
       ) {
+        storage.setItem("c_server", "close.app", "LOCAL");
+        storage.clear("SESSION");
+        location.reload();
         return Promise.reject(error);
       }
 
@@ -58,7 +67,6 @@ export function jwtInterceptor() {
           location.reload();
         }
       }
-
       return Promise.reject(error);
     }
   );

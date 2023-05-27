@@ -1,5 +1,9 @@
 import ContentEmpty from "../components/Content/ContentEmpty";
 import UserList from "../components/User/UserList";
+import ModulosScreen from "../views/ModulosScreen";
+import PermisosScreen from "../views/PermisosScreen";
+import RolesScreen from "../views/RolesScreen";
+import UserScreen from "../views/UserScreen";
 import {
   MENU_MODULOS,
   MENU_PERMISOS,
@@ -11,13 +15,13 @@ import {
 export const ComponentByName = (menu: string) => {
   switch (menu) {
     case MENU_MODULOS:
-      return <h1>MODULOS</h1>;
+      return <ModulosScreen />;
     case MENU_PERMISOS:
-      return <h1>PERMSISOS</h1>;
+      return <PermisosScreen />;
     case MENU_ROLES:
-      return <h1>ROLES</h1>;
+      return <RolesScreen />;
     case MENU_USUARIOS:
-      return <UserList />;
+      return <UserScreen />;
     default:
       return <ContentEmpty />;
   }

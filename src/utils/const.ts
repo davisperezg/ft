@@ -1,4 +1,5 @@
 export const BASE_API = import.meta.env.VITE_API_URL;
+export const MOD_PRINCIPAL = import.meta.env.VITE_MOD_PRINCIPAL;
 export const MENU_MODULOS = "Modulos";
 export const MENU_PERMISOS = "Permisos";
 export const MENU_ROLES = "Roles";

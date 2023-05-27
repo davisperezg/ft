@@ -3,9 +3,10 @@ import { postLogin } from "../api/auth";
 import { useForm, SubmitHandler } from "react-hook-form";
 import ToastError from "../components/Toast/ToastError";
 import { storage } from "../utils/storage";
+import { toast } from "react-toastify";
 
 interface Username {
-  email: string;
+  username: string;
   password: string;
   checkbox?: boolean;
 }
@@ -19,10 +20,10 @@ const LoginScreen = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors, defaultValues },
+    formState: { errors },
   } = useForm<Username>({
     defaultValues: {
-      email: storage.getItem("username", "LOCAL") || "",
+      username: storage.getItem("username", "LOCAL") || "",
       password: storage.getItem("password", "LOCAL") || "",
     },
   });
@@ -33,37 +34,38 @@ const LoginScreen = () => {
   const onSubmit: SubmitHandler<Username> = async (data) => {
     setError(initialError);
     setDisabled(true);
-    setTimeout(async () => {
-      try {
-        const res = await postLogin(data.email, data.password);
-        const access_token = res.data.user.access_token;
-        const refresh_token = res.data.user.refresh_token;
-        storage.setItem("access_token", access_token, "SESSION");
-        storage.setItem("refresh_token", refresh_token, "SESSION");
-        storage.removeItem("c_session", "LOCAL");
-        if (data.checkbox) {
-          storage.setItem("username", data.email, "LOCAL");
-          storage.setItem("password", data.password, "LOCAL");
-        } else {
-          storage.removeItem("username", "LOCAL");
-          storage.removeItem("password", "LOCAL");
-        }
-
-        location.reload();
-      } catch (error: any) {
-        setError({
-          visible: true,
-          message: error.response.data.message,
-        });
-        setDisabled(false);
+    try {
+      const res = await postLogin(data.username, data.password);
+      const access_token = res.data.user.access_token;
+      const refresh_token = res.data.user.refresh_token;
+      storage.setItem("access_token", access_token, "SESSION");
+      storage.setItem("refresh_token", refresh_token, "SESSION");
+      storage.removeItem("c_session", "LOCAL");
+      if (data.checkbox) {
+        storage.setItem("username", data.username, "LOCAL");
+        storage.setItem("password", data.password, "LOCAL");
+      } else {
+        storage.removeItem("username", "LOCAL");
+        storage.removeItem("password", "LOCAL");
       }
-    }, 1000);
+
+      storage.removeItem("c_server", "LOCAL");
+      location.reload();
+    } catch (error: any) {
+      setDisabled(false);
+
+      if (!error.response) {
+        return toast.error("Conexión rechazada");
+      }
+
+      toast.error(error.response.data.message);
+    }
   };
 
-  const onInvalid = () => {
-    const message = Object.keys(errors).map(
-      (field) => (errors as any)[field].message
-    )[0];
+  const onInvalid = (e: any) => {
+    const message = Object.values(e).map((field: any) => {
+      return field.message;
+    })[0];
 
     setError({ visible: true, message });
   };
@@ -73,6 +75,13 @@ const LoginScreen = () => {
       setError({
         visible: true,
         message: "Session invalida",
+      });
+    }
+
+    if (storage.getItem("c_server", "LOCAL")) {
+      setError({
+        visible: true,
+        message: "Conexión rechazada",
       });
     }
   }, [storage]);
@@ -100,23 +109,24 @@ const LoginScreen = () => {
                   </div>
                   <div className="w-[50%]">
                     <input
-                      {...register("email", {
+                      {...register("username", {
                         required: {
                           value: true,
-                          message:
-                            "Por favor ingresa tu dirección de correo electrónico",
+                          message: "Por favor ingresa tu usuario",
                         },
-                        pattern: {
-                          value: /^\S+@\S+$/i,
-                          message:
-                            "Por favor ingresa una dirección de correo electrónico válida",
-                        },
+                        // pattern: {
+                        //   value: /^\S+@\S+$/i,
+                        //   message:
+                        //     "Por favor ingresa una dirección de correo electrónico válida",
+                        // },
                       })}
                       id="label-username"
                       disabled={disabled}
                       type="text"
                       className={`autofill:shadow-[0_0_0_30px_white_inset] w-full p-1 rounded-sm border border-hover focus:outline-none pl-2 text-[14px] ${
-                        errors.email ? "border-primary" : "hover:border-borders"
+                        errors.username
+                          ? "border-primary"
+                          : "hover:border-borders"
                       }`}
                       placeholder="Usuario"
                     />
@@ -162,7 +172,7 @@ const LoginScreen = () => {
                   />
                   <label
                     htmlFor="label-checkbox"
-                    className="text-[12px] pl-2 font-[700] select-none"
+                    className="text-[12px] pl-2 font-[700] select-none cursor-pointer"
                   >
                     Recordar
                   </label>
@@ -186,16 +196,6 @@ const LoginScreen = () => {
             </div>
           </form>
         </div>
-
-        <ToastError
-          className={`${
-            controlError.visible
-              ? "opacity-[1] transform-none"
-              : "opacity-0 translate-y-[20px]"
-          }`}
-          placeholder={controlError.visible}
-          message={controlError.message}
-        />
       </div>
     </>
   );

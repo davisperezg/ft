@@ -2,6 +2,9 @@ import { useContext } from "react";
 import { ModalContext } from "../../context/modalContext";
 import { NavLeftWithItem } from "../../interface/navleft_item.modulos.interface";
 import { DialogActionKind } from "../../reducers/dialogReducer";
+import ContentDialogs from "../Content/ContentDialogs";
+import ModulosSystemCreate from "../System/ModulosSystemCreate";
+import ModulosSystemEdit from "../System/ModulosSystemEdit";
 import UserCreate from "../User/UserCreate";
 import NavModItem from "./NavModItem";
 
@@ -17,18 +20,12 @@ interface Props {
 const NavLeft = (props: Props) => {
   const { menus, handleTab, setNroTab, nroTab, clicked, setNameMenuInit } =
     props;
-  const { dialogState, dispatch, userGlobal } = useContext(ModalContext);
+  const { userGlobal } = useContext(ModalContext);
 
   return (
     <>
-      {dialogState.open &&
-        dialogState.nameDialog === DialogActionKind.DIALOG_USER && (
-          <UserCreate />
-        )}
-      {dialogState.open &&
-        dialogState.nameDialog === DialogActionKind.DIALOG_RESORUCE && (
-          <UserCreate />
-        )}
+      {/* Renderiza todos los dialogs */}
+      <ContentDialogs />
       <div className="flex flex-[0_0_300px] flex-col  relative dark:bg-slate  -700">
         <dl className="flex flex-[1_1_100%] min-h-0 flex-col">
           {userGlobal?.rol?.modulos.map((a: any, i: number) => {

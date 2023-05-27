@@ -3,20 +3,17 @@
 //   setOpen: any;
 // }
 
-import { useContext } from "react";
+import { cloneElement, useContext } from "react";
 import { ModalContext } from "../../context/modalContext";
 
 interface Props {
-  children: React.ReactNode[];
+  children: JSX.Element[];
   width?: string | number;
   height?: string | number;
+  handleClose?: () => void;
 }
 
-const DialogBasic = ({
-  children,
-  width = "630px",
-  height = "440px",
-}: Props) => {
+const DialogBasic = ({ children, handleClose, width, height }: Props) => {
   const { dialogState } = useContext(ModalContext);
   const isStringMyWidth = typeof width === "string";
   const isStringMyHeight = typeof height === "string";
@@ -27,13 +24,26 @@ const DialogBasic = ({
 
   //w-630px
   //h-440px
+
   return (
     <div
-      className={`flex flex-col z-[4] rounded-[3px] bg-[#ffefc6] text-white absolute left-0 top-0 bottom-0 right-0 m-auto w-[${
-        isStringMyWidth ? width : width + "px"
-      }] h-[${isStringMyHeight ? height : height + "px"}]`}
+      style={{
+        width: isStringMyWidth
+          ? width + "px" //Aceptar ancho si es string
+          : typeof width === "number" //condicional de number
+          ? width //Aceptar ancho si es number
+          : "630px", //ancho x defecto
+        height: isStringMyHeight
+          ? height + "px" //Aceptar altura si es string
+          : typeof height === "number" //condicional de number
+          ? height //Aceptar altura si es number
+          : "440px", //altura x defecto
+      }}
+      className={`z-[12] overflow-hidden flex flex-col rounded-[10px] bg-white text-white fixed left-0 top-0 bottom-0 right-0 m-auto h-[${height}px]`}
     >
-      {children[0]}
+      {cloneElement(children[0], {
+        handleClose: handleClose,
+      })}
       {children[1]}
       {children[2]}
     </div>
