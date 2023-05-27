@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useEffect } from "react";
 import ComponentTable from "../Table/Index";
 import { ColumnDef } from "@tanstack/react-table";
 import { useDeleteRol, useRestoreRol, useRoles } from "../../hooks/useRoles";
@@ -6,25 +6,24 @@ import { IRol } from "../../interface/rol.interface";
 import IndeterminateCheckbox from "../Input/IndeterminateCheckbox";
 import ToastError from "../Toast/ToastError";
 import LoadingTotal from "../Loading/LoadingTotal";
+import { toast } from "react-toastify";
+import { isError } from "../../utils/functions";
 
 interface Props {
   openEdit: (value: boolean, row: IRol) => void;
 }
 
 const RolList = ({ openEdit }: Props) => {
-  const { data, error, isLoading, isError } = useRoles();
-
   const {
-    mutateAsync: mutateDelete,
-    error: errorDelete,
-    isError: isErrorDelete,
-  } = useDeleteRol();
+    data,
+    error: errorRoles,
+    isLoading,
+    isError: isErrorRoles,
+  } = useRoles();
 
-  const {
-    mutateAsync: mutateRestore,
-    error: errorRestore,
-    isError: isErrorRestore,
-  } = useRestoreRol();
+  const { mutateAsync: mutateDelete } = useDeleteRol();
+
+  const { mutateAsync: mutateRestore } = useRestoreRol();
 
   const columns = useMemo<ColumnDef<IRol>[]>(
     () => [
@@ -134,7 +133,13 @@ const RolList = ({ openEdit }: Props) => {
     if (eliminar) {
       for (let index = 0; index < items.length; index++) {
         const element = items[index];
-        await mutateDelete({ id: element.original._id });
+        try {
+          await mutateDelete({ id: element.original._id });
+        } catch (e) {
+          if (isError(e)) {
+            toast.error(e.response.data.message);
+          }
+        }
       }
     }
   };
@@ -147,7 +152,13 @@ const RolList = ({ openEdit }: Props) => {
     if (restaurar) {
       for (let index = 0; index < items.length; index++) {
         const element = items[index];
-        await mutateRestore({ id: element.original._id });
+        try {
+          await mutateRestore({ id: element.original._id });
+        } catch (e) {
+          if (isError(e)) {
+            toast.error(e.response.data.message);
+          }
+        }
       }
     }
   };
@@ -160,6 +171,12 @@ const RolList = ({ openEdit }: Props) => {
     return [];
   }, [data]);
 
+  useEffect(() => {
+    if (isErrorRoles) {
+      toast.error(errorRoles.response.data.message);
+    }
+  }, [isErrorRoles, toast]);
+
   return (
     <>
       {isLoading ? (
@@ -171,30 +188,6 @@ const RolList = ({ openEdit }: Props) => {
           getItemsRemoves={getItemsRemoves}
           getItemsRestores={getItemsRestores}
           openEdit={openEdit}
-        />
-      )}
-      {/* 6440abb3c63313d07627eb55 */}
-      {isError && (
-        <ToastError
-          delay={5000}
-          placeholder={isError}
-          message={error?.response.data.message}
-        />
-      )}
-
-      {isErrorDelete && (
-        <ToastError
-          delay={5000}
-          placeholder={isErrorDelete}
-          message={errorDelete?.response.data.message}
-        />
-      )}
-
-      {isErrorRestore && (
-        <ToastError
-          delay={5000}
-          placeholder={isErrorRestore}
-          message={errorRestore?.response.data.message}
         />
       )}
     </>

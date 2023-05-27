@@ -1,9 +1,11 @@
 import { useContext, useMemo, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
+import { toast } from "react-toastify";
 import { ModalContext } from "../../context/modalContext";
 import { useModules, useModulesAvailables } from "../../hooks/useModuleS";
 import { usePostRol } from "../../hooks/useRoles";
 import { IRol } from "../../interface/rol.interface";
+import { isError } from "../../utils/functions";
 import DialogBasic from "../Dialog/DialogBasic";
 import DialogBody from "../Dialog/DialogBody";
 import DialogButtons from "../Dialog/DialogButtons";
@@ -56,8 +58,15 @@ const RolCreate = () => {
   const getModulos = watch("module") as string[];
 
   const onSubmit: SubmitHandler<IRol> = async (values) => {
-    await mutateAsync({ rol: values });
-    dispatch({ type: "INIT" });
+    try {
+      const response = await mutateAsync(values);
+      dispatch({ type: "INIT" });
+      toast.success(response.message);
+    } catch (e) {
+      if (isError(e)) {
+        toast.error(e.response.data.message);
+      }
+    }
   };
 
   const memoModulos = useMemo(() => {
