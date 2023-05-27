@@ -1,6 +1,7 @@
 import axios from "axios";
 import { IModulosSystem } from "../interface/modulo_system.interface";
 import { IRol } from "../interface/rol.interface";
+import { IServer } from "../interface/server.interface";
 import { BASE_API } from "../utils/const";
 
 export const getRoles = async () => {
@@ -9,13 +10,16 @@ export const getRoles = async () => {
 };
 
 export const postRol = async (body: IModulosSystem) => {
-  const { data } = await axios.post<IRol>(`${BASE_API}/api/v1/roles`, body);
+  const { data } = await axios.post<IServer<IRol>>(
+    `${BASE_API}/api/v1/roles`,
+    body
+  );
 
   return data;
 };
 
 export const editRol = async (body: IRol, id: string) => {
-  const { data } = await axios.put<IRol>(
+  const { data } = await axios.put<IServer<IRol>>(
     `${BASE_API}/api/v1/roles/${id}`,
     body
   );
