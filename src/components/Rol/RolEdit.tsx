@@ -112,12 +112,7 @@ const RolEdit = ({ data, closeEdit }: Props) => {
 
   const getModulos = watch("module") as string[];
 
-  const {
-    mutateAsync,
-    error: errorEdit,
-    isLoading: isLoadingEdit,
-    isError: isErrorEdit,
-  } = useEditRol();
+  const { mutateAsync, isLoading: isLoadingEdit } = useEditRol();
 
   const getResources_users = watch("resources") as string[];
 
