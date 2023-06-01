@@ -1,6 +1,7 @@
 import axios from "axios";
 import { ServicesInput } from "../interface/modules-input.interface";
 import { IModulosSystem } from "../interface/modulo_system.interface";
+import { IServer } from "../interface/server.interface";
 import { BASE_API } from "../utils/const";
 
 //Edit o crea los servicios o modulos x usuario
@@ -26,7 +27,7 @@ export const getModuloS = async () => {
 };
 
 export const postModulo = async (body: IModulosSystem) => {
-  const { data } = await axios.post<IModulosSystem>(
+  const { data } = await axios.post<IServer<IModulosSystem>>(
     `${BASE_API}/api/v1/modules`,
     body
   );
@@ -35,7 +36,7 @@ export const postModulo = async (body: IModulosSystem) => {
 };
 
 export const editModulo = async (body: IModulosSystem, id: string) => {
-  const { data } = await axios.put<IModulosSystem>(
+  const { data } = await axios.put<IServer<IModulosSystem>>(
     `${BASE_API}/api/v1/modules/${id}`,
     body
   );

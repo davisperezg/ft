@@ -1,9 +1,11 @@
 import { useContext, useMemo, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
+import { toast } from "react-toastify";
 import { ModalContext } from "../../context/modalContext";
 import { useMenus } from "../../hooks/useMenus";
 import { usePostModule } from "../../hooks/useModuleS";
 import { IModulosSystem } from "../../interface/modulo_system.interface";
+import { isError } from "../../utils/functions";
 import DialogBasic from "../Dialog/DialogBasic";
 import DialogBody from "../Dialog/DialogBody";
 import DialogButtons from "../Dialog/DialogButtons";
@@ -13,6 +15,7 @@ import TabModal from "../Tab/Modal/TabModal";
 import TabModalItem from "../Tab/Modal/TabModalItem";
 import TabModalPanel from "../Tab/Modal/TabModalPanel";
 import ToastError from "../Toast/ToastError";
+import { toastError } from "../Toast/ToastNotify";
 
 const ModulosSystemCreate = () => {
   const { dispatch } = useContext(ModalContext);
@@ -67,9 +70,15 @@ const ModulosSystemCreate = () => {
   };
 
   const onSubmit: SubmitHandler<IModulosSystem> = async (data) => {
-    //console.log(data);
-    await mutateAsync({ module: data });
-    dispatch({ type: "INIT" });
+    try {
+      const responde = await mutateAsync(data);
+      dispatch({ type: "INIT" });
+      toast.success(responde.message);
+    } catch (e) {
+      if (isError(e)) {
+        toastError(e.response.data.message);
+      }
+    }
   };
 
   return (

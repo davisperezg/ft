@@ -1,10 +1,12 @@
 import { useContext, useMemo, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
+import { toast } from "react-toastify";
 import { ModalContext } from "../../context/modalContext";
 import { useMenus } from "../../hooks/useMenus";
 import { useEditModule } from "../../hooks/useModuleS";
 import { IModulosSystem } from "../../interface/modulo_system.interface";
 import { MOD_PRINCIPAL } from "../../utils/const";
+import { isError } from "../../utils/functions";
 import DialogBasic from "../Dialog/DialogBasic";
 import DialogBody from "../Dialog/DialogBody";
 import DialogButtons from "../Dialog/DialogButtons";
@@ -14,6 +16,7 @@ import TabModal from "../Tab/Modal/TabModal";
 import TabModalItem from "../Tab/Modal/TabModalItem";
 import TabModalPanel from "../Tab/Modal/TabModalPanel";
 import ToastError from "../Toast/ToastError";
+import { toastError } from "../Toast/ToastNotify";
 
 interface Props {
   data?: any;
@@ -66,15 +69,21 @@ const ModulosSystemEdit = ({ data, closeEdit }: Props) => {
 
   const handleCheck = (values: string[]) => setValueModel("menu", values);
 
-  const {
-    mutateAsync,
-    error: errorEdit,
-    isLoading: isLoadingEdit,
-  } = useEditModule();
+  const { mutateAsync, isLoading: isLoadingEdit } = useEditModule();
 
   const onSubmit: SubmitHandler<IModulosSystem> = async (values) => {
-    await mutateAsync({ body: values, id: data._id as string });
-    closeModal();
+    try {
+      const response = await mutateAsync({
+        body: values,
+        id: data._id as string,
+      });
+      closeModal();
+      toast.success(response.message);
+    } catch (e) {
+      if (isError(e)) {
+        toastError(e.response.data.message);
+      }
+    }
   };
 
   const closeModal = () => {
@@ -201,16 +210,6 @@ const ModulosSystemEdit = ({ data, closeEdit }: Props) => {
           </button>
         </DialogButtons>
       </DialogBasic>
-
-      <ToastError
-        className={`${
-          errorEdit
-            ? "opacity-[1] transform-none"
-            : "opacity-0 translate-y-[20px]"
-        }`}
-        placeholder={errorEdit ? true : false}
-        message={errorEdit?.response.data.message}
-      />
     </>
   );
 };

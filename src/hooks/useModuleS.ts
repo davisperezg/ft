@@ -9,6 +9,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { IError } from "../interface/error.interface";
 import { getModulesToUsers } from "../api/user";
+import { IServer } from "../interface/server.interface";
 
 const KEY = "modules_system";
 const KEY_USERS = "modules_availables";
@@ -32,13 +33,13 @@ export const useModulesAvailables = () => {
 export const usePostModule = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<any, IError, { module: IModulosSystem }, any>({
-    mutationFn: ({ module }) => postModulo(module),
-    onSuccess: (modulo: IModulosSystem) => {
+  return useMutation<IServer<IModulosSystem>, IError, IModulosSystem>({
+    mutationFn: (module) => postModulo(module),
+    onSuccess: ({ response }) => {
       queryClient.setQueryData(
         [KEY],
         (prevModulos: IModulosSystem[] | undefined) =>
-          prevModulos ? [...prevModulos, modulo] : [modulo]
+          prevModulos ? [...prevModulos, response] : [response]
       );
 
       queryClient.invalidateQueries([KEY]);
@@ -50,19 +51,19 @@ export const useEditModule = () => {
   const queryClient = useQueryClient();
 
   return useMutation<
-    IModulosSystem,
+    IServer<IModulosSystem>,
     IError,
     { body: IModulosSystem; id: string }
   >({
     mutationFn: ({ body, id }) => editModulo(body, id),
-    onSuccess: (mod_updated: IModulosSystem) => {
+    onSuccess: ({ response }) => {
       queryClient.setQueryData(
         [KEY],
         (prevModulos: IModulosSystem[] | undefined) => {
           if (prevModulos) {
             const updatedUsers = prevModulos.map((modulo) => {
-              if (modulo._id === mod_updated._id)
-                return { ...modulo, ...mod_updated };
+              if (modulo._id === response._id)
+                return { ...modulo, ...response };
               return modulo;
             });
 
