@@ -6,7 +6,7 @@ export interface IPermisos {
   name: string;
   key: string;
   description?: string;
-  group_resource: IGroup;
+  group_resource: IGroup | string;
   createdAt?: Date;
   updatedAt?: Date;
 }

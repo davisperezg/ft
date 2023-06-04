@@ -115,9 +115,9 @@ const NavMenuItem = ({
           {menu.nombre === MENU_PERMISOS && (
             <div className="p-[10px] text-center">
               <button
-                // onClick={() =>
-                //   dispatch({ type: DialogActionKind.DIALOG_USER })
-                // }
+                onClick={() =>
+                  dispatch({ type: DialogActionKind.DIALOG_RESORUCE })
+                }
                 type="button"
                 className="w-[180px] mb-[5px] border  min-h-[24px] text-secondary dark:text-white hover:bg-hover"
               >

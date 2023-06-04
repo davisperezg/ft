@@ -15,6 +15,7 @@ import TabModal from "../Tab/Modal/TabModal";
 import TabModalItem from "../Tab/Modal/TabModalItem";
 import TabModalPanel from "../Tab/Modal/TabModalPanel";
 import ToastError from "../Toast/ToastError";
+import { toastError } from "../Toast/ToastNotify";
 
 const RolCreate = () => {
   const [value, setValue] = useState(1);
@@ -64,7 +65,7 @@ const RolCreate = () => {
       toast.success(response.message);
     } catch (e) {
       if (isError(e)) {
-        toast.error(e.response.data.message);
+        toastError(e.response.data.message);
       }
     }
   };
@@ -196,10 +197,6 @@ const RolCreate = () => {
           </button>
         </DialogButtons>
       </DialogBasic>
-      <ToastError
-        placeholder={isErrorPost}
-        message={errorPost?.response.data.message}
-      />
     </>
   );
 };
