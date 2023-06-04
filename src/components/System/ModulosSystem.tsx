@@ -39,8 +39,6 @@ const ModulosSystemList = ({ openEdit }: Props) => {
     return [];
   }, [data]);
 
-  console.log(data);
-
   const columns = useMemo<ColumnDef<IModulosSystem>[]>(
     () => [
       {

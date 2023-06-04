@@ -126,7 +126,6 @@ const ResourceList = ({ openEdit }: Props) => {
         },
         cell: ({ getValue }) => {
           const estado = getValue() as any;
-          console.log(estado);
           return (
             <div
               className={`

@@ -1,5 +1,5 @@
 import DialogBasic from "../Dialog/DialogBasic";
-import { useState, useContext, useMemo } from "react";
+import { useEffect, useContext, useMemo } from "react";
 import DialogTitle from "../Dialog/DialogTitle";
 import DialogBody from "../Dialog/DialogBody";
 import DialogButtons from "../Dialog/DialogButtons";
@@ -50,6 +50,8 @@ const ResourceEdit = ({ data, closeEdit }: Props) => {
     register,
     handleSubmit,
     formState: { errors },
+    setValue,
+    watch,
   } = useForm<FormValues>({
     defaultValues: {
       name: data.name,
@@ -75,6 +77,12 @@ const ResourceEdit = ({ data, closeEdit }: Props) => {
     }
   };
 
+  useEffect(() => {
+    if (memoGroups.length > 0) {
+      setValue("group_resource", data.group_resource._id);
+    }
+  }, [data, memoGroups]);
+
   return (
     <>
       <DialogBasic handleClose={closeEdit}>
@@ -93,7 +101,7 @@ const ResourceEdit = ({ data, closeEdit }: Props) => {
                   {...register("group_resource", {
                     required: {
                       value: true,
-                      message: "Ingrese grupo",
+                      message: "Ingrese categoría",
                     },
                   })}
                   className={`border w-8/12 focus:outline-none pl-1 rounded-sm ${
@@ -147,7 +155,6 @@ const ResourceEdit = ({ data, closeEdit }: Props) => {
                       message: "Ingrese máximo 45 caracteres",
                     },
                   })}
-                  autoFocus
                   type="text"
                   className={`border w-8/12 focus:outline-none pl-1 rounded-sm ${
                     errors.name ? "border-primary" : ""
