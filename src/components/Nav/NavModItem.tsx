@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { IModuloAccess } from "../../interface/modulo.interface";
 import { NavLeftWithItem } from "../../interface/navleft_item.modulos.interface";
 
 import NavMenuItem from "./NavMenuItem";
+import { ModalContext } from "../../context/modalContext";
 
 interface Props {
   totalMenus: any[];
@@ -25,9 +26,25 @@ const NavModItem = ({
   clicked,
   setNameMenuInit,
 }: Props) => {
+  const { modulesGlobal, clickedTab } = useContext(ModalContext);
+
   const endObject = totalMenus[totalMenus.length - 1];
   const [index, setIndex] = useState(0);
   const onClickMenu = (item: number) => setIndex(item);
+
+  useEffect(() => {
+    if (clicked !== clickedTab) {
+      const find = modulesGlobal?.find((a: any) => a.tab === clicked);
+      if (find) {
+        setIndex(find?.menu);
+      }
+    } else if (clicked >= 0) {
+      const find = modulesGlobal?.find((a: any) => a.tab === clickedTab);
+      if (find) {
+        setIndex(find?.menu);
+      }
+    }
+  }, [clicked, clickedTab, modulesGlobal]);
 
   return (
     <>
@@ -63,9 +80,12 @@ const NavModItem = ({
                   key={i}
                   modulo={modulo}
                   menu={a}
-                  onClickMenu={() => onClickMenu(i)}
+                  onClickMenu={() => {
+                    onClickMenu(i);
+                  }}
                   setNroTab={setNroTab}
                   nroTab={nroTab}
+                  handleTab={handleTab}
                   clicked={clicked}
                   setNameMenuInit={setNameMenuInit}
                 />

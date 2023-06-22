@@ -26,6 +26,7 @@ interface Props {
   clicked: number;
   setNameMenuInit: React.Dispatch<React.SetStateAction<string>>;
   index: number;
+  handleTab: (name: string) => void;
 }
 
 const NavMenuItem = ({
@@ -38,13 +39,46 @@ const NavMenuItem = ({
   clicked,
   setNameMenuInit,
   index,
+  handleTab,
 }: Props) => {
-  const { dispatch } = useContext(ModalContext);
+  const { dispatch, setModulesGlobal, modulesGlobal, setClickedGlobal } =
+    useContext(ModalContext);
 
   const loadMenuContext = (menu: string) => {
     const personalizedComponent = (Component: any) => {
       return nroTab.map((a: any) => {
         if (a.index === clicked) {
+          //Si existe un tab ya antes seleccionado
+          const existMenu = modulesGlobal.some((a: any) => a.tab === clicked);
+
+          if (existMenu) {
+            //Si existe el tab solo seteamos el menu
+            const res = modulesGlobal.map((a: any) => {
+              if (a.tab === clicked) {
+                return {
+                  ...a,
+                  menu: index,
+                  component: menu,
+                };
+              } else {
+                return a;
+              }
+            });
+
+            setModulesGlobal(res);
+          } else {
+            //Si no existe el tab se agrega
+            setModulesGlobal([
+              ...modulesGlobal,
+              {
+                tab: clicked,
+                menu: index,
+                title: modulo.nombre,
+                component: menu,
+              },
+            ]);
+          }
+
           return {
             ...a,
             title: modulo.nombre,
@@ -81,11 +115,12 @@ const NavMenuItem = ({
       <li className="p-1">
         <a
           onClick={() => {
-            if (clicked === 0) {
-              setNameMenuInit(menu.nombre);
-            } else {
-              loadMenuContext(menu.nombre);
-            }
+            // if (clicked === 0) {
+            //   setNameMenuInit(menu.nombre);
+            // } else {
+            //   loadMenuContext(menu.nombre);
+            // }
+            loadMenuContext(menu.nombre);
             return onClickMenu(index);
           }}
           className="cursor-pointer font-bold"

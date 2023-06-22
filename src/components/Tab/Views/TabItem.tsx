@@ -8,6 +8,7 @@ interface Props {
   active: boolean;
   onClose: () => void;
   entity: ITabItem;
+  size: any[];
 }
 
 const init = {
@@ -17,7 +18,7 @@ const init = {
 };
 
 const TabItem = (props: Props) => {
-  const { onclick, onClose, active, entity } = props;
+  const { onclick, onClose, active, entity, size } = props;
   const [tab, setTab] = useState<ITabItem>(init);
 
   useEffect(() => {
@@ -42,6 +43,7 @@ const TabItem = (props: Props) => {
           </label>
           <label
             onClick={(e) => {
+              if (tab.index === 0) return;
               e.stopPropagation();
               onClose();
             }}
