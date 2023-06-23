@@ -4,6 +4,14 @@ import { ResourcesInput } from "../interface/resources-input.interface";
 import { IServer } from "../interface/server.interface";
 import { BASE_API } from "../utils/const";
 
+//Se usara para consultar los permisos disponibles que tiene el usuario
+export const getAccess = async (id: string) => {
+  const { data } = await axios.get<any[]>(
+    `${BASE_API}/api/v1/resources-users/view/${id}`
+  );
+  return data;
+};
+
 export const getResources = async () => {
   const { data } = await axios.get<IPermisos[]>(
     `${BASE_API}/api/v1/resources/list`

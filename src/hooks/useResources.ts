@@ -2,6 +2,7 @@ import {
   activateResources,
   desactivateResources,
   editResources,
+  getAccess,
   getResources,
   getResourcesXRol,
   getResourcesXUser,
@@ -23,6 +24,16 @@ const KEY_USERS = "resources_availables";
 const KEY_BY_USERS = "resources_x_user";
 const KEY_BY_ROLES = "resources_x_roles";
 const KEY_SERVICES_BY_USERS = "services_x_user";
+const KEY_ACCESS = "resources_access";
+
+export const useAccess = (id: string) => {
+  return useQuery<any, IError, any[]>({
+    queryKey: [KEY_ACCESS, id],
+    queryFn: () => getAccess(id),
+    cacheTime: 0,
+    enabled: !!id,
+  });
+};
 
 export const useResources = () => {
   return useQuery<IPermisos[], IError>({

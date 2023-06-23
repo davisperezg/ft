@@ -28,7 +28,7 @@ const TabItem = (props: Props) => {
   }, [entity]);
 
   return (
-    <li className={`select-none float-left m-[0_0_8px_8px] cursor-pointer`}>
+    <li className={`select-none float-left m-[0_8px_8px_0] cursor-pointer`}>
       <a
         onClick={onclick}
         className={`top-0 pr-[5px] hover:no-underline ${

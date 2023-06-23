@@ -13,7 +13,6 @@ interface Props {
   setNroTab: React.Dispatch<React.SetStateAction<any[]>>;
   nroTab: any[];
   clicked: number;
-  setNameMenuInit: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const NavModItem = ({
@@ -24,7 +23,6 @@ const NavModItem = ({
   setNroTab,
   nroTab,
   clicked,
-  setNameMenuInit,
 }: Props) => {
   const { modulesGlobal, clickedTab } = useContext(ModalContext);
 
@@ -80,14 +78,10 @@ const NavModItem = ({
                   key={i}
                   modulo={modulo}
                   menu={a}
-                  onClickMenu={() => {
-                    onClickMenu(i);
-                  }}
+                  onClickMenu={() => onClickMenu(i)}
                   setNroTab={setNroTab}
                   nroTab={nroTab}
-                  handleTab={handleTab}
                   clicked={clicked}
-                  setNameMenuInit={setNameMenuInit}
                 />
               );
             })}
