@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useCallback } from "react";
 import ComponentTable from "../Table/Index";
 import { ColumnDef } from "@tanstack/react-table";
 import { useDeleteUser, useRestoreUser, useUsers } from "../../hooks/useUsers";
@@ -24,37 +24,43 @@ const UserList = ({ openEdit }: Props) => {
 
   const { mutateAsync: mutateRestore } = useRestoreUser();
 
-  const getItemsRemoves = async (item: any) => {
-    const eliminar = confirm(
-      `Esta seguro que desea eliminar ${item.username} items ?`
-    );
+  const getItemsRemoves = useCallback(
+    async (item: any) => {
+      const eliminar = confirm(
+        `Esta seguro que desea eliminar ${item.username} items ?`
+      );
 
-    try {
-      if (eliminar) {
-        await mutateDelete({ id: item._id });
+      try {
+        if (eliminar) {
+          await mutateDelete({ id: item._id });
+        }
+      } catch (e) {
+        if (isError(e)) {
+          toast.error(e.response.data.message);
+        }
       }
-    } catch (e) {
-      if (isError(e)) {
-        toast.error(e.response.data.message);
-      }
-    }
-  };
+    },
+    [mutateDelete]
+  );
 
-  const getItemsRestores = async (item: any) => {
-    const restaurar = confirm(
-      `Esta seguro que desea restaurar ${item.username} items ?`
-    );
+  const getItemsRestores = useCallback(
+    async (item: any) => {
+      const restaurar = confirm(
+        `Esta seguro que desea restaurar ${item.username} items ?`
+      );
 
-    try {
-      if (restaurar) {
-        await mutateRestore({ id: item._id });
+      try {
+        if (restaurar) {
+          await mutateRestore({ id: item._id });
+        }
+      } catch (e) {
+        if (isError(e)) {
+          toast.error(e.response.data.message);
+        }
       }
-    } catch (e) {
-      if (isError(e)) {
-        toast.error(e.response.data.message);
-      }
-    }
-  };
+    },
+    [mutateRestore]
+  );
 
   const columns = useMemo<ColumnDef<IUser>[]>(
     () => [
@@ -292,7 +298,7 @@ const UserList = ({ openEdit }: Props) => {
         enableSorting: false,
       },
     ],
-    []
+    [getItemsRemoves, getItemsRestores]
   );
 
   const loadData = useMemo(() => {
@@ -307,7 +313,7 @@ const UserList = ({ openEdit }: Props) => {
     if (isErrorUsers) {
       toast.error(errorUsers.response.data.message);
     }
-  }, [isErrorUsers, toast]);
+  }, [errorUsers, isErrorUsers]);
 
   return (
     <>

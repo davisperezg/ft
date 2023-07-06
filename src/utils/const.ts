@@ -4,6 +4,7 @@ export const MENU_MODULOS = "Modulos";
 export const MENU_PERMISOS = "Permisos";
 export const MENU_ROLES = "Roles";
 export const MENU_USUARIOS = "Usuarios";
+export const MENU_FACTURA = "Factura";
 export const MODS_TEST = [
   {
     nombre: "Administración de sistema - PRINCIPAL",

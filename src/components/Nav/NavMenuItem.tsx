@@ -4,6 +4,7 @@ import { IMenuAccess } from "../../interface/menu.interface";
 import { IModuloAccess } from "../../interface/modulo.interface";
 import { DialogActionKind } from "../../reducers/dialogReducer";
 import {
+  MENU_FACTURA,
   MENU_MODULOS,
   MENU_PERMISOS,
   MENU_ROLES,
@@ -16,6 +17,7 @@ import UserScreen from "../../views/UserScreen";
 import ContentEmpty from "../Content/ContentEmpty";
 import UserList from "../User/UserList";
 import { useAccess } from "../../hooks/useResources";
+import FacturaScreen from "../../views/FacturaScreen";
 
 interface Props {
   open: boolean;
@@ -102,6 +104,9 @@ const NavMenuItem = ({
         break;
       case MENU_USUARIOS:
         setNroTab(personalizedComponent(<UserScreen />));
+        break;
+      case MENU_FACTURA:
+        setNroTab(personalizedComponent(<FacturaScreen />));
         break;
       default:
         setNroTab(personalizedComponent(<ContentEmpty />));
