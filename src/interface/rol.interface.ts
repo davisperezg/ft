@@ -6,7 +6,7 @@ export interface IRol {
   name: string;
   description?: string;
   status?: boolean;
-  creator?: IUser;
+  creator?: IUser | string;
   module: IModulosSystem[] | string[];
   createdAt?: Date;
   restoredAt?: Date;

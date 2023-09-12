@@ -1,7 +1,7 @@
 import { Children, cloneElement, MouseEvent, useState } from "react";
 
 interface Prop {
-  children: JSX.Element[];
+  children: JSX.Element[] | JSX.Element;
   onChange: (newValue: number) => void;
   value: number;
 }

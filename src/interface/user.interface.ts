@@ -1,3 +1,4 @@
+import { IEmpresa } from "./empresa.interface";
 import { IRol } from "./rol.interface";
 
 export interface IUser {
@@ -11,10 +12,11 @@ export interface IUser {
   confirm_password?: string;
   username: string;
   status?: boolean;
-  role: IRol | string;
-  creator?: IUser | string;
+  role: Omit<IRol, "creator"> | string;
+  creator?: Omit<IUser, "creator"> | string;
   createdAt?: Date;
   restoredAt?: Date;
   deletedAt?: Date;
   updatedAt?: Date;
+  empresa?: IEmpresa;
 }

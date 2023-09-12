@@ -144,7 +144,7 @@ const RolEdit = ({ data, closeEdit }: Props) => {
 
     //Validamos que todos los inputs deben ser marcados, de no ser retorna false
     const categorysCheckeds = Array.from(allCategorys).every(
-      (checkbox) => checkbox.checked
+      (checkbox) => checkbox?.checked
     );
 
     //Si de todas las categorias encontramos un desmarcado o false actualizamos el estado del CHECK-ALL a false de no ser asi actualizamos CHECK-ALL a true es decir que todos los inputs categorias estan marcados
