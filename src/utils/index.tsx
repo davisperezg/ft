@@ -3,8 +3,10 @@ import UserList from "../components/User/UserList";
 import ModulosScreen from "../views/ModulosScreen";
 import PermisosScreen from "../views/PermisosScreen";
 import RolesScreen from "../views/RolesScreen";
+import TipoDocsScreen from "../views/TipoDocsScreen";
 import UserScreen from "../views/UserScreen";
 import {
+  MENU_ALTAS,
   MENU_MODULOS,
   MENU_PERMISOS,
   MENU_ROLES,
@@ -22,6 +24,8 @@ export const ComponentByName = (menu: string) => {
       return <RolesScreen />;
     case MENU_USUARIOS:
       return <UserScreen />;
+    case MENU_ALTAS:
+      return <TipoDocsScreen />;
     default:
       return <ContentEmpty />;
   }
