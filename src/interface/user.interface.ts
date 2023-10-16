@@ -2,6 +2,7 @@ import { IEmpresa } from "./empresa.interface";
 import { IRol } from "./rol.interface";
 
 export interface IUser {
+  id?: number;
   _id?: string;
   name: string;
   lastname: string;
@@ -18,5 +19,4 @@ export interface IUser {
   restoredAt?: Date;
   deletedAt?: Date;
   updatedAt?: Date;
-  empresa?: IEmpresa;
 }

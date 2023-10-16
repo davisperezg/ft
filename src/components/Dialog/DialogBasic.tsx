@@ -3,8 +3,11 @@
 //   setOpen: any;
 // }
 
-import { cloneElement, useContext } from "react";
+import { cloneElement, useContext, useRef } from "react";
 import { ModalContext } from "../../context/modalContext";
+import Paper, { PaperProps } from "@mui/material/Paper";
+import Draggable from "react-draggable";
+import Dialog, { DialogProps } from "@mui/material/Dialog";
 
 interface Props {
   children: JSX.Element[];
@@ -13,7 +16,53 @@ interface Props {
   handleClose?: () => void;
 }
 
-const DialogBasic = ({ children, handleClose, width, height }: Props) => {
+const PaperComponent = (props: PaperProps) => {
+  const nodeRef = useRef(null);
+
+  return (
+    <Draggable
+      nodeRef={nodeRef}
+      handle="#draggable-dialog-title"
+      cancel={'[class*="MuiDialogContent-root"]'}
+    >
+      <div ref={nodeRef}>
+        <Paper
+          sx={{
+            backgroundColor: "transparent",
+            overflow: "hidden",
+            boxShadow: "none",
+            borderRadius: "6px",
+            "&.MuiDialog-paper": {
+              overflow: "hidden",
+              maxWidth: 855,
+              width: 855,
+              height: 652,
+              maxHeight: 652,
+            },
+          }}
+          {...props}
+        />
+      </div>
+    </Draggable>
+  );
+};
+
+export const DialogBeta = (props: DialogProps) => {
+  const { children } = props;
+
+  return (
+    <Dialog
+      {...props}
+      scroll={"paper"}
+      PaperComponent={PaperComponent}
+      aria-labelledby="draggable-dialog-title"
+    >
+      {children}
+    </Dialog>
+  );
+};
+
+const DialogBasic = ({ children, width, height, handleClose }: Props) => {
   const { dialogState } = useContext(ModalContext);
   const isStringMyWidth = typeof width === "string";
   const isStringMyHeight = typeof height === "string";
@@ -41,6 +90,7 @@ const DialogBasic = ({ children, handleClose, width, height }: Props) => {
       }}
       className={`z-[12] overflow-hidden flex flex-col rounded-[10px] bg-white text-white fixed left-0 top-0 bottom-0 right-0 m-auto h-[${height}px]`}
     >
+      {/* {children} */}
       {cloneElement(children[0], {
         handleClose: handleClose,
       })}

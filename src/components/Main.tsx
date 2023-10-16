@@ -303,9 +303,9 @@ const Main = () => {
           </div>
         </div>
       </div>
-      {dialogState.open && (
+      {/* {dialogState.open && (
         <div className="absolute transition-all duration-1000 ease-in-out overflow-hidden w-full h-full top-0 left-0 bg-dialog z-[11]"></div>
-      )}
+      )} */}
     </>
   );
 };

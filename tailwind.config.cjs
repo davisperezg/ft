@@ -8,7 +8,7 @@ module.exports = {
       colors: {
         dialog: "rgba(0, 0, 0, 0.35)",
         primary: "#FF0000",
-        secondary: "#030303",
+        secondary: "#5A626F",
         default: "#F2F2F2",
         hover: "#E5E5E5",
         borders: "#B4B4B4",

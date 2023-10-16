@@ -10,6 +10,7 @@ import {
   MENU_ROLES,
   MENU_USUARIOS,
   MENU_ALTAS,
+  MENU_EMPRESAS,
 } from "../../utils/const";
 import ModulosScreen from "../../views/ModulosScreen";
 import PermisosScreen from "../../views/PermisosScreen";
@@ -20,6 +21,7 @@ import UserList from "../User/UserList";
 import { useAccess } from "../../hooks/useResources";
 import FacturaScreen from "../../views/FacturaScreen";
 import TipoDocsScreen from "../../views/TipoDocsScreen";
+import EmpresasScreen from "../../views/EmpresasScreen";
 
 interface Props {
   open: boolean;
@@ -114,6 +116,11 @@ const NavMenuItem = ({
       case MENU_ALTAS:
         setNroTab(personalizedComponent(<TipoDocsScreen />));
         break;
+
+      case MENU_EMPRESAS:
+        setNroTab(personalizedComponent(<EmpresasScreen />));
+        break;
+
       default:
         setNroTab(personalizedComponent(<ContentEmpty />));
         break;
@@ -218,6 +225,22 @@ const NavMenuItem = ({
                   className="w-[180px] mb-[5px] border  min-h-[24px] text-secondary dark:text-white hover:bg-hover"
                 >
                   Crear Tipo de documento
+                </button>
+              )}
+            </div>
+          )}
+
+          {menu.nombre === MENU_EMPRESAS && (
+            <div className="p-[10px] text-center">
+              {dataAccess?.some((a) => a === "canCreate_users") && (
+                <button
+                  onClick={() =>
+                    dispatch({ type: DialogActionKind.DIALOG_EMPRESA })
+                  }
+                  type="button"
+                  className="w-[180px] mb-[5px] border  min-h-[24px] text-secondary dark:text-white hover:bg-hover"
+                >
+                  Crear Empresa
                 </button>
               )}
             </div>

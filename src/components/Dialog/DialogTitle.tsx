@@ -1,11 +1,11 @@
-import { useContext } from "react";
+import { useContext, memo } from "react";
 import { ModalContext } from "../../context/modalContext";
 
 interface Props {
   children: React.ReactNode;
 }
 
-const DialogTitle = (props: any) => {
+const DialogTitle = memo((props: any) => {
   const { children, handleClose } = props;
   const myType = typeof children;
   const isString = myType === "string";
@@ -37,6 +37,6 @@ const DialogTitle = (props: any) => {
       )}
     </div>
   );
-};
+});
 
 export default DialogTitle;

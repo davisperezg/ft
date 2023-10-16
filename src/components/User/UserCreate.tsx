@@ -21,85 +21,10 @@ import { isError } from "../../utils/functions";
 import { toastError } from "../Toast/ToastNotify";
 import { usePostEmpresa } from "../../hooks/useEmpresa";
 
-/**
- * 
-    {
-      nombre_sucursal: "",
-      codigo_sucursal_sunat: "0000",
-      allowedDocuments: [
-        {
-          cod_serie: "01",
-          serie: ["F001"],
-        },
-        {
-          cod_serie: "03",
-          serie: ["B001"],
-        },
-        {
-          cod_serie: "04",
-          serie: ["LC01"],
-        },
-        {
-          cod_serie: "07",
-          serie: ["FC01", "BC01"],
-        },
-        {
-          cod_serie: "08",
-          serie: ["FD01", "BD01"],
-        },
-        {
-          cod_serie: "09",
-          serie: ["T001"],
-        },
-        {
-          cod_serie: "31",
-          serie: ["V001"],
-        },
-        {
-          cod_serie: "D1",
-          serie: ["TK01"],
-        },
-        {
-          cod_serie: "D2",
-          serie: ["NV01"],
-        },
-        {
-          cod_serie: "D3",
-          serie: ["P001"],
-        },
-        {
-          cod_serie: "D4",
-          serie: ["OP01"],
-        },
-      ],
-    },
- */
-
-const initialEmpresas: IEmpresa = {
-  ruc: "",
-  razon_social: "",
-  nombre_comercial: "",
-  domicilio_fiscal: "",
-  telefono_fijo_1: "",
-  telefono_movil_1: "",
-  correo: "",
-  ubigeo: "",
-  establecimientos: [],
-  //regimen_id: 0,
-  modo: 0,
-  usu_secundario_user: "",
-  usu_secundario_password: "",
-  cert_password: "",
-  ose_enabled: false,
-  urbanizacion: "-",
-};
-
 const UserCreate = () => {
   const { dispatch } = useContext(ModalContext);
 
   const { mutateAsync, isLoading: isLoadingPost } = usePostUser();
-  const { mutateAsync: mutateEmpresaAsync, isLoading: isLoadingEmpresa } =
-    usePostEmpresa();
 
   const {
     data: dataRoles,
@@ -123,7 +48,6 @@ const UserCreate = () => {
     formState: { errors },
     watch,
     getValues,
-    control,
   } = useForm<IUser>({
     defaultValues: {
       name: "",
@@ -132,13 +56,7 @@ const UserCreate = () => {
       tipDocument: "DNI",
       nroDocument: "",
       role: memoRoles[0]._id,
-      empresa: initialEmpresas,
     },
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "empresa.establecimientos",
   });
 
   const {
@@ -149,42 +67,12 @@ const UserCreate = () => {
     refetch,
   } = useReniec(watch("tipDocument"), watch("nroDocument"));
 
-  const {
-    data: dataEmpresa,
-    isFetching: isFetchingEmpresa,
-    error: errorEmpresa,
-    isError: isErrorEmpresa,
-    refetch: refetchEmpresa,
-  } = useSunat("RUC", watch("empresa.ruc"));
-
   const refInputserie = useRef<HTMLInputElement>(null);
   const refSelectDoc = useRef<HTMLSelectElement>(null);
 
   const onSubmit: SubmitHandler<IUser> = async (values) => {
-    const { empresa, ...user } = values;
-    const formData = new FormData();
-
     try {
-      const res = await mutateAsync(user);
-
-      //Si existe ruc en empresa mandaremos formulario
-      if (empresa && empresa.ruc !== "") {
-        const { foto, cert, ...valuesForm } = empresa;
-        if (foto) {
-          formData.append("logo", foto[0] as any);
-        }
-
-        if (cert) {
-          formData.append("certificado", cert[0] as any);
-        }
-
-        formData.append(
-          "data",
-          JSON.stringify({ ...valuesForm, user: res.response._id })
-        );
-        await mutateEmpresaAsync(formData);
-      }
-
+      const res = await mutateAsync(values);
       toast.success(res.message);
     } catch (e) {
       if (isError(e)) {
@@ -223,80 +111,17 @@ const UserCreate = () => {
         dataPersona.apellidoPaterno + " " + dataPersona.apellidoMaterno
       );
     }
-
-    if (isErrorEmpresa) {
-      toast.error(errorEmpresa.response.data.message);
-
-      setValueModel("empresa.razon_social", "");
-      setValueModel("empresa.nombre_comercial", "");
-      setValueModel("empresa.domicilio_fiscal", "");
-      setValueModel("empresa.ruc", "");
-    }
-
-    if (dataEmpresa) {
-      setValueModel("empresa.razon_social", dataEmpresa.razonSocial);
-      setValueModel("empresa.nombre_comercial", dataEmpresa.nombre);
-      setValueModel("empresa.ubigeo", dataEmpresa.ubigeo);
-      setValueModel(
-        "empresa.domicilio_fiscal",
-        `${dataEmpresa.direccion} ${dataEmpresa.distrito} ${dataEmpresa.provincia} ${dataEmpresa.departamento}`
-      );
-    }
   }, [
     dataPersona,
     errorPersona?.response.data.message,
     isErrorPersona,
     setValueModel,
-    dataEmpresa,
-    isErrorEmpresa,
-    errorEmpresa,
   ]);
 
   const [value, setValue] = useState(1);
-  const certRef = useRef<HTMLInputElement | null>(null);
-  const certFoto = useRef<HTMLInputElement | null>(null);
-  //const { refLogo } = register("empresa.foto");
-  const { ref: refCert, ...cert } = register("empresa.cert", {
-    required: {
-      value:
-        watch("empresa.modo") === 1 && !watch("empresa.cert") ? true : false,
-      message: "Suba un certificado .pfx | .p12",
-    },
-    onChange: (e) => {
-      const files = e.target.files as FileList;
-      if (files.length > 0 && files[0].type !== "application/x-pkcs12") {
-        alert("Por favor, selecciona un archivo PKCS12.");
-        setValueModel("empresa.cert", "");
-      }
-    },
-  });
 
-  const { ref: refFoto, ...foto } = register("empresa.foto", {
-    onChange: (e) => {
-      const files = e.target.files as FileList;
-      if (files.length > 0 && files[0].type !== "image/png") {
-        alert("Por favor, selecciona un archivo PNG.");
-        setValueModel("empresa.foto", "");
-      }
-    },
-  });
+  const handleTab = (newValue: number) => setValue(newValue);
 
-  const handleBrowseCertButtonClick = () => {
-    // Simula un click en el input de tipo file
-    certRef?.current?.click();
-  };
-
-  const handleBrowseLogoButtonClick = () => {
-    // Simula un click en el input de tipo file
-    certFoto?.current?.click();
-  };
-
-  const handleTab = (newValue: number) => {
-    setValue(newValue);
-  };
-
-  //console.log(errors);
-  console.log(errors.empresa);
   return (
     <>
       <DialogBasic width={855} height={652}>
@@ -637,738 +462,6 @@ const UserCreate = () => {
             </TabModalPanel>
             <TabModalPanel value={value} index={2}>
               <div className="flex flex-col mt-3">
-                <div className="flex w-full gap-2">
-                  {/* DATOS */}
-                  <fieldset className="w-1/2 border rounded-sm p-[8px]">
-                    <legend className="p-[0_12px] dark:text-white">
-                      Datos
-                    </legend>
-
-                    {/* RUC */}
-                    <div className="w-full flex flex-row">
-                      <div className="w-1/3">
-                        <label>Ruc:</label>
-                      </div>
-                      <div className="w-1/3">
-                        <input
-                          {...register(`empresa.ruc`, {
-                            pattern: {
-                              value: /^(20|10)\d{9}$/,
-                              message: "El RUC debe ser válido.",
-                            },
-                            maxLength: {
-                              value: 11,
-                              message: "El RUC debe contener 11 caracteres.",
-                            },
-                            minLength: {
-                              value: 11,
-                              message: "El RUC debe contener 11 caracteres.",
-                            },
-
-                            onChange: (e) => {
-                              const value: string = e.target.value;
-                              const maxLength = value.slice(0, 11);
-                              if (value.length > 11) {
-                                return setValueModel("empresa.ruc", maxLength);
-                              }
-
-                              if (value.length !== 11) {
-                                setValueModel("empresa.razon_social", "");
-                                setValueModel("empresa.nombre_comercial", "");
-                                setValueModel("empresa.domicilio_fiscal", "");
-                                setValueModel("empresa.ubigeo", "");
-                                //setValueModel("empresa.urbanizacion", "");
-                              }
-                            },
-                          })}
-                          className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                            errors?.empresa?.ruc ? "border-primary" : ""
-                          }`}
-                          type="text"
-                          disabled={isFetchingEmpresa}
-                        />
-                        {errors?.empresa?.ruc && (
-                          <span className="text-primary">
-                            {errors?.empresa?.ruc.message}
-                          </span>
-                        )}
-                      </div>
-                      <div className="w-2/12 overflow-hidden relative">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (getValues("empresa.ruc").length !== 0)
-                              return refetchEmpresa();
-                            toast.error("Ingrese ruc");
-                          }}
-                          className="flex items-center justify-center h-[20px] w-full hover:bg-hover text-center bg-default absolute"
-                        >
-                          {isFetchingEmpresa ? "..." : <FcSearch />}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* EMPRESA */}
-                    <div className="w-full flex flex-row mt-3">
-                      <div className="w-1/3">
-                        <label>Empresa:</label>
-                      </div>
-                      <div className="w-2/3">
-                        <input
-                          {...register(`empresa.razon_social`)}
-                          className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                            errors?.empresa?.razon_social
-                              ? "border-primary"
-                              : ""
-                          }`}
-                        />
-                        {errors?.empresa?.razon_social && (
-                          <span className="text-primary">
-                            {errors?.empresa?.razon_social?.message}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* NOMBRE COMERCIAL */}
-                    <div className="w-full flex flex-row mt-3">
-                      <div className="w-1/3">
-                        <label>Nombre comercial:</label>
-                      </div>
-                      <div className="w-2/3">
-                        <input
-                          {...register(`empresa.nombre_comercial`)}
-                          className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                            errors?.empresa?.nombre_comercial
-                              ? "border-primary"
-                              : ""
-                          }`}
-                        />
-                        {errors?.empresa?.nombre_comercial && (
-                          <span className="text-primary">
-                            {errors?.empresa?.nombre_comercial?.message}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* DOMICILIO FISCAL */}
-                    <div className="w-full flex flex-row mt-3">
-                      <div className="w-1/3">
-                        <label>Domicilio fiscal:</label>
-                      </div>
-                      <div className="w-2/3">
-                        <input
-                          {...register(`empresa.domicilio_fiscal`)}
-                          className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                            errors?.empresa?.domicilio_fiscal
-                              ? "border-primary"
-                              : ""
-                          }`}
-                        />
-                        {errors?.empresa?.domicilio_fiscal && (
-                          <span className="text-primary">
-                            {errors?.empresa?.domicilio_fiscal?.message}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* FOTO */}
-                    <div className="w-full flex flex-row mt-3">
-                      <div className="w-1/3">
-                        <label>Foto:</label>
-                      </div>
-                      <div className="w-2/3">
-                        <input
-                          {...foto}
-                          type="file"
-                          accept=".png"
-                          name="empresa.foto"
-                          ref={(e) => {
-                            refFoto(e);
-                            certFoto.current = e;
-                          }}
-                          className={`hidden text-[12px] ${
-                            errors?.empresa?.foto ? "border-primary" : ""
-                          }`}
-                        />
-                        <input
-                          className="border border-black bg-hover px-2 cursor-pointer"
-                          type="button"
-                          value="Buscar logo"
-                          onClick={handleBrowseLogoButtonClick}
-                        />
-                        <label>
-                          &nbsp;
-                          {String(
-                            (watch("empresa.foto")?.[0] as any)?.name ??
-                              "Ningún archivo seleccionado."
-                          )}
-                        </label>
-                        {errors?.empresa?.foto && (
-                          <span className="text-primary">
-                            {errors?.empresa?.foto?.message}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </fieldset>
-
-                  {/* CONFIGURACIONES */}
-                  <fieldset className="w-1/2 border rounded-sm p-[8px]">
-                    <legend className="p-[0_12px] dark:text-white">
-                      Configuraciones
-                    </legend>
-
-                    {/* MODO 0 beta - 1 produccion */}
-                    <div className="w-full flex flex-row">
-                      <div className="w-1/3">
-                        <label>
-                          Modo: <strong className="text-primary">*</strong>
-                        </label>
-                      </div>
-                      <div className="w-1/3">
-                        <select
-                          {...register(`empresa.modo`, {
-                            valueAsNumber: true,
-                            required: {
-                              value: true,
-                              message: "Ingrese Modo.",
-                            },
-                          })}
-                          className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                            errors?.empresa?.modo ? "border-primary" : ""
-                          }`}
-                        >
-                          <option value={0}>Beta</option>
-                          <option value={1}>Produccion</option>
-                        </select>
-
-                        {errors?.empresa?.modo && (
-                          <span className="text-primary">
-                            {errors?.empresa?.modo?.message}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* SI ES MODO BETA SE DESACTIVA INPUTS */}
-
-                    {/* HABILITAR OSE */}
-                    <div className="w-full flex flex-row mt-3">
-                      <div className="w-1/3">
-                        <label>
-                          Habilitar OSE:{" "}
-                          <strong className="text-primary"></strong>
-                        </label>
-                      </div>
-                      <div className="w-1/3">
-                        <input
-                          type="checkbox"
-                          {...register(`empresa.ose_enabled`)}
-                          className={`text-[12px] ${
-                            errors?.empresa?.ose_enabled ? "border-primary" : ""
-                          }`}
-                        />
-                      </div>
-                    </div>
-
-                    {/* SI HABILITAMOS OSE SE DEBE HABILITAR TAMBIEN EL LINK DEL OSE */}
-                    {Boolean(watch("empresa.ose_enabled") === true) && (
-                      <div className="w-full flex flex-row mt-3">
-                        <div className="w-1/3">
-                          <label>
-                            Link OSE:{" "}
-                            <strong className="text-primary">*</strong>
-                          </label>
-                        </div>
-                        <div className="w-2/3">
-                          <input
-                            type="text"
-                            {...register(`empresa.web_service`, {
-                              pattern: {
-                                value:
-                                  /^(http|https):\/\/[\w\-\.]+\.\w{2,}(\/.*)?$/,
-                                message:
-                                  "El link del web_service debe ser valido.",
-                              },
-                              required: {
-                                value:
-                                  watch("empresa.ose_enabled") === true
-                                    ? true
-                                    : false,
-                                message: "Ingrese link OSE.",
-                              },
-                            })}
-                            className={`border w-full focus:outline-none pl-1 rounded-sm text-[12px] ${
-                              errors?.empresa?.web_service
-                                ? "border-primary"
-                                : ""
-                            }`}
-                          />
-
-                          {errors?.empresa?.web_service && (
-                            <span className="text-primary">
-                              {errors?.empresa?.web_service?.message}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {Number(watch("empresa.modo")) === 1 && (
-                      <>
-                        {/* CERTIFICADO */}
-                        <div className="w-full flex flex-row mt-3">
-                          <div className="w-1/3">
-                            <label>
-                              Certificado:{" "}
-                              <strong className="text-primary">*</strong>
-                            </label>
-                          </div>
-                          <div className="w-2/3 ">
-                            <input
-                              {...cert}
-                              type="file"
-                              accept=".pfx;*.p12"
-                              name="empresa.cert"
-                              ref={(e) => {
-                                refCert(e);
-                                certRef.current = e;
-                              }}
-                              className={`hidden text-[12px] ${
-                                errors?.empresa?.cert ? "border-primary" : ""
-                              }`}
-                            />
-
-                            <div>
-                              <input
-                                className={`border ${
-                                  errors?.empresa?.cert
-                                    ? "border-primary"
-                                    : "border-black"
-                                } bg-hover px-2 cursor-pointer`}
-                                type="button"
-                                value="Buscar certificado"
-                                onClick={handleBrowseCertButtonClick}
-                              />
-                              <label>
-                                &nbsp;
-                                {String(
-                                  (watch("empresa.cert")?.[0] as any)?.name ??
-                                    "Ningún archivo seleccionado."
-                                )}
-                              </label>
-                            </div>
-                            {errors?.empresa?.cert && (
-                              <span className="text-primary">
-                                {errors?.empresa?.cert?.message}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* CERTIFICADO PASSWORD */}
-                        <div className="w-full flex flex-row mt-3">
-                          <div className="w-1/3">
-                            <label>
-                              Cert. password:{" "}
-                              <strong className="text-primary">*</strong>
-                            </label>
-                          </div>
-                          <div className="w-1/3">
-                            <input
-                              {...register(`empresa.cert_password`, {
-                                required: {
-                                  value:
-                                    watch("empresa.modo") === 1 ||
-                                    watch("empresa.cert")
-                                      ? true
-                                      : false,
-                                  message:
-                                    watch("empresa.modo") === 1 &&
-                                    !watch("empresa.cert")
-                                      ? "Suba un cert. para agregar el password"
-                                      : "Ingrese password del certificado.",
-                                },
-                              })}
-                              className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                                errors?.empresa?.cert_password
-                                  ? "border-primary"
-                                  : ""
-                              }`}
-                            />
-                            {errors?.empresa?.cert_password && (
-                              <span className="text-primary">
-                                {errors?.empresa?.cert_password?.message}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {watch("empresa.ose_enabled") ? (
-                          <>
-                            {/* OSE USUSEC */}
-                            <div className="w-full flex flex-row mt-3">
-                              <div className="w-1/3">
-                                <label>
-                                  Usuario secundario username OSE:{" "}
-                                  <strong className="text-primary">*</strong>
-                                </label>
-                              </div>
-                              <div className="w-1/3">
-                                <input
-                                  {...register(
-                                    `empresa.usu_secundario_ose_user`,
-                                    {
-                                      required: {
-                                        value:
-                                          watch("empresa.ose_enabled") === true
-                                            ? true
-                                            : false,
-                                        message:
-                                          "Ingrese usuario secundario del OSE",
-                                      },
-                                    }
-                                  )}
-                                  className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                                    errors?.empresa?.usu_secundario_ose_user
-                                      ? "border-primary"
-                                      : ""
-                                  }`}
-                                />
-                                {errors?.empresa?.usu_secundario_ose_user && (
-                                  <span className="text-primary">
-                                    {
-                                      errors?.empresa?.usu_secundario_ose_user
-                                        ?.message
-                                    }
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            {/* OSE USUSECPASSWORD */}
-                            <div className="w-full flex flex-row mt-3">
-                              <div className="w-1/3">
-                                <label>
-                                  Usuario secundario password OSE:{" "}
-                                  <strong className="text-primary">*</strong>
-                                </label>
-                              </div>
-                              <div className="w-1/3">
-                                <input
-                                  {...register(
-                                    `empresa.usu_secundario_ose_password`,
-                                    {
-                                      required: {
-                                        value:
-                                          watch("empresa.ose_enabled") === true
-                                            ? true
-                                            : false,
-                                        message:
-                                          "Ingrese password del usuario secundario del OSE",
-                                      },
-                                    }
-                                  )}
-                                  className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                                    errors?.empresa?.usu_secundario_ose_password
-                                      ? "border-primary"
-                                      : ""
-                                  }`}
-                                />
-                                {errors?.empresa
-                                  ?.usu_secundario_ose_password && (
-                                  <span className="text-primary">
-                                    {
-                                      errors?.empresa
-                                        ?.usu_secundario_ose_password?.message
-                                    }
-                                  </span>
-                                )}
-                              </div>
-                            </div>{" "}
-                          </>
-                        ) : (
-                          <>
-                            {/* SUNAT USUSECUSERNAME */}
-                            <div className="w-full flex flex-row mt-3">
-                              <div className="w-1/3">
-                                <label>
-                                  Usuario secundario username:{" "}
-                                  <strong className="text-primary">*</strong>
-                                </label>
-                              </div>
-                              <div className="w-1/3">
-                                <input
-                                  {...register(`empresa.usu_secundario_user`, {
-                                    required: {
-                                      value:
-                                        watch("empresa.ose_enabled") === false
-                                          ? true
-                                          : false,
-                                      message: "Ingrese usuario secundario",
-                                    },
-                                  })}
-                                  className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                                    errors?.empresa?.usu_secundario_user
-                                      ? "border-primary"
-                                      : ""
-                                  }`}
-                                />
-                                {errors?.empresa?.usu_secundario_user && (
-                                  <span className="text-primary">
-                                    {
-                                      errors?.empresa?.usu_secundario_user
-                                        ?.message
-                                    }
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* SUNAT USUSECPASSWORD */}
-                            <div className="w-full flex flex-row mt-3">
-                              <div className="w-1/3">
-                                <label>
-                                  Usuario secundario password:{" "}
-                                  <strong className="text-primary">*</strong>
-                                </label>
-                              </div>
-                              <div className="w-1/3">
-                                <input
-                                  {...register(
-                                    `empresa.usu_secundario_password`,
-                                    {
-                                      required: {
-                                        value:
-                                          watch("empresa.ose_enabled") === false
-                                            ? true
-                                            : false,
-                                        message:
-                                          "Ingrese password del usuario secundario",
-                                      },
-                                    }
-                                  )}
-                                  className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                                    errors?.empresa?.usu_secundario_password
-                                      ? "border-primary"
-                                      : ""
-                                  }`}
-                                />
-                                {errors?.empresa?.usu_secundario_password && (
-                                  <span className="text-primary">
-                                    {
-                                      errors?.empresa?.usu_secundario_password
-                                        ?.message
-                                    }
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </>
-                        )}
-                      </>
-                    )}
-                  </fieldset>
-                </div>
-
-                <div className="flex w-full gap-2">
-                  {/* SUNAT */}
-                  <fieldset className="w-1/2 border rounded-sm p-[8px]">
-                    <legend className="p-[0_12px] dark:text-white">
-                      Sunat
-                    </legend>
-
-                    {/* UBIGEO */}
-                    <div className="w-full flex flex-row">
-                      <div className="w-1/3">
-                        <label>Ubigeo:</label>
-                      </div>
-                      <div className="w-1/3">
-                        <input
-                          {...register(`empresa.ubigeo`)}
-                          className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                            errors?.empresa?.ubigeo ? "border-primary" : ""
-                          }`}
-                        />
-                        {errors?.empresa?.ubigeo && (
-                          <span className="text-primary">
-                            {errors?.empresa?.ubigeo?.message}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* REGIMEN */}
-                    {/* <div className="w-full flex flex-row mt-3">
-                    <div className="w-1/3">
-                      <label>
-                        Regimen sunat:{" "}
-                        <strong className="text-primary">*</strong>
-                      </label>
-                    </div>
-                    <div className="w-1/3">
-                      <input
-                        {...register(`empresa.regimen_id`, {
-                          required: {
-                            value: true,
-                            message: "Ingrese Regimen sunat",
-                          },
-                        })}
-                        className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                          errors?.empresa?.regimen_id ? "border-primary" : ""
-                        }`}
-                      />
-                      {errors?.empresa?.regimen_id && (
-                        <span className="text-primary">
-                          {errors?.empresa?.regimen_id?.message}
-                        </span>
-                      )}
-                    </div>
-                  </div> */}
-
-                    {/* URBANIZACION */}
-                    <div className="w-full flex flex-row mt-3">
-                      <div className="w-1/3">
-                        <label>Urbanizacion:</label>
-                      </div>
-                      <div className="w-1/3">
-                        <input
-                          {...register(`empresa.urbanizacion`)}
-                          className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                            errors?.empresa?.urbanizacion
-                              ? "border-primary"
-                              : ""
-                          }`}
-                        />
-                      </div>
-                    </div>
-                  </fieldset>
-
-                  {/* CONTACTOS */}
-                  <fieldset className="w-1/2 border rounded-sm p-[8px]">
-                    <legend className="p-[0_12px] dark:text-white">
-                      Contacto
-                    </legend>
-                    {/* CORREO */}
-                    <div className="w-full flex flex-row">
-                      <div className="w-1/3">
-                        <label>Correo:</label>
-                      </div>
-                      <div className="w-1/3">
-                        <input
-                          {...register(`empresa.correo`, {
-                            pattern: {
-                              value:
-                                /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                              message: "El correo debe ser valido.",
-                            },
-                          })}
-                          className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                            errors?.empresa?.correo ? "border-primary" : ""
-                          }`}
-                        />
-                        {errors?.empresa?.correo && (
-                          <span className="text-primary">
-                            {errors?.empresa?.correo?.message}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* TELEFONO MOVIL 1 */}
-                    <div className="w-full flex flex-row mt-3">
-                      <div className="w-1/3">
-                        <label>Telefono movil 1:</label>
-                      </div>
-                      <div className="w-1/3">
-                        <input
-                          {...register(`empresa.telefono_movil_1`, {
-                            pattern: {
-                              value: /^9\d{8}$/,
-                              message:
-                                "Ingrese un número de telefono movil_1 válido.",
-                            },
-                          })}
-                          className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                            errors?.empresa?.telefono_movil_1
-                              ? "border-primary"
-                              : ""
-                          }`}
-                        />
-                        {errors?.empresa?.telefono_movil_1 && (
-                          <span className="text-primary">
-                            {errors?.empresa?.telefono_movil_1?.message}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* TELEFONO MOVIL 2 */}
-                    <div className="w-full flex flex-row mt-3">
-                      <div className="w-1/3">
-                        <label>Telefono movil 2:</label>
-                      </div>
-                      <div className="w-1/3">
-                        <input
-                          {...register(`empresa.telefono_movil_2`, {
-                            pattern: {
-                              value: /^9\d{8}$/,
-                              message:
-                                "Ingrese un número de telefono movil_2 válido.",
-                            },
-                          })}
-                          className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                            errors?.empresa?.telefono_movil_2
-                              ? "border-primary"
-                              : ""
-                          }`}
-                        />
-                      </div>
-                    </div>
-
-                    {/* TELEFONO FIJO 1 */}
-                    <div className="w-full flex flex-row mt-3">
-                      <div className="w-1/3">
-                        <label>Telefono fijo 1:</label>
-                      </div>
-                      <div className="w-1/3">
-                        <input
-                          {...register(`empresa.telefono_fijo_1`)}
-                          className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                            errors?.empresa?.telefono_fijo_1
-                              ? "border-primary"
-                              : ""
-                          }`}
-                        />
-                        {errors?.empresa?.telefono_fijo_1 && (
-                          <span className="text-primary">
-                            {errors?.empresa?.telefono_fijo_1?.message}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* TELEFONO FIJO 2 */}
-                    <div className="w-full flex flex-row mt-3">
-                      <div className="w-1/3">
-                        <label>Telefono fijo 2:</label>
-                      </div>
-                      <div className="w-1/3">
-                        <input
-                          {...register(`empresa.telefono_fijo_2`)}
-                          className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                            errors?.empresa?.telefono_fijo_2
-                              ? "border-primary"
-                              : ""
-                          }`}
-                        />
-                      </div>
-                    </div>
-                  </fieldset>
-                </div>
-
                 <fieldset className="w-full border rounded-sm p-[8px]">
                   <legend className="p-[0_12px] dark:text-white">
                     Establecimientos
@@ -1383,29 +476,29 @@ const UserCreate = () => {
                     <button
                       type="button"
                       onClick={() => {
-                        append({
-                          nombre_establecimiento: "",
-                          codigo_establecimiento_sunat: "",
-                          nombre_comercial_establecimiento: watch(
-                            "empresa.razon_social"
-                          )
-                            ? watch("empresa.razon_social")
-                            : "",
-                          allowedDocuments: [
-                            {
-                              documento: { tipo_documento: "Proforma" },
-                              series: ["PRO001", "PRO002"],
-                            },
-                            {
-                              documento: { tipo_documento: "Factura" },
-                              series: ["F001"],
-                            },
-                            {
-                              documento: { tipo_documento: "Boleta" },
-                              series: ["B001", "B002"],
-                            },
-                          ],
-                        });
+                        // append({
+                        //   nombre_establecimiento: "",
+                        //   codigo_establecimiento_sunat: "",
+                        //   nombre_comercial_establecimiento: watch(
+                        //     "empresa.razon_social"
+                        //   )
+                        //     ? watch("empresa.razon_social")
+                        //     : "",
+                        //   allowedDocuments: [
+                        //     {
+                        //       documento: { tipo_documento: "Proforma" },
+                        //       series: ["PRO001", "PRO002"],
+                        //     },
+                        //     {
+                        //       documento: { tipo_documento: "Factura" },
+                        //       series: ["F001"],
+                        //     },
+                        //     {
+                        //       documento: { tipo_documento: "Boleta" },
+                        //       series: ["B001", "B002"],
+                        //     },
+                        //   ],
+                        // });
                       }}
                       className="border px-2 hover:bg-hover"
                     >
@@ -1413,7 +506,7 @@ const UserCreate = () => {
                     </button>
                   </div>
                 </fieldset>
-                {fields.map((item, index) => {
+                {/* {fields.map((item, index) => {
                   return (
                     <div key={item.id} className="w-full">
                       <div className="flex justify-between mt-2">
@@ -1431,7 +524,6 @@ const UserCreate = () => {
                       <div className="border rounded-sm p-[8px] mb-5 mt-2">
                         <div>
                           <div className="w-full flex flex-row gap-2">
-                            {/* NOMBRE SUCURSAL SUNAT */}
                             <div className="flex w-1/2">
                               <div className="w-1/3">
                                 <label>
@@ -1470,7 +562,6 @@ const UserCreate = () => {
                               </div>
                             </div>
 
-                            {/* NOMBRE SUCURSAL SUNAT */}
                             <div className="flex w-1/2">
                               <div className="w-1/3">
                                 <label>
@@ -1685,7 +776,7 @@ const UserCreate = () => {
                       </div>
                     </div>
                   );
-                })}
+                })} */}
               </div>
             </TabModalPanel>
           </form>
