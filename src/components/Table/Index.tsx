@@ -58,6 +58,7 @@ interface Props<T> {
   getItemsRemoves?: (props: any) => void;
   getItemsRestores?: (props: any) => void;
   openEdit?: (value: boolean, row: T) => void;
+  loading?: boolean;
 }
 
 interface PropsHead<T> {
@@ -772,6 +773,7 @@ const ComponentTable = <T extends object>({
   getItemsRemoves,
   getItemsRestores,
   openEdit,
+  loading,
 }: Props<T>) => {
   const refContentTHeader = useRef<HTMLDivElement>(null);
 
@@ -857,42 +859,50 @@ const ComponentTable = <T extends object>({
 
   return (
     <div className="flex flex-col flex-[1_1_auto] overflow-hidden border border-solid relative">
-      <ShowOptions
-        props={{
-          ...table,
-          refElement2,
-          leftTable,
-          refContentTHeader,
-          refContentTable,
-          showOptions,
-          spacing,
-          scrolled,
-        }}
-      />
-      <THead
-        configTable={table}
-        refTHeader={refContentTHeader}
-        setLeftTable={setLeftTable}
-        setSpacing={setSpacing}
-        setScrolled={setScrolled}
-        setShowOptions={setShowOptions}
-        refElement2={refElement2}
-        showOptions={showOptions}
-        refContentTBody={refContentTBody}
-      />
-      <TBody
-        configTable={table}
-        handleScroll={handleScroll}
-        refContentTBody={refContentTBody}
-        openEdit={openEdit}
-      />
-      {footerVisible === true && data.length > 0 && (
-        <TFooter
-          configTable={table}
-          data={data}
-          getItemsRemoves={getItemsRemoves}
-          getItemsRestores={getItemsRestores}
-        />
+      {loading ? (
+        <div className="flex h-full justify-center items-center">
+          Por favor, espere, buscando...
+        </div>
+      ) : (
+        <>
+          <ShowOptions
+            props={{
+              ...table,
+              refElement2,
+              leftTable,
+              refContentTHeader,
+              refContentTable,
+              showOptions,
+              spacing,
+              scrolled,
+            }}
+          />
+          <THead
+            configTable={table}
+            refTHeader={refContentTHeader}
+            setLeftTable={setLeftTable}
+            setSpacing={setSpacing}
+            setScrolled={setScrolled}
+            setShowOptions={setShowOptions}
+            refElement2={refElement2}
+            showOptions={showOptions}
+            refContentTBody={refContentTBody}
+          />
+          <TBody
+            configTable={table}
+            handleScroll={handleScroll}
+            refContentTBody={refContentTBody}
+            openEdit={openEdit}
+          />
+          {footerVisible === true && data.length > 0 && (
+            <TFooter
+              configTable={table}
+              data={data}
+              getItemsRemoves={getItemsRemoves}
+              getItemsRestores={getItemsRestores}
+            />
+          )}
+        </>
       )}
     </div>
   );

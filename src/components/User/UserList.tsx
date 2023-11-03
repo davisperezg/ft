@@ -324,11 +324,12 @@ const UserList = ({ openEdit }: Props) => {
           </div>
         </div>
       </div> */}
-      {isLoading ? (
-        <LoadingTotal />
-      ) : (
-        <ComponentTable data={loadData} columns={columns} openEdit={openEdit} />
-      )}
+      <ComponentTable
+        loading={isLoading}
+        data={loadData}
+        columns={columns}
+        openEdit={openEdit}
+      />
     </>
   );
 };
