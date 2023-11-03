@@ -9,6 +9,7 @@ import {
   getEmpresas,
   getUsersEmpresas,
   postNewEmpresa,
+  putEmpresa,
 } from "../api/empresa";
 import { IUserEmpresa } from "../interface/users_empresa.interface.";
 
@@ -103,4 +104,45 @@ export const usePostEmpresa = () => {
       queryClient.invalidateQueries([KEY]);
     },
   });
+};
+
+export const useEditEmpresa = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<IServer<IEmpresa>, IError, { body: IEmpresa; id: number }>(
+    {
+      mutationFn: ({ body, id }) => putEmpresa(id, body),
+      onSuccess: ({ response }) => {
+        queryClient.setQueryData([KEY], (prevEmpresa: any[] | undefined) => {
+          if (prevEmpresa) {
+            const updatedEmpresa = prevEmpresa.map((emp) => {
+              if (emp.id === response.id)
+                return {
+                  ...emp,
+                  id: response.id,
+                  modo: response.modo === 0 ? "DESARROLLO" : "PRODUCCION",
+                  ose: response.ose_enabled ? "SI" : "NO",
+                  ose_pass: response.usu_secundario_ose_password,
+                  ose_usu: response.usu_secundario_ose_user,
+                  razon_social: response.razon_social,
+                  ruc: response.ruc,
+                  status: response.estado,
+                  sunat_pass: response.usu_secundario_password,
+                  sunat_usu: response.usu_secundario_user,
+                  web_service: response.web_service,
+                  usuario: emp.usuario,
+                };
+              return emp;
+            });
+            return updatedEmpresa;
+          }
+
+          return prevEmpresa;
+        });
+
+        queryClient.invalidateQueries([KEY]);
+        queryClient.invalidateQueries([KEY_GET_EMPRESA, response?.id]);
+      },
+    }
+  );
 };

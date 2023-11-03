@@ -48,3 +48,12 @@ export const postNewEmpresa = async (body: IEmpresa) => {
 
   return data;
 };
+
+export const putEmpresa = async (id: number, body: IEmpresa) => {
+  const { data } = await axios.put<IServer<IEmpresa>>(
+    `${BASE_API}/api/v1/empresas/${id}`,
+    body
+  );
+
+  return data;
+};

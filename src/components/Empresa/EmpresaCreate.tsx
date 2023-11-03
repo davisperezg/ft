@@ -89,12 +89,14 @@ const EmpresaCreate = () => {
       >
         <CloseIcon sx={{ width: "16px", height: "16px" }} />
       </IconButton>
+
       <TabsModal aria-label="BasicTabs" value={value} onChange={handleChange}>
         <TabModal label="General" index={0} />
         <TabModal label="Configuraciones" index={1} />
         <TabModal label="Documentos" index={2} />
         <TabModal label="Contacto" index={3} />
       </TabsModal>
+
       <DialogContentBeta>
         <Box sx={{ width: "100%", padding: 0 }}>
           <FormProvider {...methods}>

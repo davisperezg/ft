@@ -19,7 +19,6 @@ const EmpresasScreen = () => {
   };
 
   const closeEdit = () => {
-    console.log("silenciado");
     setState({ visible: false, row: {} });
   };
 

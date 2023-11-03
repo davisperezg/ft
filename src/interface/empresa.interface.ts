@@ -31,7 +31,7 @@ export interface IEmpresa {
   web_service?: string;
   estado?: boolean;
   usuario: Partial<IUser> | number;
-  documentos?: Pick<ITipoDoc, "id" | "nombre">[];
+  documentos?: Pick<ITipoDoc, "id" | "nombre" | "new" | "estado">[];
   departamento?: SelectOption;
   provincia?: SelectOption;
   distrito?: SelectOption;

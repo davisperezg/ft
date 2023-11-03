@@ -22,39 +22,37 @@ export const useDepartamentos = () => {
   });
 };
 
-export const useProvincias = (idDepartamento = "") => {
+export const useProvincias = () => {
   return useQuery<IProvincia[], IError>({
-    queryKey: [KEY_PROVINCIAS, idDepartamento],
-    queryFn: () => getProvincias(idDepartamento),
-    enabled: !!idDepartamento,
+    queryKey: [KEY_PROVINCIAS],
+    queryFn: () => getProvincias(),
   });
 };
 
-export const useDistritos = (idProvincia = "") => {
+export const useDistritos = () => {
   return useQuery<IDistrito[], IError>({
-    queryKey: [KEY_DISTRITOS, idProvincia],
-    queryFn: () => getDistritos(idProvincia),
-    enabled: !!idProvincia,
+    queryKey: [KEY_DISTRITOS],
+    queryFn: () => getDistritos(),
   });
 };
 
-export const useProvinciasDinamic = (
-  idDinamica: string,
-  idDepartamento = ""
-) => {
-  return useQuery<IProvincia[], IError>({
-    queryKey: [`${KEY_PROVINCIAS}_${idDinamica}`, idDepartamento],
-    queryFn: () => getProvincias(idDepartamento),
-    enabled: !!idDepartamento,
-    cacheTime: Infinity,
-  });
-};
+// export const useProvinciasDinamic = (
+//   idDinamica: string,
+//   idDepartamento = ""
+// ) => {
+//   return useQuery<IProvincia[], IError>({
+//     queryKey: [`${KEY_PROVINCIAS}_${idDinamica}`, idDepartamento],
+//     queryFn: () => getProvincias(idDepartamento),
+//     enabled: !!idDepartamento,
+//     cacheTime: Infinity,
+//   });
+// };
 
-export const useDistritosDinamic = (idDinamica: string, idProvincia = "") => {
-  return useQuery<IDistrito[], IError>({
-    queryKey: [`${KEY_DISTRITOS}_${idDinamica}`, idProvincia],
-    queryFn: () => getDistritos(idProvincia),
-    enabled: !!idProvincia,
-    cacheTime: Infinity,
-  });
-};
+// export const useDistritosDinamic = (idDinamica: string, idProvincia = "") => {
+//   return useQuery<IDistrito[], IError>({
+//     queryKey: [`${KEY_DISTRITOS}_${idDinamica}`, idProvincia],
+//     queryFn: () => getDistritos(idProvincia),
+//     enabled: !!idProvincia,
+//     cacheTime: Infinity,
+//   });
+// };

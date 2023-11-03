@@ -22,6 +22,21 @@ export const enableTipoDocs = async (id: number) => {
   return data;
 };
 
+export const disableDocumento = async (id: number) => {
+  const { data } = await axios.patch(
+    `${BASE_API}/api/v1/tipodocs-empresa/disable/${id}`
+  );
+
+  return data;
+};
+
+export const enableDocumento = async (id: number) => {
+  const { data } = await axios.patch(
+    `${BASE_API}/api/v1/tipodocs-empresa/enable/${id}`
+  );
+  return data;
+};
+
 export const postTipoDocs = async (body: ITipoDoc) => {
   const { data } = await axios.post<IServer<ITipoDoc>>(
     `${BASE_API}/api/v1/tipodocs`,

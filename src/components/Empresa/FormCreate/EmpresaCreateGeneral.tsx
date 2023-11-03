@@ -7,7 +7,7 @@ import {
   useDistritos,
   useProvincias,
 } from "../../../hooks/useEntidades";
-import { useState, useRef, ChangeEvent } from "react";
+import { useState, useRef, ChangeEvent, useMemo } from "react";
 import { Button, Grid, Stack } from "@mui/material";
 import InputText from "../../Material/Input/InputText";
 import SearchIcon from "@mui/icons-material/Search";
@@ -51,11 +51,10 @@ const EmpresaCreateGeneral = () => {
   const { isLoading: isLoadingDepartamentos, data: dataDepartamentos } =
     useDepartamentos();
 
-  const { data: dataProvincias } = useProvincias(
-    valuesWatch.departamento?.value
-  );
+  const { data: dataProvincias, isLoading: isLoadingProvincias } =
+    useProvincias();
 
-  const { data: dataDistritos } = useDistritos(valuesWatch.provincia?.value);
+  const { data: dataDistritos, isLoading: isLoadingDistritos } = useDistritos();
 
   const [isLoadingRuc, setLoadingRuc] = useState<boolean>(false);
   const refLogo = useRef<HTMLInputElement | null>(null);
@@ -66,29 +65,38 @@ const EmpresaCreateGeneral = () => {
     }
   };
 
-  const listDepartamentos =
-    dataDepartamentos
-      ?.map((item) => ({
-        value: item.id,
-        label: item.departamento,
-      }))
-      .concat({ value: "-", label: "-" }) || [];
+  const listDepartamentos = useMemo(() => {
+    return (
+      dataDepartamentos
+        ?.map((item) => ({
+          value: item.id,
+          label: item.departamento,
+        }))
+        .concat({ value: "-", label: "-" }) || []
+    );
+  }, [dataDepartamentos]);
 
-  const listProvincias =
-    dataProvincias
-      ?.map((item) => ({
-        value: item.id,
-        label: item.provincia,
-      }))
-      .concat({ value: "-", label: "-" }) || [];
+  const listProvincias = useMemo(() => {
+    return (
+      dataProvincias
+        ?.map((item) => ({
+          value: item.id,
+          label: item.provincia,
+        }))
+        .concat({ value: "-", label: "-" }) || []
+    );
+  }, [dataProvincias]);
 
-  const listDistritos =
-    dataDistritos
-      ?.map((item) => ({
-        value: item.id,
-        label: item.distrito,
-      }))
-      .concat({ value: "-", label: "-" }) || [];
+  const listDistritos = useMemo(() => {
+    return (
+      dataDistritos
+        ?.map((item) => ({
+          value: item.id,
+          label: item.distrito,
+        }))
+        .concat({ value: "-", label: "-" }) || []
+    );
+  }, [dataDistritos]);
 
   const listUsuarios =
     dataUsers?.map((item) => ({
@@ -115,15 +123,12 @@ const EmpresaCreateGeneral = () => {
   };
 
   const obtenerDepartamento = async (departamento: string) => {
-    const listaDepartamentos: IDepartamento[] | undefined =
-      queryClient.getQueryData(["departamentos"]);
-
     const findDepartamento =
-      listaDepartamentos &&
-      listaDepartamentos.find((dtp) => dtp.departamento === departamento);
+      listDepartamentos &&
+      listDepartamentos.find((dtp) => dtp.label === departamento);
 
     const queryDpto = findDepartamento
-      ? { value: findDepartamento.id, label: findDepartamento.departamento }
+      ? findDepartamento
       : { value: "-", label: "-" };
 
     setValueModel("departamento", queryDpto);
@@ -133,19 +138,11 @@ const EmpresaCreateGeneral = () => {
     return queryDpto;
   };
 
-  const obtenerProvincia = async (queryDpto: string, provincia: string) => {
-    const listaProvincias: IProvincia[] | undefined = queryClient.getQueryData([
-      "provincias",
-      queryDpto,
-    ]);
-
+  const obtenerProvincia = async (provincia: string) => {
     const findProvincia =
-      listaProvincias &&
-      listaProvincias.find((dtp) => dtp.provincia === provincia);
+      listProvincias && listProvincias.find((dtp) => dtp.label === provincia);
 
-    const queryPrv = findProvincia
-      ? { value: findProvincia.id, label: findProvincia.provincia }
-      : { value: "-", label: "-" };
+    const queryPrv = findProvincia ? findProvincia : { value: "-", label: "-" };
 
     setValueModel("provincia", queryPrv);
 
@@ -154,18 +151,11 @@ const EmpresaCreateGeneral = () => {
     return queryPrv;
   };
 
-  const obtenerDistrito = async (queryPrv: string, distrito: string) => {
-    const listaDistritos: IDistrito[] | undefined = queryClient.getQueryData([
-      "distritos",
-      queryPrv,
-    ]);
-
+  const obtenerDistrito = async (distrito: string) => {
     const findDistrito =
-      listaDistritos && listaDistritos.find((dtp) => dtp.distrito === distrito);
+      listDistritos && listDistritos.find((dtp) => dtp.label === distrito);
 
-    const queryDsto = findDistrito
-      ? { value: findDistrito.id, label: findDistrito.distrito }
-      : { value: "-", label: "-" };
+    const queryDsto = findDistrito ? findDistrito : { value: "-", label: "-" };
 
     setValueModel("distrito", queryDsto);
 
@@ -186,9 +176,9 @@ const EmpresaCreateGeneral = () => {
       setValueModel("razon_social", entidad.razonSocial);
       setValueModel("nombre_comercial", entidad.nombre);
       setValueModel("domicilio_fiscal", entidad.direccion);
-      const queryDpto = await obtenerDepartamento(departamento);
-      const queryPrvo = await obtenerProvincia(queryDpto.value, provincia);
-      await obtenerDistrito(queryPrvo.value, distrito);
+      await obtenerDepartamento(departamento);
+      await obtenerProvincia(provincia);
+      await obtenerDistrito(distrito);
       setValueModel("ubigeo", ubigeo);
       setValueModel("urbanizacion", "-");
     } catch (e) {
@@ -374,7 +364,7 @@ const EmpresaCreateGeneral = () => {
                     classNamePrefix="select"
                     isDisabled
                     isSearchable={false}
-                    isLoading={isLoadingRuc}
+                    isLoading={isLoadingRuc || isLoadingProvincias}
                     options={listProvincias}
                     // value={listProvincias.find(
                     //   ({ value }) => value === valuesWatch.provincia
@@ -402,7 +392,7 @@ const EmpresaCreateGeneral = () => {
                     classNamePrefix="select"
                     isDisabled
                     isSearchable={false}
-                    isLoading={isLoadingRuc}
+                    isLoading={isLoadingRuc || isLoadingDistritos}
                     options={listDistritos}
                     // value={listDistritos.find(
                     //   ({ value }) => value === valuesWatch.distrito
@@ -476,7 +466,9 @@ const EmpresaCreateGeneral = () => {
                 <ImageIcon sx={{ height: "100%", width: "100%" }} />
               )}
             </Button>
-            <span className="text-center">{valuesWatch.logo?.[0].name}</span>
+            <span className="text-center break-words">
+              {valuesWatch.logo?.[0].name}
+            </span>
             <Controller
               name="logo"
               control={control}

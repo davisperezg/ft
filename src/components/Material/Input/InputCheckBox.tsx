@@ -54,6 +54,7 @@ const InputCheckBox = forwardRef(
   (props: CheckboxProps, ref: ForwardedRef<HTMLButtonElement>) => {
     return (
       <Checkbox
+        ref={ref}
         sx={{
           padding: 0,
           "&:hover": { bgcolor: "transparent" },
@@ -63,7 +64,7 @@ const InputCheckBox = forwardRef(
         checkedIcon={<BpCheckedIcon />}
         icon={<BpIcon />}
         inputProps={{ "aria-label": "Single-Checkbox" }}
-        ref={ref}
+        checked={Boolean(props.value)}
         {...props}
       />
     );

@@ -1,21 +1,23 @@
-import { Button, Grid, Stack } from "@mui/material";
-import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { useFormContext, Controller, useWatch } from "react-hook-form";
+import { IEmpresa } from "../../../interface/empresa.interface";
+import { Grid, Stack, Button } from "@mui/material";
 import { SelectSimple } from "../../Select/SelectSimple";
-import InputText from "../../Material/Input/InputText";
 import InputCheckBox from "../../Material/Input/InputCheckBox";
+import InputText from "../../Material/Input/InputText";
 import { ChangeEvent, useRef } from "react";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import InputFile from "../../Material/Input/InputFile";
-import { IEmpresa } from "../../../interface/empresa.interface";
 
-const EmpresaCreateConfiguraciones = () => {
+interface Props {
+  data: IEmpresa;
+}
+
+const EmpresaEditConfiguraciones = ({ data }: Props) => {
   const {
     control,
     setValue: setValueModel,
     formState: { errors },
   } = useFormContext<IEmpresa>();
-
-  const refCert = useRef<HTMLInputElement | null>(null);
 
   const valuesWatch = useWatch({
     control,
@@ -23,8 +25,46 @@ const EmpresaCreateConfiguraciones = () => {
 
   const optionsModo = [
     { value: 0, label: "Beta" },
-    { value: 1, label: "Produccion" },
+    { value: 1, label: "Producción" },
   ];
+
+  const onChangeModo = async (e: any) => {
+    const value = e.value;
+
+    //0-Beta 1-Produccion
+    if (value === 0 || value === 1) {
+      setValueModel("cert", undefined);
+      setValueModel("web_service", "");
+      setValueModel("cert_password", "");
+      setValueModel("usu_secundario_user", "");
+      setValueModel("usu_secundario_password", "");
+    }
+
+    if (valuesWatch.ose_enabled) {
+      setValueModel("usu_secundario_ose_user", "");
+      setValueModel("usu_secundario_ose_password", "");
+    }
+
+    setValueModel("modo", e.value, { shouldValidate: true });
+  };
+
+  const onChangeIsOse = (e: any, field: any) => {
+    const checked = e.target.checked;
+
+    if (!checked) {
+      setValueModel("web_service", "");
+      setValueModel("usu_secundario_ose_user", "");
+      setValueModel("usu_secundario_ose_password", "");
+    } else {
+      setValueModel("web_service", "");
+      setValueModel("usu_secundario_user", "");
+      setValueModel("usu_secundario_password", "");
+    }
+
+    field.onChange(checked);
+  };
+
+  const refCert = useRef<HTMLInputElement | null>(null);
 
   const handleBrowseCertButtonClick = () => {
     if (refCert.current) {
@@ -49,72 +89,47 @@ const EmpresaCreateConfiguraciones = () => {
     }
   };
 
-  const onChangeModo = async (e: any) => {
-    const value = e.value;
-
-    if (value === 0) {
-      //Beta
-      setValueModel("cert", undefined);
-      setValueModel("cert_password", "");
-      setValueModel("usu_secundario_user", "");
-      setValueModel("usu_secundario_password", "");
-    }
-
-    if (valuesWatch.ose_enabled) {
-      setValueModel("usu_secundario_ose_user", "");
-      setValueModel("usu_secundario_ose_password", "");
-    }
-
-    setValueModel("modo", e.value, { shouldValidate: true });
-
-    //await schemaFormEmpresa.validate(getValues());
-  };
-
-  const onChangeIsOse = (e: any, field: any) => {
-    const checked = e.target.checked;
-
-    if (!checked) {
-      setValueModel("web_service", "");
-      setValueModel("usu_secundario_ose_user", "");
-      setValueModel("usu_secundario_ose_password", "");
-    } else {
-      setValueModel("usu_secundario_user", "");
-      setValueModel("usu_secundario_password", "");
-    }
-
-    field.onChange(checked);
-  };
-
   return (
     <>
       <Grid container spacing={2}>
         <Grid item xs={9}>
           <Grid xs={12} item container>
-            {/* Modo */}
-            <Grid item xs={4}>
-              Modo:
-            </Grid>
+            {String(data.modo) === "PRODUCCION" && (
+              <Grid item xs={12}>
+                <h2 className="text-primary">
+                  <strong>Modo: {data.modo} 🚀</strong>
+                </h2>
+              </Grid>
+            )}
 
-            <Grid item xs={8}>
-              <Controller
-                name="modo"
-                control={control}
-                render={({ field }) => (
-                  <SelectSimple
-                    {...field}
-                    className="modo-single"
-                    classNamePrefix="select"
-                    isSearchable={false}
-                    options={optionsModo}
-                    placeholder="Seleccione modo"
-                    value={optionsModo.find(
-                      ({ value }) => Number(value) === valuesWatch.modo
+            {/* Modo */}
+            {String(data.modo) === "BETA" ? (
+              <>
+                <Grid item xs={4}>
+                  Modo:
+                </Grid>
+                <Grid item xs={8}>
+                  <Controller
+                    name="modo"
+                    control={control}
+                    render={({ field }) => (
+                      <SelectSimple
+                        {...field}
+                        className="modo-single"
+                        classNamePrefix="select"
+                        isSearchable={false}
+                        options={optionsModo}
+                        placeholder="Seleccione modo"
+                        value={optionsModo.find(
+                          ({ value }) => Number(value) === valuesWatch.modo
+                        )}
+                        onChange={(e) => onChangeModo(e)}
+                      />
                     )}
-                    onChange={(e) => onChangeModo(e)}
                   />
-                )}
-              />
-            </Grid>
+                </Grid>
+              </>
+            ) : null}
 
             {/* OSE */}
             <Grid item xs={4}>
@@ -125,12 +140,14 @@ const EmpresaCreateConfiguraciones = () => {
               <Controller
                 name="ose_enabled"
                 control={control}
-                render={({ field }) => (
-                  <InputCheckBox
-                    {...field}
-                    onChange={(e) => onChangeIsOse(e, field)}
-                  />
-                )}
+                render={({ field: { ...rest } }) => {
+                  return (
+                    <InputCheckBox
+                      {...rest}
+                      onChange={(e) => onChangeIsOse(e, rest)}
+                    />
+                  );
+                }}
               />
             </Grid>
 
@@ -177,7 +194,11 @@ const EmpresaCreateConfiguraciones = () => {
                         variant="filled"
                         disabled={valuesWatch.cert ? false : true}
                         error={!!errors.cert_password}
-                        helperText={errors.cert_password?.message}
+                        helperText={
+                          errors.cert_password?.message ||
+                          (!valuesWatch.cert &&
+                            "Agrega un certificado válido para ingresar la contraseña.")
+                        }
                       />
                     )}
                   />
@@ -346,7 +367,6 @@ const EmpresaCreateConfiguraciones = () => {
             )}
           </Grid>
         </Grid>
-
         {valuesWatch.modo === 1 && (
           <Grid item xs={3}>
             <Stack spacing={1}>
@@ -403,4 +423,4 @@ const EmpresaCreateConfiguraciones = () => {
   );
 };
 
-export default EmpresaCreateConfiguraciones;
+export default EmpresaEditConfiguraciones;

@@ -88,5 +88,46 @@ export const schemaFormEmpresa = yup
       message: "Ingrese un número de celular válido.",
       excludeEmptyString: true,
     }),
+    establecimientos: yup.array().of(
+      yup.object().shape({
+        codigo: yup.string().required("Ingrese código."),
+        denominacion: yup.string().required("Ingrese denominación."),
+        direccion: yup.string().required("Ingrese dirección."),
+        ubigeo: yup.string().required("Ingrese ubigeo."),
+        departamento: yup.object({
+          label: yup.string().required(),
+          value: yup.lazy((value) => {
+            return value === "-"
+              ? yup
+                  .string()
+                  .matches(/^[^-]*$/, 'No puede ser igual a "-"')
+                  .required()
+              : yup.string().required();
+          }),
+        }),
+        provincia: yup.object({
+          label: yup.string().required(),
+          value: yup.lazy((value) => {
+            return value === "-"
+              ? yup
+                  .string()
+                  .matches(/^[^-]*$/, 'No puede ser igual a "-"')
+                  .required()
+              : yup.string().required();
+          }),
+        }),
+        distrito: yup.object({
+          label: yup.string().required(),
+          value: yup.lazy((value) => {
+            return value === "-"
+              ? yup
+                  .string()
+                  .matches(/^[^-]*$/, 'No puede ser igual a "-"')
+                  .required()
+              : yup.string().required();
+          }),
+        }),
+      })
+    ),
   })
   .required();

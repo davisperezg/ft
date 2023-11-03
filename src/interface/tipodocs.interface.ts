@@ -9,4 +9,5 @@ export interface ITipoDoc {
   updatedAt?: Date;
   deleteAt?: Date;
   restoreAt?: Date;
+  new?: boolean;
 }

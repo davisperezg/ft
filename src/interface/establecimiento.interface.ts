@@ -15,5 +15,7 @@ export interface IEstablecimiento {
   direccion: string;
   ubigeo: string;
   logo?: FileList;
+  status?: boolean;
+  new?: boolean;
   allowedDocuments?: ISeries[];
 }

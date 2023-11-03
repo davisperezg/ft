@@ -13,16 +13,30 @@ export const getDepartamentos = async () => {
   return data;
 };
 
-export const getProvincias = async (idDepartamento: string) => {
+export const getProvincias = async () => {
   const { data } = await axios.get<IProvincia[]>(
-    `${BASE_API}/api/v1/entidades/provincias/departamento/${idDepartamento}`
+    `${BASE_API}/api/v1/entidades/provincias`
   );
   return data;
 };
 
-export const getDistritos = async (idProvincia: string) => {
+export const getDistritos = async () => {
   const { data } = await axios.get<IDistrito[]>(
-    `${BASE_API}/api/v1/entidades/distritos/provincia/${idProvincia}`
+    `${BASE_API}/api/v1/entidades/distritos`
   );
   return data;
 };
+
+// export const getProvincias = async (idDepartamento: string) => {
+//   const { data } = await axios.get<IProvincia[]>(
+//     `${BASE_API}/api/v1/entidades/provincias/departamento/${idDepartamento}`
+//   );
+//   return data;
+// };
+
+// export const getDistritos = async (idProvincia: string) => {
+//   const { data } = await axios.get<IDistrito[]>(
+//     `${BASE_API}/api/v1/entidades/distritos/provincia/${idProvincia}`
+//   );
+//   return data;
+// };

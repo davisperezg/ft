@@ -2,8 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { IError } from "../interface/error.interface";
 import { ITipoDoc } from "../interface/tipodocs.interface";
 import {
+  disableDocumento,
   disableTipoDocs,
   editTipoDocs,
+  enableDocumento,
   enableTipoDocs,
   getAllTipoDocs,
   postTipoDocs,
@@ -11,6 +13,7 @@ import {
 import { IServer } from "../interface/server.interface";
 
 const KEY = "tipodocs";
+const KEY_GET_EMPRESA = "get_empresa";
 
 export const useTipoDocs = () => {
   return useQuery<ITipoDoc[], IError>({
@@ -61,6 +64,32 @@ export const useEnableTipDoc = () => {
         );
 
         queryClient.invalidateQueries([KEY]);
+      }
+    },
+  });
+};
+
+export const useDisableDocumento = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<boolean, IError, { id: number }>({
+    mutationFn: ({ id }) => disableDocumento(id),
+    onSuccess: (result) => {
+      if (result) {
+        queryClient.invalidateQueries([KEY_GET_EMPRESA]);
+      }
+    },
+  });
+};
+
+export const useEnableDocumento = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<boolean, IError, { id: number }>({
+    mutationFn: ({ id }) => enableDocumento(id),
+    onSuccess: (result) => {
+      if (result) {
+        queryClient.invalidateQueries([KEY_GET_EMPRESA]);
       }
     },
   });
