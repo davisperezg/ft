@@ -179,17 +179,14 @@ const RolList = ({ openEdit }: Props) => {
 
   return (
     <>
-      {isLoading ? (
-        <LoadingTotal />
-      ) : (
-        <ComponentTable
-          data={loadData}
-          columns={columns}
-          getItemsRemoves={getItemsRemoves}
-          getItemsRestores={getItemsRestores}
-          openEdit={openEdit}
-        />
-      )}
+      <ComponentTable
+        loading={isLoading}
+        data={loadData}
+        columns={columns}
+        getItemsRemoves={getItemsRemoves}
+        getItemsRestores={getItemsRestores}
+        openEdit={openEdit}
+      />
     </>
   );
 };
