@@ -16,12 +16,7 @@ export const getSerie = async (id: number) => {
 export const postNewSerie = async (body: ISeries) => {
   const { data } = await axios.post<IServer<ISeries>>(
     `${BASE_API}/api/v1/series`,
-    body,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
+    body
   );
 
   return data;

@@ -23,6 +23,7 @@ import { useAccess } from "../../hooks/useResources";
 import FacturaScreen from "../../views/FacturaScreen";
 import TipoDocsScreen from "../../views/TipoDocsScreen";
 import EmpresasScreen from "../../views/EmpresasScreen";
+import SeriesScreen from "../../views/SeriesScreen";
 
 interface Props {
   open: boolean;
@@ -120,6 +121,10 @@ const NavMenuItem = ({
 
       case MENU_EMPRESAS:
         setNroTab(personalizedComponent(<EmpresasScreen />));
+        break;
+
+      case MENU_SERIES:
+        setNroTab(personalizedComponent(<SeriesScreen />));
         break;
 
       default:

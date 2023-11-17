@@ -63,11 +63,9 @@ const EmpresaEdit = ({ data, closeEdit }: Props) => {
 
   const {
     handleSubmit,
-
     formState: { isDirty, isValid },
   } = methods;
-  // console.log(watch());
-  // console.log(dataGetEmpresa);
+
   const onSubmit: SubmitHandler<IEmpresa> = async (values) => {
     if (dataGetEmpresa?.id) {
       try {
