@@ -7,6 +7,7 @@ export const MENU_USUARIOS = "Usuarios";
 export const MENU_FACTURA = "Factura";
 export const MENU_ALTAS = "Tipo de documentos";
 export const MENU_EMPRESAS = "Empresas";
+export const MENU_SERIES = "Series";
 export const MODS_TEST = [
   {
     nombre: "Administración de sistema - PRINCIPAL",

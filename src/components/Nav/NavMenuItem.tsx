@@ -11,6 +11,7 @@ import {
   MENU_USUARIOS,
   MENU_ALTAS,
   MENU_EMPRESAS,
+  MENU_SERIES,
 } from "../../utils/const";
 import ModulosScreen from "../../views/ModulosScreen";
 import PermisosScreen from "../../views/PermisosScreen";
@@ -241,6 +242,33 @@ const NavMenuItem = ({
                   className="w-[180px] mb-[5px] border  min-h-[24px] text-secondary dark:text-white hover:bg-hover"
                 >
                   Crear Empresa
+                </button>
+              )}
+            </div>
+          )}
+
+          {menu.nombre === MENU_SERIES && (
+            <div className="p-[10px] text-center">
+              {dataAccess?.some((a) => a === "canCreate_series") && (
+                <button
+                  onClick={() =>
+                    dispatch({ type: DialogActionKind.DIALOG_SERIES })
+                  }
+                  type="button"
+                  className="w-[180px] mb-[5px] border  min-h-[24px] text-secondary dark:text-white hover:bg-hover"
+                >
+                  Crear Series
+                </button>
+              )}
+              {dataAccess?.some((a) => a === "canMigrate_series") && (
+                <button
+                  onClick={() =>
+                    dispatch({ type: DialogActionKind.DIALOG_SERIES })
+                  }
+                  type="button"
+                  className="w-[180px] mb-[5px] border  min-h-[24px] text-secondary dark:text-white hover:bg-hover"
+                >
+                  Migrar Series
                 </button>
               )}
             </div>

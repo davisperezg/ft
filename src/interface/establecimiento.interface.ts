@@ -1,5 +1,3 @@
-import { ISeries } from "./series.interface";
-
 interface Option {
   value: string;
   label: string;
@@ -17,5 +15,4 @@ export interface IEstablecimiento {
   logo?: FileList;
   status?: boolean;
   new?: boolean;
-  allowedDocuments?: ISeries[];
 }
