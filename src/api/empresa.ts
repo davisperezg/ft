@@ -3,6 +3,8 @@ import axios from "axios";
 import { IServer } from "../interface/server.interface";
 import { BASE_API } from "../utils/const";
 import { IUserEmpresa } from "../interface/users_empresa.interface.";
+import { IEstablecimiento } from "../interface/establecimiento.interface";
+import { ITipoDoc } from "../interface/tipodocs.interface";
 
 export const getEmpresas = async () => {
   const { data } = await axios.get<IEmpresa[]>(`${BASE_API}/api/v1/empresas`);
@@ -12,6 +14,20 @@ export const getEmpresas = async () => {
 export const getEmpresa = async (id: number) => {
   const { data } = await axios.get(`${BASE_API}/api/v1/empresas/${id}`);
   return data.response;
+};
+
+export const getEstablecimientosByEmpresa = async (id: number) => {
+  const { data } = await axios.get<IEstablecimiento[]>(
+    `${BASE_API}/api/v1/empresas/${id}/establecimientos`
+  );
+  return data;
+};
+
+export const getDocumentosByEmpresa = async (id: number) => {
+  const { data } = await axios.get<ITipoDoc[]>(
+    `${BASE_API}/api/v1/empresas/${id}/documentos`
+  );
+  return data;
 };
 
 export const getUsersEmpresas = async () => {

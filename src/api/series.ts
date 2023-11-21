@@ -10,7 +10,7 @@ export const getSeries = async () => {
 
 export const getSerie = async (id: number) => {
   const { data } = await axios.get(`${BASE_API}/api/v1/series/empresa/${id}`);
-  return data.response;
+  return data;
 };
 
 export const postNewSerie = async (body: ISeries) => {

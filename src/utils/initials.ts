@@ -27,3 +27,10 @@ export const FORM_INITIAL_EMPRESA: IEmpresa = {
   usu_secundario_user: "",
   usu_secundario_password: "",
 };
+
+export const FORM_INITIAL_SERIES = {
+  empresa: 0,
+  establecimiento: 0,
+  serie: "",
+  documento: undefined,
+};

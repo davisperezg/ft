@@ -144,20 +144,16 @@ const SeriesList = ({ openEdit }: Props) => {
                     </div>
                     {item.documentos.map((doc: any, b: number) => {
                       return (
-                        <>
-                          <div className="ml-[10px]">
-                            {a + 1}.{b + 1}.- {doc.nombre}
-                            {doc.series.map((ser: any, c: number) => {
-                              return (
-                                <>
-                                  <div className="ml-[10px]">
-                                    {a + 1}.{b + 1}.{c + 1}.- {ser.serie}
-                                  </div>
-                                </>
-                              );
-                            })}
-                          </div>
-                        </>
+                        <div key={b} className="ml-[10px]">
+                          {a + 1}.{b + 1}.- {doc.nombre}
+                          {doc.series.map((ser: any, c: number) => {
+                            return (
+                              <div key={c} className="ml-[10px]">
+                                {a + 1}.{b + 1}.{c + 1}.- {ser.serie}
+                              </div>
+                            );
+                          })}
+                        </div>
                       );
                     })}
                   </div>

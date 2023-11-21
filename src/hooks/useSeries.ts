@@ -14,11 +14,16 @@ export const useSeries = () => {
 };
 
 export const useSerie = (id: number) => {
-  return useQuery<ISeries, IError>({
+  const query = useQuery<ISeries, IError>({
     queryKey: [KEY_SERIES, id],
     queryFn: async () => await getSerie(id),
     enabled: !!id,
   });
+
+  return {
+    ...query,
+    isLoading: query.isLoading && query.fetchStatus !== "idle",
+  };
 };
 
 export const usePostSerie = () => {

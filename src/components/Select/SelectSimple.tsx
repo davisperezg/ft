@@ -3,8 +3,8 @@ import { forwardRef } from "react";
 //https://stackoverflow.com/questions/73678700/react-select-typescript-not-working-properly-when-i-substitute-select-with-a-com
 //https://codesandbox.io/s/react-typescript-forked-q3z9mv?file=/src/CustomSelect.tsx:1398-1405
 
-type IOption = {
-  value: number;
+export type IOption = {
+  value: number | string;
   label: string;
   text?: string;
   disabled?: boolean;
@@ -52,7 +52,9 @@ export const SelectSimple = forwardRef(
             menuList: () => "!p-0",
           }}
         />
-        {props.error && <p className="text-[#d32f2f]">{props.helperText}</p>}
+        {props.error && (
+          <p className="text-[#d32f2f] text-[0.75rem]">{props.helperText}</p>
+        )}
       </>
     );
   }

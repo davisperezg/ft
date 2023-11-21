@@ -75,6 +75,13 @@ export const dialogReducer = (state: DialogState, action: DialogActions) => {
         nameDialog: "DIALOG_EMPRESA",
       };
 
+    case DialogActionKind.DIALOG_SERIES:
+      return {
+        ...state,
+        open: true,
+        nameDialog: "DIALOG_SERIES",
+      };
+
     case DialogActionKind.OPEN_EDIT:
       return {
         ...state,

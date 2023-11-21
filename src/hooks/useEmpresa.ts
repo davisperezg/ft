@@ -5,18 +5,23 @@ import { IEmpresa } from "../interface/empresa.interface";
 import {
   disableEmpresa,
   enableEmpresa,
+  getDocumentosByEmpresa,
   getEmpresa,
   getEmpresas,
+  getEstablecimientosByEmpresa,
   getUsersEmpresas,
   postNewEmpresa,
   putEmpresa,
 } from "../api/empresa";
 import { IUserEmpresa } from "../interface/users_empresa.interface.";
-import { KEY_SERIES } from "./useSeries";
+import { IEstablecimiento } from "../interface/establecimiento.interface";
+import { ITipoDoc } from "../interface/tipodocs.interface";
 
 const KEY = "empresas";
 const KEY_GET_EMPRESA = "get_empresa";
 const KEY_USERS_EMPRESA = "users_empresas";
+const KEY_ESTABLECIMIENTO = "get_empresa_establecimientos";
+const KEY_DOCUMENTO = "get_empresa_documentos";
 
 export const useEmpresas = () => {
   return useQuery<IEmpresa[], IError>({
@@ -29,6 +34,22 @@ export const useEmpresa = (id: number) => {
   return useQuery<IEmpresa, IError>({
     queryKey: [KEY_GET_EMPRESA, id],
     queryFn: async () => await getEmpresa(id),
+    enabled: !!id,
+  });
+};
+
+export const useEstablecimientosByEmpresa = (id: number) => {
+  return useQuery<IEstablecimiento[], IError>({
+    queryKey: [KEY_ESTABLECIMIENTO, id],
+    queryFn: async () => await getEstablecimientosByEmpresa(id),
+    enabled: !!id,
+  });
+};
+
+export const useDocumentosByEmpresa = (id: number) => {
+  return useQuery<ITipoDoc[], IError>({
+    queryKey: [KEY_DOCUMENTO, id],
+    queryFn: async () => await getDocumentosByEmpresa(id),
     enabled: !!id,
   });
 };

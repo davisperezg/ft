@@ -24,7 +24,7 @@ const SeriesScreen = () => {
 
   return (
     <>
-      {dialogState.nameDialog === DialogActionKind.DIALOG_EMPRESA && (
+      {dialogState.nameDialog === DialogActionKind.DIALOG_SERIES && (
         <SeriesCreate />
       )}
 

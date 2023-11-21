@@ -11,12 +11,6 @@ import { useState, useRef, ChangeEvent, useMemo } from "react";
 import { Button, Grid, Stack } from "@mui/material";
 import InputText from "../../Material/Input/InputText";
 import SearchIcon from "@mui/icons-material/Search";
-import { useQueryClient } from "@tanstack/react-query";
-import {
-  IDepartamento,
-  IDistrito,
-  IProvincia,
-} from "../../../interface/entidades.interface";
 import { isError } from "../../../utils/functions";
 import { toast } from "react-toastify";
 import CachedIcon from "@mui/icons-material/Cached";
@@ -28,8 +22,6 @@ import { IEmpresa } from "../../../interface/empresa.interface";
 let imagePreview = "";
 
 const EmpresaCreateGeneral = () => {
-  const queryClient = useQueryClient();
-
   const {
     control,
     getValues,

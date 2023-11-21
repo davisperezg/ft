@@ -6,7 +6,6 @@ import { toast } from "react-toastify";
 import { isError } from "../../utils/functions";
 import { toastError } from "../Toast/ToastNotify";
 import { DialogBeta } from "../Dialog/DialogBasic";
-
 import { useEditEmpresa, useEmpresa } from "../../hooks/useEmpresa";
 import { IUser } from "../../interface/user.interface";
 import { DialogTitleBeta } from "../Dialog/_DialogTitle";

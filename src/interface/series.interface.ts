@@ -1,9 +1,11 @@
-import { IEmpresa } from "./empresa.interface";
-import { IEstablecimiento } from "./establecimiento.interface";
+import { IOption } from "../components/Select/SelectSimple";
 
 export interface ISeries {
   id?: number;
-  empresa: number | IEmpresa;
-  establecimiento: number | IEstablecimiento;
-  documentos: Record<string, string[]>;
+  empresa: number;
+  establecimiento: number;
+  establecimientos?: any[];
+  documentos?: any[];
+  serie: string;
+  documento: Pick<IOption, "label" | "value">;
 }
