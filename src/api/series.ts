@@ -30,3 +30,14 @@ export const postMigrateSerie = async (body: ISeries) => {
 
   return data;
 };
+
+export const disableSerie = async (id: number) => {
+  const { data } = await axios.patch(`${BASE_API}/api/v1/series/disable/${id}`);
+
+  return data;
+};
+
+export const enableSerie = async (id: number) => {
+  const { data } = await axios.patch(`${BASE_API}/api/v1/series/enable/${id}`);
+  return data;
+};

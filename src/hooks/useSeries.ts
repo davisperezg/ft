@@ -1,7 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ISeries } from "../interface/series.interface";
 import { IError } from "../interface/error.interface";
-import { getSerie, getSeries, postNewSerie } from "../api/series";
+import {
+  disableSerie,
+  enableSerie,
+  getSerie,
+  getSeries,
+  postNewSerie,
+} from "../api/series";
 import { IServer } from "../interface/server.interface";
 
 export const KEY_SERIES = "series";
@@ -40,6 +46,32 @@ export const usePostSerie = () => {
       );
 
       queryClient.invalidateQueries([KEY_SERIES]);
+    },
+  });
+};
+
+export const useDisableSerie = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<boolean, IError, { id: number }>({
+    mutationFn: ({ id }) => disableSerie(id),
+    onSuccess: async (result, { id }) => {
+      if (result) {
+        await queryClient.invalidateQueries([KEY_SERIES]);
+      }
+    },
+  });
+};
+
+export const useEnableSerie = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<boolean, IError, { id: number }>({
+    mutationFn: ({ id }) => enableSerie(id),
+    onSuccess: async (result, { id }) => {
+      if (result) {
+        await queryClient.invalidateQueries([KEY_SERIES]);
+      }
     },
   });
 };

@@ -153,13 +153,10 @@ const SeriesCreate = () => {
     const serie = getValues("serie");
     const documento = getValues("documento");
 
-    if (!documento) {
-      return alert("Seleccione un documento.");
-    }
-
-    if (!serie) {
-      return alert("Ingrese una serie.");
-    }
+    //Validamos si la serie que se estan ingresando pertecene a otro establecimiento de la empresa
+    const existSerieEstablecimiento =
+      validarSerieExixtenteXEstablecimiento(serie);
+    if (existSerieEstablecimiento) return;
 
     const existDocumento = fields.find((item) => item.id === documento?.value);
 
@@ -209,6 +206,36 @@ const SeriesCreate = () => {
         series: newSeries,
       });
     }
+  };
+
+  const validarSerieExixtenteXEstablecimiento = (inputSerie: string) => {
+    const establecimientos =
+      dataSeries && dataSeries.establecimientos
+        ? dataSeries.establecimientos.length
+        : 0;
+
+    let estado = false;
+
+    for (let a = 0; a < establecimientos; a++) {
+      const establecimiento = dataSeries?.establecimientos?.[a];
+      for (let b = 0; b < establecimiento.documentos.length; b++) {
+        const est_documento = establecimiento.documentos[b];
+        for (let c = 0; c < est_documento.series.length; c++) {
+          const doc_serie = est_documento.series[c];
+          if (
+            doc_serie.serie === inputSerie &&
+            getValues("establecimiento") !== establecimiento.id
+          ) {
+            estado = true;
+            alert(
+              "La serie ya existe en otro establecimiento de la empresa. Si quieres que pertenezca a este establecimiento debes migrar la serie."
+            );
+          }
+        }
+      }
+    }
+
+    return estado;
   };
 
   const obtenerSeriesXEstablecimiento = (establecimiento: number) => {

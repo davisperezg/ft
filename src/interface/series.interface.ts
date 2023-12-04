@@ -8,4 +8,5 @@ export interface ISeries {
   documentos?: any[];
   serie: string;
   documento: Pick<IOption, "label" | "value">;
+  estado?: boolean;
 }
