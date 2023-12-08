@@ -1,3 +1,5 @@
+import { ISeriesExtendida } from "./series.interface";
+
 export interface ITipoDoc {
   id?: number;
   codigo: string;
@@ -10,4 +12,10 @@ export interface ITipoDoc {
   deleteAt?: Date;
   restoreAt?: Date;
   new?: boolean;
+}
+
+export interface ITipoDocsExtentido
+  extends Pick<ITipoDoc, "id" | "nombre" | "codigo"> {
+  estado: boolean;
+  series: ISeriesExtendida[];
 }

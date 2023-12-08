@@ -1,3 +1,5 @@
+import { ITipoDocsExtentido } from "./tipodocs.interface";
+
 interface Option {
   value: string;
   label: string;
@@ -15,4 +17,9 @@ export interface IEstablecimiento {
   logo?: FileList;
   status?: boolean;
   new?: boolean;
+}
+
+export interface IEstablecimientoExtendida
+  extends Pick<IEstablecimiento, "id" | "codigo" | "denominacion"> {
+  documentos: ITipoDocsExtentido[];
 }

@@ -34,3 +34,10 @@ export const FORM_INITIAL_SERIES = {
   serie: "",
   documento: undefined,
 };
+
+export const FORM_INITIAL_SERIES_MIGRATE = {
+  empresa: 0,
+  establecimiento: 0,
+  establecimiento_destino: 0,
+  documentos: [],
+};

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { ISeries } from "../interface/series.interface";
+import { ISeries, ISeriesMigrate } from "../interface/series.interface";
 import { BASE_API } from "../utils/const";
 import { IServer } from "../interface/server.interface";
 
@@ -22,8 +22,8 @@ export const postNewSerie = async (body: ISeries) => {
   return data;
 };
 
-export const postMigrateSerie = async (body: ISeries) => {
-  const { data } = await axios.post<IServer<ISeries>>(
+export const postMigrateSerie = async (body: ISeriesMigrate) => {
+  const { data } = await axios.post<IServer<ISeriesMigrate>>(
     `${BASE_API}/api/v1/series/migrate`,
     body
   );

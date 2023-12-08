@@ -7,6 +7,7 @@ export enum DialogActionKind {
   DIALOG_TIPODOC = "DIALOG_TIPODOC",
   DIALOG_EMPRESA = "DIALOG_EMPRESA",
   DIALOG_SERIES = "DIALOG_SERIES",
+  DIALOG_SERIES_MIGRATE = "DIALOG_SERIES_MIGRATE",
   OPEN_EDIT = "OPEN_EDIT",
   //OPEN_EDIT_ROL = "OPEN_EDIT_ROL",
 }
@@ -80,6 +81,13 @@ export const dialogReducer = (state: DialogState, action: DialogActions) => {
         ...state,
         open: true,
         nameDialog: "DIALOG_SERIES",
+      };
+
+    case DialogActionKind.DIALOG_SERIES_MIGRATE:
+      return {
+        ...state,
+        open: true,
+        nameDialog: "DIALOG_SERIES_MIGRATE",
       };
 
     case DialogActionKind.OPEN_EDIT:

@@ -5,6 +5,7 @@ import SeriesCreate from "../components/Series/SeriesCreate";
 import { DialogActionKind } from "../reducers/dialogReducer";
 import SeriesList from "../components/Series/SeriesList";
 import SeriesEdit from "../components/Series/SeriesEdit";
+import SeriesMigrate from "../components/Series/SeriesMigrate";
 
 const SeriesScreen = () => {
   const { dialogState } = useContext(ModalContext);
@@ -26,6 +27,10 @@ const SeriesScreen = () => {
     <>
       {dialogState.nameDialog === DialogActionKind.DIALOG_SERIES && (
         <SeriesCreate />
+      )}
+
+      {dialogState.nameDialog === DialogActionKind.DIALOG_SERIES_MIGRATE && (
+        <SeriesMigrate />
       )}
 
       {state.visible && <SeriesEdit data={state.row} closeEdit={closeEdit} />}

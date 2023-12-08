@@ -218,18 +218,20 @@ const SeriesCreate = () => {
 
     for (let a = 0; a < establecimientos; a++) {
       const establecimiento = dataSeries?.establecimientos?.[a];
-      for (let b = 0; b < establecimiento.documentos.length; b++) {
-        const est_documento = establecimiento.documentos[b];
-        for (let c = 0; c < est_documento.series.length; c++) {
-          const doc_serie = est_documento.series[c];
-          if (
-            doc_serie.serie === inputSerie &&
-            getValues("establecimiento") !== establecimiento.id
-          ) {
-            estado = true;
-            alert(
-              "La serie ya existe en otro establecimiento de la empresa. Si quieres que pertenezca a este establecimiento debes migrar la serie."
-            );
+      if (establecimiento) {
+        for (let b = 0; b < establecimiento.documentos.length; b++) {
+          const est_documento = establecimiento.documentos[b];
+          for (let c = 0; c < est_documento.series.length; c++) {
+            const doc_serie = est_documento.series[c];
+            if (
+              doc_serie.serie === inputSerie &&
+              getValues("establecimiento") !== establecimiento.id
+            ) {
+              estado = true;
+              alert(
+                "La serie ya existe en otro establecimiento de la empresa. Si quieres que pertenezca a este establecimiento debes migrar la serie."
+              );
+            }
           }
         }
       }

@@ -268,7 +268,7 @@ const NavMenuItem = ({
               {dataAccess?.some((a) => a === "canMigrate_series") && (
                 <button
                   onClick={() =>
-                    dispatch({ type: DialogActionKind.DIALOG_SERIES })
+                    dispatch({ type: DialogActionKind.DIALOG_SERIES_MIGRATE })
                   }
                   type="button"
                   className="w-[180px] mb-[5px] border  min-h-[24px] text-secondary dark:text-white hover:bg-hover"

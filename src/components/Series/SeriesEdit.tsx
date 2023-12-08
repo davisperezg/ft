@@ -10,7 +10,7 @@ import {
   Controller,
   useFieldArray,
 } from "react-hook-form";
-import { useCallback, useContext, useMemo } from "react";
+import { useContext } from "react";
 import { ModalContext } from "../../context/modalContext";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { schemaFormSeries } from "../../utils/yup_validations";
@@ -225,18 +225,20 @@ const SeriesEdit = ({ data, closeEdit }: Props) => {
 
     for (let a = 0; a < establecimientos; a++) {
       const establecimiento = dataSeries?.establecimientos?.[a];
-      for (let b = 0; b < establecimiento.documentos.length; b++) {
-        const est_documento = establecimiento.documentos[b];
-        for (let c = 0; c < est_documento.series.length; c++) {
-          const doc_serie = est_documento.series[c];
-          if (
-            doc_serie.serie === inputSerie &&
-            getValues("establecimiento") !== establecimiento.id
-          ) {
-            estado = true;
-            alert(
-              "La serie ya existe en otro establecimiento de la empresa. Si quieres que pertenezca a este establecimiento debes migrar la serie."
-            );
+      if (establecimiento) {
+        for (let b = 0; b < establecimiento.documentos.length; b++) {
+          const est_documento = establecimiento.documentos[b];
+          for (let c = 0; c < est_documento.series.length; c++) {
+            const doc_serie = est_documento.series[c];
+            if (
+              doc_serie.serie === inputSerie &&
+              getValues("establecimiento") !== establecimiento.id
+            ) {
+              estado = true;
+              alert(
+                "La serie ya existe en otro establecimiento de la empresa. Si quieres que pertenezca a este establecimiento debes migrar la serie."
+              );
+            }
           }
         }
       }
@@ -277,16 +279,16 @@ const SeriesEdit = ({ data, closeEdit }: Props) => {
     try {
       await mutateEnable({ id: idSerie });
       const query = obtenerQueryDocumentosByEstablecimiento();
-      const indexQuery = query.documentos.findIndex(
+      const indexQuery = query?.documentos.findIndex(
         (item: any) => item.id === documento.id
       );
-      const queryDocumento = query.documentos.find(
+      const queryDocumento = query?.documentos.find(
         (doc: any) => doc.id === documento.id
       );
 
-      return update(indexQuery, {
+      return update(Number(indexQuery), {
         ...documento,
-        series: queryDocumento.series,
+        series: queryDocumento?.series,
       });
     } catch (e) {
       if (isError(e)) {
@@ -300,16 +302,16 @@ const SeriesEdit = ({ data, closeEdit }: Props) => {
     try {
       await mutateDisable({ id: idSerie });
       const query = obtenerQueryDocumentosByEstablecimiento();
-      const indexQuery = query.documentos.findIndex(
+      const indexQuery = query?.documentos.findIndex(
         (item: any) => item.id === documento.id
       );
-      const queryDocumento = query.documentos.find(
+      const queryDocumento = query?.documentos.find(
         (doc: any) => doc.id === documento.id
       );
 
-      return update(indexQuery, {
+      return update(Number(indexQuery), {
         ...documento,
-        series: queryDocumento.series,
+        series: queryDocumento?.series,
       });
     } catch (e) {
       if (isError(e)) {

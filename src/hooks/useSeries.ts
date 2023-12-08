@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ISeries } from "../interface/series.interface";
+import { ISeries, ISeriesMigrate } from "../interface/series.interface";
 import { IError } from "../interface/error.interface";
 import {
   disableSerie,
   enableSerie,
   getSerie,
   getSeries,
+  postMigrateSerie,
   postNewSerie,
 } from "../api/series";
 import { IServer } from "../interface/server.interface";
@@ -42,6 +43,34 @@ export const usePostSerie = () => {
         [KEY_SERIES],
         (prevSeries: ISeries[] | undefined) => {
           return prevSeries ? [...prevSeries, response] : [response];
+        }
+      );
+
+      queryClient.invalidateQueries([KEY_SERIES]);
+    },
+  });
+};
+
+export const useMigrateSerie = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<IServer<ISeriesMigrate>, IError, any>({
+    mutationFn: (serie) => postMigrateSerie(serie),
+    onSuccess: ({ response }) => {
+      queryClient.setQueryData(
+        [KEY_SERIES],
+        (prevSeries: ISeriesMigrate[] | undefined) => {
+          if (prevSeries) {
+            const updateSerie = prevSeries.map((serie) => {
+              if (serie.empresa === response.empresa)
+                return { ...serie, ...response };
+              return serie;
+            });
+
+            return updateSerie;
+          }
+
+          return prevSeries;
         }
       );
 
