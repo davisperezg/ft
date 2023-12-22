@@ -70,7 +70,9 @@ const Header = ({ result }: any) => {
             nombre_comercial: result?.data?.empresas[0].nombre_comercial,
             ruc: result?.data?.empresas[0].ruc,
             establecimiento: result?.data?.empresas[0].establecimientos[0],
+            estado: result?.data.empresas[0].estado,
           };
+
           setSelectedOption(
             `idEmpresa:${empresa?.id},idEstablecimiento:${empresa?.establecimiento?.id}`
           );
@@ -162,7 +164,9 @@ const Header = ({ result }: any) => {
                     return (
                       <optgroup
                         key={item.ruc}
-                        label={`${item.nombre_comercial}`}
+                        label={`${item.nombre_comercial} - ${
+                          item.estado ? "Activo" : "Inactivo"
+                        }`}
                       >
                         {item.establecimientos.map((est: any) => {
                           return (

@@ -115,6 +115,7 @@ const SeriesMigrate = () => {
     dataEmpresas?.map((item) => ({
       value: Number(item.id),
       label: item.razon_social,
+      disabled: !item.estado,
     })) || [];
 
   const listEstablecimientos =
@@ -123,6 +124,7 @@ const SeriesMigrate = () => {
       label: `${item.codigo === "0000" ? "PRINCIPAL" : item.codigo} - ${
         item.denominacion
       }`,
+      disabled: !item.estado,
     })) || [];
 
   const obtenerDocumentosXEstablecimiento = (
@@ -205,6 +207,7 @@ const SeriesMigrate = () => {
                         isSearchable={true}
                         isLoading={isLoadingEmpresas}
                         options={listEmpresas}
+                        isOptionDisabled={(option) => Boolean(option.disabled)}
                         placeholder="Seleccione empresa"
                         error={!!errors.empresa || isErrorEmpresa}
                         helperText={
@@ -269,6 +272,7 @@ const SeriesMigrate = () => {
                         isSearchable={false}
                         isLoading={isLoadingEstablecimientos}
                         options={establecimientosOrigenDisponibles}
+                        isOptionDisabled={(option) => Boolean(option.disabled)}
                         placeholder="Seleccione establecimiento origen"
                         error={
                           !!errors.establecimiento || isErrorEstablecimientos
@@ -311,6 +315,7 @@ const SeriesMigrate = () => {
                         isSearchable={false}
                         isLoading={isLoadingEstablecimientos}
                         options={establecimientosDestinoDisponibles}
+                        isOptionDisabled={(option) => Boolean(option.disabled)}
                         placeholder="Seleccione establecimiento destino"
                         error={
                           !!errors.establecimiento_destino ||

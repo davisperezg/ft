@@ -97,6 +97,7 @@ const SeriesEdit = ({ data, closeEdit }: Props) => {
       label: `${item.codigo === "0000" ? "PRINCIPAL" : item.codigo} - ${
         item.denominacion
       }`,
+      disabled: !item.estado,
     })) || [];
 
   const listDocumentos =
@@ -203,7 +204,7 @@ const SeriesEdit = ({ data, closeEdit }: Props) => {
 
     if (existDocumento) {
       const index = fields.findIndex((item: any) => item.id === documento.id);
-      console.log(index);
+
       const newSeries = existDocumento.series.filter(
         (item: any) => item.serie !== serie
       );
@@ -363,6 +364,7 @@ const SeriesEdit = ({ data, closeEdit }: Props) => {
                         isSearchable={false}
                         isLoading={isLoadingSerie}
                         options={listEstablecimientos}
+                        isOptionDisabled={(option) => Boolean(option.disabled)}
                         placeholder="Seleccione establecimiento"
                         error={!!errors.establecimiento || isErrorSeries}
                         helperText={

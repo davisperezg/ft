@@ -45,7 +45,7 @@ export const getlistToAsignEmpresasByIdPartner = async (id: string) => {
 };
 
 export const disableEmpresa = async (id: number) => {
-  const { data } = await axios.delete(
+  const { data } = await axios.patch(
     `${BASE_API}/api/v1/empresas/disable/${id}`
   );
   return data;

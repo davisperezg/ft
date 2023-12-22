@@ -21,6 +21,6 @@ export interface IEstablecimiento {
 }
 
 export interface IEstablecimientoExtendida
-  extends Pick<IEstablecimiento, "id" | "codigo" | "denominacion"> {
+  extends Pick<IEstablecimiento, "id" | "codigo" | "denominacion" | "estado"> {
   documentos: ITipoDocsExtentido[];
 }

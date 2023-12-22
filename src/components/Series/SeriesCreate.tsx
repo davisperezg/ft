@@ -128,6 +128,7 @@ const SeriesCreate = () => {
     dataEmpresas?.map((item) => ({
       value: Number(item.id),
       label: item.razon_social,
+      disabled: !item.estado,
     })) || [];
 
   const listEstablecimientos =
@@ -136,6 +137,7 @@ const SeriesCreate = () => {
       label: `${item.codigo === "0000" ? "PRINCIPAL" : item.codigo} - ${
         item.denominacion
       }`,
+      disabled: !item.estado,
     })) || [];
 
   const listDocumentos =
@@ -295,6 +297,7 @@ const SeriesCreate = () => {
                         isLoading={isLoadingEmpresas}
                         options={listEmpresas}
                         placeholder="Seleccione empresa"
+                        isOptionDisabled={(option) => Boolean(option.disabled)}
                         error={!!errors.empresa || isErrorEmpresa}
                         helperText={
                           errors.empresa?.message ||
@@ -339,6 +342,7 @@ const SeriesCreate = () => {
                         isSearchable={false}
                         isLoading={isLoadingEstablecimientos}
                         options={listEstablecimientos}
+                        isOptionDisabled={(option) => Boolean(option.disabled)}
                         placeholder="Seleccione establecimiento"
                         error={
                           !!errors.establecimiento || isErrorEstablecimientos
@@ -398,9 +402,9 @@ const SeriesCreate = () => {
                         isSearchable={false}
                         isLoading={isLoadingDocumentos}
                         options={listDocumentos}
+                        isOptionDisabled={(option) => Boolean(option.disabled)}
                         placeholder="Seleccione documento"
                         error={!!errors.documento || isErrorDocumentos}
-                        isOptionDisabled={(option) => Boolean(option.disabled)}
                         helperText={
                           errors.documento?.value?.message ||
                           errorDocumentos?.response.data.message
