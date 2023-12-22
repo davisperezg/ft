@@ -125,6 +125,7 @@ const Header = ({ result }: any) => {
       logo: getEmpresa?.logo,
       nombre_comercial: getEmpresa?.nombre_comercial,
       ruc: getEmpresa?.ruc,
+      estado: getEmpresa?.estado,
       establecimiento: getEstablecimiento,
     };
 
@@ -172,9 +173,16 @@ const Header = ({ result }: any) => {
                           return (
                             <option
                               key={est.id}
-                              disabled={!est.estado}
+                              disabled={!est.estado || !item.estado}
                               value={`idEmpresa:${item.id},idEstablecimiento:${est.id}`}
-                            >{`${est.codigo} - ${est.denominacion}`}</option>
+                            >
+                              {`${est.codigo} - ${est.denominacion} -
+                                ${
+                                  item.estado && est.estado
+                                    ? "Activo"
+                                    : "Inactivo"
+                                }`}
+                            </option>
                           );
                         })}
                       </optgroup>
