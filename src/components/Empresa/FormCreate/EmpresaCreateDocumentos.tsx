@@ -34,6 +34,7 @@ const EmpresaCreateDocumentos = () => {
     dataTipdocs?.map((item) => ({
       value: item.id,
       label: `${item.codigo} - ${item.nombre}`,
+      disabled: !item.status,
     })) || [];
 
   const appendDocumento = () => {
@@ -79,6 +80,7 @@ const EmpresaCreateDocumentos = () => {
                     isSearchable={false}
                     isLoading={isLoadingTipdocs}
                     options={listDocs}
+                    isOptionDisabled={(option) => Boolean(option.disabled)}
                     placeholder="Seleccione documento"
                     error={isErrorTipdocs}
                     helperText={errorTipdocs?.response.data.message}

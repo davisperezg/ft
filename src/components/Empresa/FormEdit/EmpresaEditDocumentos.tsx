@@ -47,7 +47,7 @@ const EmpresaEditDocumentos = () => {
       value: Number(item.id),
       label: `${item.codigo} - ${item.nombre}`,
       text: item.nombre,
-      disabled: item.status ? false : true,
+      disabled: !item.status,
     })) || [];
 
   const appendDocumento = () => {
