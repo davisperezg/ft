@@ -1,4 +1,4 @@
-import { IEmpresa } from "./../interface/empresa.interface";
+import { IEmpresa, IEmpresaAsign } from "./../interface/empresa.interface";
 import axios from "axios";
 import { IServer } from "../interface/server.interface";
 import { BASE_API } from "../utils/const";
@@ -33,6 +33,13 @@ export const getDocumentosByEmpresa = async (id: number) => {
 export const getUsersEmpresas = async () => {
   const { data } = await axios.get<IUserEmpresa[]>(
     `${BASE_API}/api/v1/users/empresa`
+  );
+  return data;
+};
+
+export const getlistToAsignEmpresasByIdPartner = async (id: string) => {
+  const { data } = await axios.get<IEmpresaAsign[]>(
+    `${BASE_API}/api/v1/users/list-empresas/${id}`
   );
   return data;
 };

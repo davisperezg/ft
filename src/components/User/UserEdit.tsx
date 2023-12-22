@@ -5,23 +5,14 @@ import {
   useMemo,
   useState,
   useLayoutEffect,
-  useRef,
-  useCallback,
 } from "react";
 import { ModalContext } from "../../context/modalContext";
-import DialogBody from "../Dialog/DialogBody";
-import DialogButtons from "../Dialog/DialogButtons";
-import DialogTitle from "../Dialog/DialogTitle";
-import DialogBasic from "../Dialog/DialogBasic";
-import { SubmitHandler, useFieldArray, useForm } from "react-hook-form";
-import { IUser } from "../../interface/user.interface";
+import { SubmitHandler, useForm, FormProvider } from "react-hook-form";
+import { IUserWithPassword, IUser } from "../../interface/user.interface";
 import { useRolesAvailables } from "../../hooks/useRoles";
-import { useReniec, useSunat } from "../../hooks/useServices";
+import { useReniec } from "../../hooks/useServices";
 import { FcSearch } from "react-icons/fc";
 import { useEditPassword, useEditUser } from "../../hooks/useUsers";
-import TabModal from "../Tab/Modal/TabModal";
-import TabModalItem from "../Tab/Modal/TabModalItem";
-import TabModalPanel from "../Tab/Modal/TabModalPanel";
 import CheckBoxItem from "../Input/CheckBoxItem";
 import { useModulesAvailables } from "../../hooks/useModuleS";
 import {
@@ -35,25 +26,34 @@ import { TfiReload } from "react-icons/tfi";
 import { toast } from "react-toastify";
 import { toastError } from "../Toast/ToastNotify";
 import { isError } from "../../utils/functions";
+import TabsModal from "../Material/Tabs/TabsModal";
+import TabModal from "../Material/Tab/TabModal";
+import TabModalPanel from "../Material/Tab/TabModalPanel";
+import IconButton from "@mui/material/IconButton";
+import CloseIcon from "@mui/icons-material/Close";
+import { DialogActionsBeta } from "../Dialog/_DialogActions";
+import { DialogContentBeta } from "../Dialog/_DialogContent";
+import { DialogTitleBeta } from "../Dialog/_DialogTitle";
+import { DialogBeta } from "../Dialog/DialogBasic";
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
+import UserEditAsignarEmpresa from "./FormEdit/UserEditAsignarEmpresa";
+import { useAsignEmpresasByIdPartner } from "../../hooks/useEmpresa";
+import { FORM_EDIT_INITIAL_USER } from "../../utils/initials";
 
 interface Props {
   data: any;
   closeEdit: () => void;
 }
 
-interface FormValues extends IUser {
+interface FormValues extends IUserWithPassword {
   resources?: string[];
   modules?: string[];
   [key: string]: any;
 }
 
-const initialSize = {
-  heigth: 440,
-  width: 630,
-};
-
 const UserEdit = ({ data, closeEdit }: Props) => {
-  const { dispatch } = useContext(ModalContext);
+  const { dispatch, dialogState, userGlobal } = useContext(ModalContext);
 
   //POST
   const { mutateAsync: mutateEditUser, isLoading: isLoadingEdit } =
@@ -91,14 +91,19 @@ const UserEdit = ({ data, closeEdit }: Props) => {
   } = usePermisosAvailables();
 
   const {
-    register,
-    handleSubmit,
-    setValue: setValueModel,
-    formState: { errors },
-    watch,
-    getValues,
-  } = useForm<FormValues>({
+    data: dataEmpresasAsign,
+    error,
+    isLoading: isLoadingAsignEmpresas,
+  } = useAsignEmpresasByIdPartner(userGlobal?.id);
+
+  const methods = useForm<FormValues>({
     defaultValues: {
+      ...FORM_EDIT_INITIAL_USER,
+      resources: [],
+      modules: [],
+      empresas: [],
+    },
+    values: {
       name: data.name,
       lastname: data.lastname,
       email: data.email,
@@ -106,11 +111,47 @@ const UserEdit = ({ data, closeEdit }: Props) => {
       nroDocument: data.nroDocument,
       role: data.role._id,
       username: data.username,
+      password: "",
+      confirm_password: "",
       resources: [],
       modules: [],
       empresas: [],
+      empresasAsign: dataEmpresasAsign?.map((item) => {
+        return {
+          ...item,
+          checked: data.empresasAsign.some((a: any) => a.id === item.id),
+          establecimientos: item.establecimientos.map((est) => {
+            const empresaAsign = data.empresasAsign.find(
+              (asign: any) => asign.id === item.id
+            ) as any;
+            const establecimientoAsignado = empresaAsign?.establecimientos.find(
+              (b: any) => b.id === est.id
+            );
+
+            return {
+              ...est,
+              idEntidad: establecimientoAsignado
+                ? establecimientoAsignado.idEntidad
+                : null,
+              checked: establecimientoAsignado
+                ? establecimientoAsignado.checked
+                : false,
+            };
+          }),
+        };
+      }),
     },
+    mode: "onTouched",
   });
+
+  const {
+    register,
+    handleSubmit,
+    setValue: setValueModel,
+    formState: { errors, isDirty, isValid },
+    watch,
+    getValues,
+  } = methods;
 
   const {
     data: dataPersona,
@@ -138,9 +179,8 @@ const UserEdit = ({ data, closeEdit }: Props) => {
     refetch: refetch3,
   } = useServicesXuser(data._id);
 
-  const [value, setValue] = useState(1);
+  const [value, setValue] = useState(0);
   const [refresh, setRefresh] = useState(false);
-  const [size, setSize] = useState(initialSize);
 
   const validateOption = (value: string) => {
     const tipDocumento = watch("tipDocument");
@@ -174,14 +214,15 @@ const UserEdit = ({ data, closeEdit }: Props) => {
       lastname: values.lastname,
       email: values.email,
       username: values.username,
+      empresasAsign: values.empresasAsign,
     };
 
     try {
       const response = await mutateEditUser({ id: data._id, body: sendUser });
       await mutateEditPassword({
         body: {
-          password: values.password!,
-          confirm_password: values.confirm_password!,
+          password: values.password,
+          confirm_password: values.confirm_password,
         },
         id: data._id,
       });
@@ -209,21 +250,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
     dispatch({ type: "INIT" });
   };
 
-  const handleTab = (newValue: number) => {
-    if (newValue === 4) {
-      setSize({
-        heigth: 800,
-        width: 1200,
-      });
-    } else if (newValue === 5) {
-      setSize({
-        width: 855,
-        heigth: 652,
-      });
-    } else {
-      setSize(initialSize);
-    }
-
+  const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
 
@@ -368,600 +395,649 @@ const UserEdit = ({ data, closeEdit }: Props) => {
       const idsModules = dataServicesUser.map((a: any) => a._id);
       setValueModel("modules", idsModules);
     }
-  }, [dataPermisosUser, dataServicesUser]);
-
-  console.log(data);
+  }, [dataPermisosUser, dataServicesUser, setValueModel]);
 
   return (
     <>
-      <DialogBasic
-        height={size.heigth}
-        width={size.width}
-        handleClose={closeEdit}
-      >
-        <DialogTitle>{`Editar ${data.name + " " + data.lastname}`}</DialogTitle>
-        <DialogBody>
-          <TabModal value={value} onChange={handleTab}>
-            <TabModalItem value={1}>General</TabModalItem>
-            <TabModalItem value={2}>Cambiar contraseña</TabModalItem>
-            <TabModalItem value={3}>Modulos</TabModalItem>
-            <TabModalItem value={4}>Permisos</TabModalItem>
-          </TabModal>
-          <form className="overflow-y-auto flex-[1_0_calc(100%-78px)]">
-            <TabModalPanel value={value} index={1}>
-              <div className="w-full flex flex-row mt-3">
-                <div className="w-1/3">
-                  <label>
-                    Rol: <strong className="text-primary">*</strong>
-                  </label>
-                </div>
-                <div className="w-1/3">
-                  <select
-                    autoFocus
-                    {...register("role", {
-                      required: {
-                        value: true,
-                        message: "Ingrese rol",
-                      },
-                    })}
-                    className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                      errors.role || isErrorRoles ? "border-primary" : ""
-                    }`}
-                  >
-                    {isLoadingRoles ? (
-                      <option>Cargando...</option>
-                    ) : (
-                      memoRoles.map((a) => {
-                        return (
-                          <option key={a._id} value={a._id}>
-                            {a.name}
-                          </option>
-                        );
-                      })
-                    )}
-                  </select>
-                  {errors.role && (
-                    <span className="text-primary">{errors.role.message}</span>
-                  )}
+      <DialogBeta open={dialogState.open && !dialogState.nameDialog}>
+        <DialogTitleBeta>{`Editar ${
+          data.name + " " + data.lastname
+        }`}</DialogTitleBeta>
+        <IconButton
+          aria-label="close"
+          onClick={() => dispatch({ type: "INIT" })}
+          sx={{
+            position: "absolute",
+            right: 8,
+            top: 8,
+            padding: "3px",
+            height: 18,
+            fontSize: "16px",
+            color: "#fff",
+          }}
+        >
+          <CloseIcon sx={{ width: "16px", height: "16px" }} />
+        </IconButton>
 
-                  {isErrorRoles && (
-                    <span className="text-primary">
-                      {errorRoles.response.data.message}
-                    </span>
-                  )}
-                </div>
-              </div>
+        <TabsModal aria-label="BasicTabs" value={value} onChange={handleChange}>
+          <TabModal label="General" index={0} />
+          <TabModal label="Cambiar contraseña" index={1} />
+          <TabModal label="Modulos" index={2} />
+          <TabModal label="Permisos" index={3} />
+          {data && data?.length > 0 && (
+            <TabModal label="Asignar empresas" index={4} />
+          )}
+        </TabsModal>
 
-              <div className="w-full flex flex-row mt-3">
-                <div className="w-1/3">
-                  <label>
-                    Tipo de documento:{" "}
-                    <strong className="text-primary">*</strong>
-                  </label>
-                </div>
-                <div className="w-1/3">
-                  <select
-                    {...register("tipDocument", {
-                      required: {
-                        value: true,
-                        message: "Ingrese tipo de documento",
-                      },
-                    })}
-                    className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                      errors.tipDocument ? "border-primary" : ""
-                    }`}
-                  >
-                    <option value="DNI">DNI</option>
-                  </select>
-                  {errors.tipDocument && (
-                    <span className="text-primary">
-                      {errors.tipDocument.message}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="w-full flex flex-row mt-3">
-                <div className="w-1/3">
-                  <label>
-                    Nro de documento:{" "}
-                    <strong className="text-primary">*</strong>
-                  </label>
-                </div>
-
-                <div className="w-1/3 flex flex-row gap-1">
-                  <div className="w-10/12 flex flex-col relative">
-                    <input
-                      {...register("nroDocument", {
-                        required: {
-                          value: true,
-                          message: "Ingrese nro de documento",
-                        },
-                        validate: validateOption,
-                        onChange: (e) => {
-                          const value: string = e.target.value;
-                          const maxLength = value.slice(0, 8);
-                          if (value.length > 8) {
-                            return setValueModel("nroDocument", maxLength);
-                          }
-
-                          if (value.length !== 8) {
-                            setValueModel("name", "");
-                            setValueModel("lastname", "");
-                          }
-                        },
-                      })}
-                      type="text"
-                      disabled={isFetchingPersona}
-                      className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                        errors.nroDocument ? "border-primary" : ""
-                      }`}
-                    />
-                    {errors.nroDocument && (
-                      <span className="text-primary">
-                        {errors.nroDocument.message}
-                      </span>
-                    )}
-                  </div>
-                  <div className="w-2/12 overflow-hidden relative">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (getValues("nroDocument").length !== 0) {
-                          return refetch();
-                        }
-
-                        toast.error("Ingrese nro de documento");
-                      }}
-                      className="flex items-center justify-center h-[20px] w-full hover:bg-hover text-center bg-default absolute"
-                    >
-                      {isFetchingPersona ? "..." : <FcSearch />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="w-full flex flex-row mt-3">
-                <div className="w-1/3">
-                  <label>
-                    Nombres: <strong className="text-primary">*</strong>
-                  </label>
-                </div>
-                <div className="w-1/3">
-                  <input
-                    {...register("name", {
-                      required: { value: true, message: "Ingrese nombres" },
-                      minLength: {
-                        value: 3,
-                        message: "Ingrese mínimo 3 caracteres",
-                      },
-                      maxLength: {
-                        value: 45,
-                        message: "Ingrese máximo 45 caracteres",
-                      },
-                    })}
-                    type="text"
-                    disabled={isFetchingPersona}
-                    className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                      errors.name ? "border-primary" : ""
-                    }`}
-                  />
-                  {errors.name && (
-                    <span className="text-primary">{errors.name.message}</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="w-full flex flex-row mt-3">
-                <div className="w-1/3">
-                  <label>
-                    Apellidos: <strong className="text-primary">*</strong>
-                  </label>
-                </div>
-                <div className="w-1/3">
-                  <input
-                    {...register("lastname", {
-                      required: { value: true, message: "Ingrese apellidos" },
-                      minLength: {
-                        value: 3,
-                        message: "Ingrese mínimo 3 caracteres",
-                      },
-                      maxLength: {
-                        value: 45,
-                        message: "Ingrese máximo 45 caracteres",
-                      },
-                    })}
-                    type="text"
-                    disabled={isFetchingPersona}
-                    className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                      errors.lastname ? "border-primary" : ""
-                    }`}
-                  />
-                  {errors.lastname && (
-                    <span className="text-primary">
-                      {errors.lastname.message}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="w-full flex flex-row mt-3">
-                <div className="w-1/3">
-                  <label>
-                    Correo: <strong className="text-primary">*</strong>
-                  </label>
-                </div>
-                <div className="w-1/3">
-                  <input
-                    {...register("email", {
-                      required: { value: true, message: "Ingrese correo" },
-                    })}
-                    type="text"
-                    className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                      errors.email ? "border-primary" : ""
-                    }`}
-                  />
-                  {errors.email && (
-                    <span className="text-primary">{errors.email.message}</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="w-full flex flex-row mt-3">
-                <div className="w-1/3">
-                  <label>
-                    Usuario: <strong className="text-primary">*</strong>
-                  </label>
-                </div>
-                <div className="w-1/3">
-                  <input
-                    {...register("username", {
-                      required: { value: true, message: "Ingrese usuario" },
-                      minLength: {
-                        value: 5,
-                        message: "Ingrese mínimo 5 caracteres",
-                      },
-                      maxLength: {
-                        value: 15,
-                        message: "Ingrese máximo 15 caracteres",
-                      },
-                    })}
-                    type="text"
-                    className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                      errors.username ? "border-primary" : ""
-                    }`}
-                  />
-                  {errors.username && (
-                    <span className="text-primary">
-                      {errors.username.message}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </TabModalPanel>
-            <TabModalPanel value={value} index={2}>
-              <div className="w-full flex flex-row mt-3">
-                <div className="w-1/3">
-                  <label>Contraseña:</label>
-                </div>
-                <div className="w-1/3">
-                  <input
-                    {...register("password", {
-                      minLength: {
-                        value: 8,
-                        message: "Ingrese mínimo 8 caracteres",
-                      },
-                      maxLength: {
-                        value: 25,
-                        message: "Ingrese máximo 25 caracteres",
-                      },
-                    })}
-                    type="text"
-                    className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                      errors.password ? "border-primary" : ""
-                    }`}
-                  />
-                  {errors.password && (
-                    <span className="text-primary">
-                      {errors.password.message}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="w-full flex flex-row mt-3">
-                <div className="w-1/3">
-                  <label>Confirmar contraseña:</label>
-                </div>
-                <div className="w-1/3">
-                  <input
-                    {...register("confirm_password", {
-                      minLength: {
-                        value: 8,
-                        message: "Ingrese mínimo 8 caracteres",
-                      },
-                      maxLength: {
-                        value: 25,
-                        message: "Ingrese máximo 25 caracteres",
-                      },
-                    })}
-                    type="text"
-                    className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                      errors.confirm_password ? "border-primary" : ""
-                    }`}
-                  />
-                  {errors.confirm_password && (
-                    <span className="text-primary">
-                      {errors?.confirm_password?.message}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </TabModalPanel>
-            <TabModalPanel value={value} index={3}>
-              <div className="mt-2">
-                {isLoadingModules || isLoadingServicesUser ? (
-                  "Cargando modulos..."
-                ) : isErrorModules ? (
-                  <label className="text-primary">
-                    {errorModules.response.data.message}
-                  </label>
-                ) : isErrorServicesUser ? (
-                  <label>{errorServicesUser.response.data.message}</label>
-                ) : (
-                  <>
-                    <div className="flex flex-row w-full justify-end pr-5">
-                      <label
-                        className="flex items-center gap-1 cursor-pointer text-textDefault select-none"
-                        onClick={handleRefreshModules}
-                      >
-                        <TfiReload
-                          className={`${
-                            refresh ? "animate-[spin_2s_linear_infinite]" : ""
-                          }`}
-                        />
-                        Refresh modulos
+        <DialogContentBeta>
+          <Box sx={{ width: "100%", padding: 0 }}>
+            <FormProvider {...methods}>
+              <form>
+                <TabModalPanel value={value} index={0}>
+                  <div className="w-full flex flex-row">
+                    <div className="w-1/3">
+                      <label>
+                        Rol: <strong className="text-primary">*</strong>
                       </label>
                     </div>
-
-                    <CheckBoxItem
-                      options={memoModulos}
-                      values={getResources_modules}
-                      handleChange={handleCheckServices}
-                    />
-                  </>
-                )}
-              </div>
-            </TabModalPanel>
-            <TabModalPanel value={value} index={4}>
-              <div className="mt-2 flex flex-col mr-[16px] mb-[10px]">
-                {isLoadingPermisos || isLoadingPermisosUser ? (
-                  "Cargando permisos disponiles..."
-                ) : isErrorPermisos ? (
-                  <label className="text-primary">
-                    {errorPermisos.response.data.message}
-                  </label>
-                ) : isErrorPermisosUser ? (
-                  <label>{errorPermisosUser.response.data.message}</label>
-                ) : (
-                  <>
-                    <div className="flex flex-row w-full justify-end pr-5">
-                      <label
-                        className="flex items-center gap-1 cursor-pointer text-textDefault select-none"
-                        onClick={handleRefresh}
-                      >
-                        <TfiReload
-                          className={`${
-                            refresh ? "animate-[spin_2s_linear_infinite]" : ""
-                          }`}
-                        />
-                        Refresh permisos
-                      </label>
-                    </div>
-
-                    <div className="flex w-1/2 mt-2">
-                      <input
-                        className="border w-1/12 focus:outline-none pl-1 rounded-sm cursor-pointer"
-                        type="checkbox"
-                        id="check-all"
-                        {...register("check-all", {
-                          onChange: (e) => {
-                            const value = e.target.checked;
-                            let keys: string[] = [];
-
-                            if (!value) {
-                              memoPermisos.map((a) => {
-                                //Desmarcamos todas las categorias
-                                setValueModel(`${a.category}`, false);
-
-                                //Buscamores todos los inputs x categoria
-                                const checkboxesCategory =
-                                  document.querySelectorAll(
-                                    `.group-${a.category}`
-                                  );
-
-                                //Desmarcamos inputs x categoria y almacenamos array para el estado
-                                Array.from(checkboxesCategory).map((a: any) => {
-                                  a.checked = false;
-                                  keys = [...keys, a.name];
-                                });
-                              });
-
-                              //Quitamos todos los permisos x categoria y actualizamos estado
-                              const filter = getResources_users.filter(
-                                (x) => !keys.includes(x)
-                              );
-                              setValueModel("resources", filter);
-                            } else {
-                              memoPermisos.map((a) => {
-                                //Marcamos todas las categorias
-                                setValueModel(`${a.category}`, true);
-
-                                //Buscamores todos los inputs x categoria
-                                const checkboxesCategory =
-                                  document.querySelectorAll(
-                                    `.group-${a.category}`
-                                  );
-
-                                //Marcamos inputs x categoria y almacenamos array para el estado
-                                Array.from(checkboxesCategory).map((a: any) => {
-                                  a.checked = true;
-                                  keys = [...keys, a.name];
-                                });
-                              });
-
-                              //Agregamos todos los permisos x categoria y actualizamos estado
-                              const filter = getResources_users.concat(keys);
-                              setValueModel("resources", filter);
-                            }
+                    <div className="w-1/3">
+                      <select
+                        autoFocus
+                        {...register("role", {
+                          required: {
+                            value: true,
+                            message: "Ingrese rol",
                           },
-                          value: false,
                         })}
-                      />
-
-                      <label
-                        htmlFor="check-all"
-                        className="ml-2 cursor-pointer select-none font-bold"
+                        className={`border w-full focus:outline-none pl-1 rounded-sm ${
+                          errors.role || isErrorRoles ? "border-primary" : ""
+                        }`}
                       >
-                        Marcar todos los permisos
+                        {isLoadingRoles ? (
+                          <option>Cargando...</option>
+                        ) : (
+                          memoRoles.map((a) => {
+                            return (
+                              <option key={a._id} value={a._id}>
+                                {a.name}
+                              </option>
+                            );
+                          })
+                        )}
+                      </select>
+                      {errors.role && (
+                        <span className="text-primary">
+                          {errors.role.message}
+                        </span>
+                      )}
+
+                      {isErrorRoles && (
+                        <span className="text-primary">
+                          {errorRoles.response.data.message}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="w-full flex flex-row mt-3">
+                    <div className="w-1/3">
+                      <label>
+                        Tipo de documento:{" "}
+                        <strong className="text-primary">*</strong>
+                      </label>
+                    </div>
+                    <div className="w-1/3">
+                      <select
+                        {...register("tipDocument", {
+                          required: {
+                            value: true,
+                            message: "Ingrese tipo de documento",
+                          },
+                        })}
+                        className={`border w-full focus:outline-none pl-1 rounded-sm ${
+                          errors.tipDocument ? "border-primary" : ""
+                        }`}
+                      >
+                        <option value="DNI">DNI</option>
+                      </select>
+                      {errors.tipDocument && (
+                        <span className="text-primary">
+                          {errors.tipDocument.message}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="w-full flex flex-row mt-3">
+                    <div className="w-1/3">
+                      <label>
+                        Nro de documento:{" "}
+                        <strong className="text-primary">*</strong>
                       </label>
                     </div>
 
-                    <div className="mt-2 grid grid-cols-[repeat(4,_1fr)] gap-[15px]">
-                      {memoPermisos.map((a, i: number) => {
-                        //Mostraremos todos los recursos x categoria
-                        const resources = memoPermisos.find(
-                          (b) => b.category === a.category
-                        ).resources;
+                    <div className="w-1/3 flex flex-row gap-1">
+                      <div className="w-10/12 flex flex-col relative">
+                        <input
+                          {...register("nroDocument", {
+                            required: {
+                              value: true,
+                              message: "Ingrese nro de documento",
+                            },
+                            validate: validateOption,
+                            onChange: (e) => {
+                              const value: string = e.target.value;
+                              const maxLength = value.slice(0, 8);
+                              if (value.length > 8) {
+                                return setValueModel("nroDocument", maxLength);
+                              }
 
-                        return (
-                          <div key={i} className="border p-2 pr-2">
-                            <div className="flex">
-                              <label
-                                htmlFor={`all-${a.category}`}
-                                className="flex items-center font-bold underline cursor-pointer gap-2"
-                              >
-                                <input
-                                  {...register(`${a.category}`, {
-                                    value: false,
-                                  })}
-                                  onChange={(e) => {
-                                    //Obtenemos todos los inputs con la misma clase de la categoria
-                                    const checkboxesResource =
+                              if (value.length !== 8) {
+                                setValueModel("name", "");
+                                setValueModel("lastname", "");
+                              }
+                            },
+                          })}
+                          type="text"
+                          disabled={isFetchingPersona}
+                          className={`border w-full focus:outline-none pl-1 rounded-sm ${
+                            errors.nroDocument ? "border-primary" : ""
+                          }`}
+                        />
+                        {errors.nroDocument && (
+                          <span className="text-primary">
+                            {errors.nroDocument.message}
+                          </span>
+                        )}
+                      </div>
+                      <div className="w-2/12 overflow-hidden relative">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (getValues("nroDocument").length !== 0) {
+                              return refetch();
+                            }
+
+                            toast.error("Ingrese nro de documento");
+                          }}
+                          className="flex items-center justify-center h-[20px] w-full hover:bg-hover text-center bg-default absolute"
+                        >
+                          {isFetchingPersona ? "..." : <FcSearch />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="w-full flex flex-row mt-3">
+                    <div className="w-1/3">
+                      <label>
+                        Nombres: <strong className="text-primary">*</strong>
+                      </label>
+                    </div>
+                    <div className="w-1/3">
+                      <input
+                        {...register("name", {
+                          required: { value: true, message: "Ingrese nombres" },
+                          minLength: {
+                            value: 3,
+                            message: "Ingrese mínimo 3 caracteres",
+                          },
+                          maxLength: {
+                            value: 45,
+                            message: "Ingrese máximo 45 caracteres",
+                          },
+                        })}
+                        type="text"
+                        disabled={isFetchingPersona}
+                        className={`border w-full focus:outline-none pl-1 rounded-sm ${
+                          errors.name ? "border-primary" : ""
+                        }`}
+                      />
+                      {errors.name && (
+                        <span className="text-primary">
+                          {errors.name.message}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="w-full flex flex-row mt-3">
+                    <div className="w-1/3">
+                      <label>
+                        Apellidos: <strong className="text-primary">*</strong>
+                      </label>
+                    </div>
+                    <div className="w-1/3">
+                      <input
+                        {...register("lastname", {
+                          required: {
+                            value: true,
+                            message: "Ingrese apellidos",
+                          },
+                          minLength: {
+                            value: 3,
+                            message: "Ingrese mínimo 3 caracteres",
+                          },
+                          maxLength: {
+                            value: 45,
+                            message: "Ingrese máximo 45 caracteres",
+                          },
+                        })}
+                        type="text"
+                        disabled={isFetchingPersona}
+                        className={`border w-full focus:outline-none pl-1 rounded-sm ${
+                          errors.lastname ? "border-primary" : ""
+                        }`}
+                      />
+                      {errors.lastname && (
+                        <span className="text-primary">
+                          {errors.lastname.message}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="w-full flex flex-row mt-3">
+                    <div className="w-1/3">
+                      <label>
+                        Correo: <strong className="text-primary">*</strong>
+                      </label>
+                    </div>
+                    <div className="w-1/3">
+                      <input
+                        {...register("email", {
+                          required: { value: true, message: "Ingrese correo" },
+                        })}
+                        type="text"
+                        className={`border w-full focus:outline-none pl-1 rounded-sm ${
+                          errors.email ? "border-primary" : ""
+                        }`}
+                      />
+                      {errors.email && (
+                        <span className="text-primary">
+                          {errors.email.message}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="w-full flex flex-row mt-3">
+                    <div className="w-1/3">
+                      <label>
+                        Usuario: <strong className="text-primary">*</strong>
+                      </label>
+                    </div>
+                    <div className="w-1/3">
+                      <input
+                        {...register("username", {
+                          required: { value: true, message: "Ingrese usuario" },
+                          minLength: {
+                            value: 5,
+                            message: "Ingrese mínimo 5 caracteres",
+                          },
+                          maxLength: {
+                            value: 15,
+                            message: "Ingrese máximo 15 caracteres",
+                          },
+                        })}
+                        type="text"
+                        className={`border w-full focus:outline-none pl-1 rounded-sm ${
+                          errors.username ? "border-primary" : ""
+                        }`}
+                      />
+                      {errors.username && (
+                        <span className="text-primary">
+                          {errors.username.message}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </TabModalPanel>
+                <TabModalPanel value={value} index={1}>
+                  <div className="w-full flex flex-row">
+                    <div className="w-1/3">
+                      <label>Contraseña:</label>
+                    </div>
+                    <div className="w-1/3">
+                      <input
+                        {...register("password", {
+                          minLength: {
+                            value: 8,
+                            message: "Ingrese mínimo 8 caracteres",
+                          },
+                          maxLength: {
+                            value: 25,
+                            message: "Ingrese máximo 25 caracteres",
+                          },
+                        })}
+                        type="text"
+                        className={`border w-full focus:outline-none pl-1 rounded-sm ${
+                          errors.password ? "border-primary" : ""
+                        }`}
+                      />
+                      {errors.password && (
+                        <span className="text-primary">
+                          {errors.password.message}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="w-full flex flex-row mt-3">
+                    <div className="w-1/3">
+                      <label>Confirmar contraseña:</label>
+                    </div>
+                    <div className="w-1/3">
+                      <input
+                        {...register("confirm_password", {
+                          minLength: {
+                            value: 8,
+                            message: "Ingrese mínimo 8 caracteres",
+                          },
+                          maxLength: {
+                            value: 25,
+                            message: "Ingrese máximo 25 caracteres",
+                          },
+                        })}
+                        type="text"
+                        className={`border w-full focus:outline-none pl-1 rounded-sm ${
+                          errors.confirm_password ? "border-primary" : ""
+                        }`}
+                      />
+                      {errors.confirm_password && (
+                        <span className="text-primary">
+                          {errors?.confirm_password?.message}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </TabModalPanel>
+                <TabModalPanel value={value} index={2}>
+                  <div className="">
+                    {isLoadingModules || isLoadingServicesUser ? (
+                      "Cargando modulos..."
+                    ) : isErrorModules ? (
+                      <label className="text-primary">
+                        {errorModules.response.data.message}
+                      </label>
+                    ) : isErrorServicesUser ? (
+                      <label>{errorServicesUser.response.data.message}</label>
+                    ) : (
+                      <>
+                        <div className="flex flex-row w-full justify-end pr-5">
+                          <label
+                            className="flex items-center gap-1 cursor-pointer text-textDefault select-none"
+                            onClick={handleRefreshModules}
+                          >
+                            <TfiReload
+                              className={`${
+                                refresh
+                                  ? "animate-[spin_2s_linear_infinite]"
+                                  : ""
+                              }`}
+                            />
+                            Refresh modulos
+                          </label>
+                        </div>
+
+                        <CheckBoxItem
+                          options={memoModulos}
+                          values={getResources_modules}
+                          handleChange={handleCheckServices}
+                        />
+                      </>
+                    )}
+                  </div>
+                </TabModalPanel>
+                <TabModalPanel value={value} index={3}>
+                  <div className="flex flex-col mr-[16px] mb-[10px]">
+                    {isLoadingPermisos || isLoadingPermisosUser ? (
+                      "Cargando permisos disponiles..."
+                    ) : isErrorPermisos ? (
+                      <label className="text-primary">
+                        {errorPermisos.response.data.message}
+                      </label>
+                    ) : isErrorPermisosUser ? (
+                      <label>{errorPermisosUser.response.data.message}</label>
+                    ) : (
+                      <>
+                        <div className="flex flex-row w-full justify-end pr-5">
+                          <label
+                            className="flex items-center gap-1 cursor-pointer text-textDefault select-none"
+                            onClick={handleRefresh}
+                          >
+                            <TfiReload
+                              className={`${
+                                refresh
+                                  ? "animate-[spin_2s_linear_infinite]"
+                                  : ""
+                              }`}
+                            />
+                            Refresh permisos
+                          </label>
+                        </div>
+
+                        <div className="flex w-1/2 mt-2">
+                          <input
+                            className="border w-1/12 focus:outline-none pl-1 rounded-sm cursor-pointer"
+                            type="checkbox"
+                            id="check-all"
+                            {...register("check-all", {
+                              onChange: (e) => {
+                                const value = e.target.checked;
+                                let keys: string[] = [];
+
+                                if (!value) {
+                                  memoPermisos.map((a) => {
+                                    //Desmarcamos todas las categorias
+                                    setValueModel(`${a.category}`, false);
+
+                                    //Buscamores todos los inputs x categoria
+                                    const checkboxesCategory =
                                       document.querySelectorAll(
                                         `.group-${a.category}`
                                       );
 
-                                    let keys: string[] = [];
+                                    //Desmarcamos inputs x categoria y almacenamos array para el estado
+                                    Array.from(checkboxesCategory).map(
+                                      (a: any) => {
+                                        a.checked = false;
+                                        keys = [...keys, a.name];
+                                      }
+                                    );
+                                  });
 
-                                    //Si el checkbox es true
-                                    if (e.target.checked) {
-                                      //Marcamos inputs x categoria y almacenamos array para el estado
-                                      Array.from(checkboxesResource).map(
-                                        (a: any) => {
-                                          a.checked = true;
-                                          keys = [...keys, a.name];
-                                        }
+                                  //Quitamos todos los permisos x categoria y actualizamos estado
+                                  const filter = getResources_users.filter(
+                                    (x) => !keys.includes(x)
+                                  );
+                                  setValueModel("resources", filter);
+                                } else {
+                                  memoPermisos.map((a) => {
+                                    //Marcamos todas las categorias
+                                    setValueModel(`${a.category}`, true);
+
+                                    //Buscamores todos los inputs x categoria
+                                    const checkboxesCategory =
+                                      document.querySelectorAll(
+                                        `.group-${a.category}`
                                       );
 
-                                      //Agregamos todos los permisos x categoria al estado resources
-                                      const append =
-                                        getResources_users.concat(keys);
-                                      setValueModel("resources", append);
+                                    //Marcamos inputs x categoria y almacenamos array para el estado
+                                    Array.from(checkboxesCategory).map(
+                                      (a: any) => {
+                                        a.checked = true;
+                                        keys = [...keys, a.name];
+                                      }
+                                    );
+                                  });
 
-                                      //CHECK-ALL
+                                  //Agregamos todos los permisos x categoria y actualizamos estado
+                                  const filter =
+                                    getResources_users.concat(keys);
+                                  setValueModel("resources", filter);
+                                }
+                              },
+                              value: false,
+                            })}
+                          />
 
-                                      //Revisar que todas las categorias son true para marcar true el check-all
-                                      const allCategorys = memoPermisos.map(
-                                        (x) => {
-                                          return document.querySelector(
-                                            `#all-${x.category}`
+                          <label
+                            htmlFor="check-all"
+                            className="ml-2 cursor-pointer select-none font-bold"
+                          >
+                            Marcar todos los permisos
+                          </label>
+                        </div>
+
+                        <div className="mt-2 grid grid-cols-[repeat(4,_1fr)] gap-[15px]">
+                          {memoPermisos.map((a, i: number) => {
+                            //Mostraremos todos los recursos x categoria
+                            const resources = memoPermisos.find(
+                              (b) => b.category === a.category
+                            ).resources;
+
+                            return (
+                              <div key={i} className="border p-2 pr-2">
+                                <div className="flex">
+                                  <label
+                                    htmlFor={`all-${a.category}`}
+                                    className="flex items-center font-bold underline cursor-pointer gap-2"
+                                  >
+                                    <input
+                                      {...register(`${a.category}`, {
+                                        value: false,
+                                      })}
+                                      onChange={(e) => {
+                                        //Obtenemos todos los inputs con la misma clase de la categoria
+                                        const checkboxesResource =
+                                          document.querySelectorAll(
+                                            `.group-${a.category}`
                                           );
+
+                                        let keys: string[] = [];
+
+                                        //Si el checkbox es true
+                                        if (e.target.checked) {
+                                          //Marcamos inputs x categoria y almacenamos array para el estado
+                                          Array.from(checkboxesResource).map(
+                                            (a: any) => {
+                                              a.checked = true;
+                                              keys = [...keys, a.name];
+                                            }
+                                          );
+
+                                          //Agregamos todos los permisos x categoria al estado resources
+                                          const append =
+                                            getResources_users.concat(keys);
+                                          setValueModel("resources", append);
+
+                                          //CHECK-ALL
+
+                                          //Revisar que todas las categorias son true para marcar true el check-all
+                                          const allCategorys = memoPermisos.map(
+                                            (x) => {
+                                              return document.querySelector(
+                                                `#all-${x.category}`
+                                              );
+                                            }
+                                          ) as HTMLInputElement[];
+
+                                          //Buscamos si todas las categorias son trues
+                                          const categorysCheckeds = Array.from(
+                                            allCategorys
+                                          ).every(
+                                            (checkbox) => checkbox.checked
+                                          );
+
+                                          //Si son trues actualizamos el estado de check-all como true
+                                          if (categorysCheckeds)
+                                            setValueModel("check-all", true);
+                                        } else {
+                                          //Desmarcamos inputs x categoria y almacenamos array para el estado
+                                          Array.from(checkboxesResource).map(
+                                            (a: any) => {
+                                              a.checked = false;
+                                              keys = [...keys, a.name];
+                                            }
+                                          );
+
+                                          //Quitamos todos los permisos x categoria y actualizamos estado
+                                          const filter =
+                                            getResources_users.filter(
+                                              (x) => !keys.includes(x)
+                                            );
+                                          setValueModel("resources", filter);
+
+                                          //CHECK-ALL
+
+                                          //Si se desmarca una sola categoria el estado check-all sera false
+                                          setValueModel("check-all", false);
                                         }
-                                      ) as HTMLInputElement[];
+                                      }}
+                                      className="border w-[21px] h-[18px] focus:outline-none pl-1 rounded-sm cursor-pointer"
+                                      type="checkbox"
+                                      id={`all-${a.category}`}
+                                    />
 
-                                      //Buscamos si todas las categorias son trues
-                                      const categorysCheckeds = Array.from(
-                                        allCategorys
-                                      ).every((checkbox) => checkbox.checked);
-
-                                      //Si son trues actualizamos el estado de check-all como true
-                                      if (categorysCheckeds)
-                                        setValueModel("check-all", true);
-                                    } else {
-                                      //Desmarcamos inputs x categoria y almacenamos array para el estado
-                                      Array.from(checkboxesResource).map(
-                                        (a: any) => {
-                                          a.checked = false;
-                                          keys = [...keys, a.name];
-                                        }
-                                      );
-
-                                      //Quitamos todos los permisos x categoria y actualizamos estado
-                                      const filter = getResources_users.filter(
-                                        (x) => !keys.includes(x)
-                                      );
-                                      setValueModel("resources", filter);
-
-                                      //CHECK-ALL
-
-                                      //Si se desmarca una sola categoria el estado check-all sera false
-                                      setValueModel("check-all", false);
-                                    }
-                                  }}
-                                  className="border w-[21px] h-[18px] focus:outline-none pl-1 rounded-sm cursor-pointer"
-                                  type="checkbox"
-                                  id={`all-${a.category}`}
+                                    {a.category}
+                                  </label>
+                                </div>
+                                <CheckBoxItem
+                                  className="mt-2"
+                                  options={resources}
+                                  values={getResources_users}
+                                  handleChange={handleCheckResources}
+                                  category={a.category}
                                 />
-
-                                {a.category}
-                              </label>
-                            </div>
-                            <CheckBoxItem
-                              className="mt-2"
-                              options={resources}
-                              values={getResources_users}
-                              handleChange={handleCheckResources}
-                              category={a.category}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </TabModalPanel>
+                {data && data?.length > 0 && (
+                  <TabModalPanel value={value} index={4}>
+                    <UserEditAsignarEmpresa
+                      isLoading={isLoadingAsignEmpresas}
+                      error={error}
+                    />
+                  </TabModalPanel>
                 )}
-              </div>
-            </TabModalPanel>
-          </form>
-        </DialogBody>
-        <DialogButtons>
-          <button
+              </form>
+            </FormProvider>
+          </Box>
+        </DialogContentBeta>
+        <DialogActionsBeta>
+          <Button
+            size="small"
+            className="text-textDefault"
+            variant="text"
+            color="secondary"
             onClick={closeModal}
-            className="min-w-[84px] min-h-[24px] mr-[8px] text-[#066397] cursor-pointer bg-transparent border border-solid rounded-md"
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             disabled={
+              !isDirty ||
+              !isValid ||
               isLoadingEdit ||
               isLoadingPassword ||
               isLoadingServices ||
               isLoadingResources
             }
-            onClick={handleSubmit(onSubmit)}
-            className={`min-w-[84px] min-h-[24px] text-white cursor-pointer  border border-solid rounded-md ${
-              isLoadingEdit ||
-              isLoadingPassword ||
-              isLoadingServices ||
-              isLoadingResources
-                ? "bg-red-500"
-                : "bg-primary"
-            }`}
+            onClick={(e) => handleSubmit(onSubmit)(e)}
+            size="small"
+            variant="contained"
+            color="primary"
           >
             OK
-          </button>
-        </DialogButtons>
-      </DialogBasic>
+          </Button>
+        </DialogActionsBeta>
+      </DialogBeta>
     </>
   );
 };

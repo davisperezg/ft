@@ -1,12 +1,13 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useContext, useEffect, useRef, useState } from "react";
 import logo from "../../assets/logo_systemfact.png";
 import { ModalContext } from "../../context/modalContext";
 import { storage } from "../../utils/storage";
 
 const Header = ({ result }: any) => {
-  const { setUserGlobal } = useContext(ModalContext);
+  const { setUserGlobal, userGlobal } = useContext(ModalContext);
   const [isDropdown, setDropdown] = useState(false);
   const labelRef = useRef<HTMLLabelElement>(null);
+  const [selectedOption, setSelectedOption] = useState("");
 
   const closeApp = () => {
     storage.clear("SESSION");
@@ -47,8 +48,93 @@ const Header = ({ result }: any) => {
   useEffect(() => {
     if (result?.data) {
       setUserGlobal(result?.data);
+
+      if (sessionStorage.getItem("empresa")) {
+        const empresa = JSON.parse(String(sessionStorage.getItem("empresa")));
+
+        if (!selectedOption) {
+          setSelectedOption(
+            `idEmpresa:${empresa?.id},idEstablecimiento:${empresa?.establecimiento?.id}`
+          );
+        }
+
+        setUserGlobal({
+          ...result?.data,
+          empresaActual: empresa ?? null,
+        });
+      } else {
+        if (result?.data?.empresas?.length > 0) {
+          const empresa = {
+            id: result?.data?.empresas[0].id,
+            logo: result?.data?.empresas[0].logo,
+            nombre_comercial: result?.data?.empresas[0].nombre_comercial,
+            ruc: result?.data?.empresas[0].ruc,
+            establecimiento: result?.data?.empresas[0].establecimientos[0],
+          };
+          setSelectedOption(
+            `idEmpresa:${empresa?.id},idEstablecimiento:${empresa?.establecimiento?.id}`
+          );
+          setUserGlobal({
+            ...result?.data,
+            empresa,
+          });
+          sessionStorage.setItem("empresa", JSON.stringify(empresa));
+        }
+      }
     }
-  }, [result]);
+  }, [result, selectedOption, setUserGlobal]);
+
+  const obtenerValoresSelect = (selectedValue: string) => {
+    // Dividir el string en partes usando la coma como separador
+    const partes: string[] = selectedValue.split(",");
+
+    // Inicializar objetos para almacenar los valores
+    const valores: Record<string, number> = {};
+
+    // Iterar sobre las partes
+    partes.forEach((parte: string) => {
+      // Dividir cada parte en clave y valor usando ":" como separador
+      const [clave, valor] = parte.split(":");
+
+      // Almacenar el valor en el objeto
+      valores[clave] = parseInt(valor); // Convertir el valor a un número entero
+    });
+
+    // Retorna los valores específicos
+    return valores;
+  };
+
+  const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const selectedValue = event.target.value;
+
+    const valores = obtenerValoresSelect(selectedValue);
+    const idEmpresa = valores.idEmpresa;
+    const idEstablecimiento = valores.idEstablecimiento;
+
+    const getEmpresa = userGlobal?.empresas.find(
+      (empresa: any) => empresa.id === idEmpresa
+    );
+    const getEstablecimiento = getEmpresa?.establecimientos.find(
+      (est: any) => est.id === idEstablecimiento
+    );
+
+    const empresa = {
+      id: getEmpresa?.id,
+      logo: getEmpresa?.logo,
+      nombre_comercial: getEmpresa?.nombre_comercial,
+      ruc: getEmpresa?.ruc,
+      establecimiento: getEstablecimiento,
+    };
+
+    if (empresa) {
+      const cambiar = confirm("Estas seguro que quieres cambiar de sucursal?");
+      if (cambiar) {
+        setSelectedOption(selectedValue);
+        sessionStorage.setItem("empresa", JSON.stringify(empresa));
+        location.reload();
+      }
+    }
+  };
 
   return (
     <>
@@ -57,6 +143,44 @@ const Header = ({ result }: any) => {
           <img src={logo} width={130} height={50} />
         </h1>
         <div className="flex flex-row select-none">
+          {result?.data?.empresas?.length === 0 && (
+            <div className="mr-[20px]">
+              <span className="text-primary font-medium">
+                Usted no pertenece a ninguna empresa.
+              </span>
+            </div>
+          )}
+          {result?.data?.empresas?.length > 0 && (
+            <>
+              <div className="mr-[20px] w-[150px]">
+                <select
+                  className="w-full cursor-pointer border outline-none"
+                  onChange={handleSelectChange}
+                  value={selectedOption}
+                >
+                  {userGlobal?.empresas?.map((item: any) => {
+                    return (
+                      <optgroup
+                        key={item.ruc}
+                        label={`${item.nombre_comercial}`}
+                      >
+                        {item.establecimientos.map((est: any) => {
+                          return (
+                            <option
+                              key={est.id}
+                              disabled={!est.estado}
+                              value={`idEmpresa:${item.id},idEstablecimiento:${est.id}`}
+                            >{`${est.codigo} - ${est.denominacion}`}</option>
+                          );
+                        })}
+                      </optgroup>
+                    );
+                  })}
+                </select>
+              </div>
+            </>
+          )}
+
           <div>
             <label className="mr-[10px] dark:text-white font-bold">
               17:52:46 (-5)

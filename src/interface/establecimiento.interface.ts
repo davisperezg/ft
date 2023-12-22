@@ -17,6 +17,7 @@ export interface IEstablecimiento {
   logo?: FileList;
   status?: boolean;
   new?: boolean;
+  estado?: boolean;
 }
 
 export interface IEstablecimientoExtendida

@@ -44,7 +44,7 @@ const EmpresaCreate = () => {
   const { mutateAsync: mutateEmpresaAsync, isLoading: isLoadingEmpresa } =
     usePostEmpresa();
 
-  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
 

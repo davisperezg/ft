@@ -1,6 +1,31 @@
 import { IEmpresa } from "../interface/empresa.interface";
+import { IUser, IUserWithPassword } from "../interface/user.interface";
 
 export const initialMenuContext = {};
+
+export const FORM_EDIT_INITIAL_USER: IUser = {
+  name: "",
+  lastname: "",
+  tipDocument: "DNI",
+  nroDocument: "",
+  email: "",
+  username: "",
+  role: "null",
+  empresasAsign: [],
+};
+
+export const FORM_INITIAL_USER: IUserWithPassword = {
+  name: "",
+  lastname: "",
+  tipDocument: "DNI",
+  nroDocument: "",
+  email: "",
+  password: "",
+  confirm_password: "",
+  username: "",
+  role: "null",
+  empresasAsign: [],
+};
 
 export const FORM_INITIAL_EMPRESA: IEmpresa = {
   logo: undefined,

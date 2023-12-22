@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { IError } from "../interface/error.interface";
 import { IServer } from "../interface/server.interface";
-import { IEmpresa } from "../interface/empresa.interface";
+import { IEmpresa, IEmpresaAsign } from "../interface/empresa.interface";
 import {
   disableEmpresa,
   enableEmpresa,
@@ -10,6 +10,7 @@ import {
   getEmpresas,
   getEstablecimientosByEmpresa,
   getUsersEmpresas,
+  getlistToAsignEmpresasByIdPartner,
   postNewEmpresa,
   putEmpresa,
 } from "../api/empresa";
@@ -22,6 +23,7 @@ const KEY_GET_EMPRESA = "get_empresa";
 const KEY_USERS_EMPRESA = "users_empresas";
 const KEY_ESTABLECIMIENTO = "get_empresa_establecimientos";
 const KEY_DOCUMENTO = "get_empresa_documentos";
+const KEY_ASIGN = "get_empresa_asign";
 
 export const useEmpresas = () => {
   return useQuery<IEmpresa[], IError>({
@@ -58,6 +60,14 @@ export const useUsersEmpresa = () => {
   return useQuery<IUserEmpresa[], IError>({
     queryKey: [KEY_USERS_EMPRESA],
     queryFn: async () => await getUsersEmpresas(),
+  });
+};
+
+export const useAsignEmpresasByIdPartner = (id: string) => {
+  return useQuery<IEmpresaAsign[], IError>({
+    queryKey: [KEY_ASIGN, id],
+    queryFn: async () => await getlistToAsignEmpresasByIdPartner(id),
+    enabled: !!id,
   });
 };
 

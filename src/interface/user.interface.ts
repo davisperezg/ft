@@ -1,6 +1,8 @@
-import { IEmpresa } from "./empresa.interface";
+import { IEmpresa, IEmpresaAsign } from "./empresa.interface";
 import { IRol } from "./rol.interface";
 
+type IRolWithoutCreator = Omit<IRol, "creator">;
+//Partial<IRol & IRolWithoutCreator> | string;
 export interface IUser {
   id?: number;
   _id?: string;
@@ -9,14 +11,18 @@ export interface IUser {
   tipDocument: string;
   nroDocument: string;
   email: string;
-  password?: string;
-  confirm_password?: string;
   username: string;
   status?: boolean;
-  role: Omit<IRol, "creator"> | string;
+  role: Partial<IRolWithoutCreator> | string;
   creator?: Omit<IUser, "creator"> | string;
   createdAt?: Date;
   restoredAt?: Date;
   deletedAt?: Date;
   updatedAt?: Date;
+  empresasAsign?: IEmpresaAsign[];
+}
+
+export interface IUserWithPassword extends IUser {
+  password: string;
+  confirm_password: string;
 }

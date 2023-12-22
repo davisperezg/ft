@@ -37,3 +37,15 @@ export interface IEmpresa {
   distrito?: SelectOption;
   tip_documento?: number;
 }
+
+interface IEstablecimientoAsign extends Partial<IEstablecimiento> {
+  checked: boolean;
+}
+
+export interface IEmpresaAsign
+  extends Pick<IEmpresa, "id" | "ruc" | "razon_social" | "estado"> {
+  checked: boolean;
+  establecimientos: IEstablecimientoAsign[];
+}
+
+//"id" | "codigo" | "denominacion" | "estado"
