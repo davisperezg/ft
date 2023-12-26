@@ -1,4 +1,4 @@
-import { IPermisos } from "../../interface/permisos..interface";
+import { IPermisos } from "../../interface/permisos.interface";
 import { useMemo, useEffect } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import LoadingTotal from "../Loading/LoadingTotal";

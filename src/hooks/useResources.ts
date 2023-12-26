@@ -17,7 +17,7 @@ import { getModulesXUser, postServicesXUser } from "../api/modulos-system";
 import { ServicesInput } from "../interface/modules-input.interface";
 import { ResourcesInput } from "../interface/resources-input.interface";
 import { IServer } from "../interface/server.interface";
-import { IPermisos } from "../interface/permisos..interface";
+import { IPermisos } from "../interface/permisos.interface";
 
 const KEY = "resources";
 const KEY_USERS = "resources_availables";

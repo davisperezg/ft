@@ -1,19 +1,22 @@
 import { ModalContext } from "../../context/modalContext";
 import { usePostResources } from "../../hooks/useResources";
-import DialogBasic from "../Dialog/DialogBasic";
-import DialogBody from "../Dialog/DialogBody";
-import DialogTitle from "../Dialog/DialogTitle";
 import { useContext, useMemo } from "react";
 import { useGroups } from "../../hooks/useGroups";
-import { IPermisos } from "../../interface/permisos..interface";
+import { IPermisos } from "../../interface/permisos.interface";
 import { SubmitHandler, useForm } from "react-hook-form";
-import DialogButtons from "../Dialog/DialogButtons";
 import { toast } from "react-toastify";
 import { isError } from "../../utils/functions";
 import { toastError } from "../Toast/ToastNotify";
+import { DialogActionsBeta } from "../Dialog/_DialogActions";
+import { DialogContentBeta } from "../Dialog/_DialogContent";
+import { DialogTitleBeta } from "../Dialog/_DialogTitle";
+import { DialogBeta } from "../Dialog/DialogBasic";
+import IconButton from "@mui/material/IconButton";
+import CloseIcon from "@mui/icons-material/Close";
+import Button from "@mui/material/Button";
 
 const ResourceCreate = () => {
-  const { dispatch } = useContext(ModalContext);
+  const { dispatch, dialogState } = useContext(ModalContext);
 
   const { mutateAsync, isLoading: isLoadingPost } = usePostResources();
 
@@ -33,18 +36,21 @@ const ResourceCreate = () => {
     return [{ name: "[SELECCIONE CATEGORÍA]", _id: "null" }];
   }, [dataGroups]);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<IPermisos>({
+  const methods = useForm<IPermisos>({
     defaultValues: {
       name: "",
       description: "",
       key: "",
       group_resource: memoGroups[0]._id as string,
     },
+    mode: "onChange",
   });
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isDirty, isValid },
+  } = methods;
 
   const onSubmit: SubmitHandler<IPermisos> = async (values) => {
     try {
@@ -60,10 +66,26 @@ const ResourceCreate = () => {
 
   return (
     <>
-      <DialogBasic>
-        <DialogTitle>Nuevo Permiso</DialogTitle>
-        <DialogBody>
-          <form className="overflow-y-auto flex-[1_0_calc(100%-78px)]">
+      <DialogBeta open={dialogState.open}>
+        <DialogTitleBeta>Nuevo Permiso</DialogTitleBeta>
+        <IconButton
+          aria-label="close"
+          onClick={() => dispatch({ type: "INIT" })}
+          sx={{
+            position: "absolute",
+            right: 8,
+            top: 8,
+            padding: "3px",
+            height: 18,
+            fontSize: "16px",
+            color: "#fff",
+          }}
+        >
+          <CloseIcon sx={{ width: "16px", height: "16px" }} />
+        </IconButton>
+
+        <DialogContentBeta>
+          <form className="ml-3">
             <div className="flex flex-row mt-3">
               <div className="w-1/3">
                 <label>
@@ -198,27 +220,29 @@ const ResourceCreate = () => {
               </div>
             </div>
           </form>
-        </DialogBody>
-        <DialogButtons>
-          <button
-            type="button"
+        </DialogContentBeta>
+
+        <DialogActionsBeta>
+          <Button
+            size="small"
+            className="text-textDefault"
+            variant="text"
+            color="secondary"
             onClick={() => dispatch({ type: "INIT" })}
-            className="min-w-[84px] min-h-[24px] mr-[8px] text-[#066397] cursor-pointer bg-transparent border border-solid rounded-md"
           >
             Cancelar
-          </button>
-          <button
-            disabled={isLoadingPost}
-            type="submit"
-            onClick={handleSubmit(onSubmit)}
-            className={`min-w-[84px] min-h-[24px] text-white cursor-pointer  border border-solid rounded-md ${
-              isLoadingPost ? "bg-red-500" : "bg-primary"
-            }`}
+          </Button>
+          <Button
+            disabled={!isDirty || !isValid || isLoadingPost}
+            onClick={(e) => handleSubmit(onSubmit)(e)}
+            size="small"
+            variant="contained"
+            color="primary"
           >
             OK
-          </button>
-        </DialogButtons>
-      </DialogBasic>
+          </Button>
+        </DialogActionsBeta>
+      </DialogBeta>
     </>
   );
 };

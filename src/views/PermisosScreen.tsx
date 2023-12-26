@@ -3,7 +3,7 @@ import ResourceCreate from "../components/Resources/ResourceCreate";
 import ResourceEdit from "../components/Resources/ResourceEdit";
 import ResourceList from "../components/Resources/ResourceList";
 import { ModalContext } from "../context/modalContext";
-import { IPermisos } from "../interface/permisos..interface";
+import { IPermisos } from "../interface/permisos.interface";
 import { DialogActionKind } from "../reducers/dialogReducer";
 
 const PermisosScreen = () => {

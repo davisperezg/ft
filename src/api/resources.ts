@@ -1,5 +1,5 @@
 import axios from "axios";
-import { IPermisos } from "../interface/permisos..interface";
+import { IPermisos } from "../interface/permisos.interface";
 import { ResourcesInput } from "../interface/resources-input.interface";
 import { IServer } from "../interface/server.interface";
 import { BASE_API } from "../utils/const";
