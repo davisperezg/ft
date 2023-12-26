@@ -22,6 +22,7 @@ import InputCheckBox from "../Material/Input/InputCheckBox";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { schemaFormModulo } from "../../utils/yup_validations";
 import { IMenuSystem } from "../../interface/menu_system.interface";
+import { TfiReload } from "react-icons/tfi";
 
 interface Props {
   data?: any;
@@ -30,6 +31,7 @@ interface Props {
 
 const ModulosSystemEdit = ({ data, closeEdit }: Props) => {
   const { dispatch, dialogState } = useContext(ModalContext);
+  const [isRefreshMenus, setRefreshMenus] = useState(false);
 
   const {
     data: dataMenus,
@@ -52,6 +54,7 @@ const ModulosSystemEdit = ({ data, closeEdit }: Props) => {
     control,
     register,
     handleSubmit,
+    setValue: setValueModel,
     formState: { errors, isDirty, isValid },
   } = methods;
 
@@ -70,6 +73,17 @@ const ModulosSystemEdit = ({ data, closeEdit }: Props) => {
   };
 
   const { mutateAsync, isLoading: isLoadingEdit } = useEditModule();
+
+  const handleRefreshMenus = () => {
+    setRefreshMenus(true);
+    setTimeout(() => {
+      setValueModel(
+        "menu",
+        data.menu.map((a: any) => a._id)
+      );
+      setRefreshMenus(false);
+    }, 1000);
+  };
 
   const onSubmit: SubmitHandler<IModulosSystem> = async (values) => {
     try {
@@ -177,6 +191,20 @@ const ModulosSystemEdit = ({ data, closeEdit }: Props) => {
               </div>
             </TabModalPanel>
             <TabModalPanel value={value} index={1}>
+              <div className="flex flex-row w-full justify-end">
+                <label
+                  className="flex items-center gap-1 cursor-pointer text-textDefault select-none"
+                  onClick={handleRefreshMenus}
+                >
+                  <TfiReload
+                    className={`${
+                      isRefreshMenus ? "animate-[spin_2s_linear_infinite]" : ""
+                    }`}
+                  />
+                  Refrescar menus
+                </label>
+              </div>
+
               <div className="flex flex-col">
                 <strong>Menus disponibles</strong>
               </div>
