@@ -14,13 +14,8 @@ interface Props {
   category?: string;
 }
 
-const CheckBoxItem = ({
-  options,
-  values,
-  handleChange,
-  className = "",
-  category,
-}: Props) => {
+const CheckBoxItem = (props: Props) => {
+  const { options, values, handleChange, className = "", category } = props;
   const [valuesLocal, setValues] = useState<string[]>([]);
 
   const itemsFiltered = useMemo(() => {

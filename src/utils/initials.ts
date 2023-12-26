@@ -1,7 +1,14 @@
 import { IEmpresa } from "../interface/empresa.interface";
+import { IRol } from "../interface/rol.interface";
 import { IUser, IUserWithPassword } from "../interface/user.interface";
 
 export const initialMenuContext = {};
+
+export const FORM_INITIAL_ROL: IRol = {
+  name: "",
+  description: "",
+  module: [],
+};
 
 export const FORM_EDIT_INITIAL_USER: IUser = {
   name: "",

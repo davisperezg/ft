@@ -1,40 +1,31 @@
 import { useContext, useMemo, useState } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { SubmitHandler, useForm, Controller } from "react-hook-form";
 import { toast } from "react-toastify";
 import { ModalContext } from "../../context/modalContext";
-import { useModules, useModulesAvailables } from "../../hooks/useModuleS";
+import { useModulesAvailables } from "../../hooks/useModuleS";
 import { usePostRol } from "../../hooks/useRoles";
 import { IRol } from "../../interface/rol.interface";
 import { isError } from "../../utils/functions";
-import DialogBasic from "../Dialog/DialogBasic";
-import DialogBody from "../Dialog/DialogBody";
-import DialogButtons from "../Dialog/DialogButtons";
-import DialogTitle from "../Dialog/DialogTitle";
-import CheckBoxItem from "../Input/CheckBoxItem";
-import TabModal from "../Tab/Modal/TabModal";
-import TabModalItem from "../Tab/Modal/TabModalItem";
-import TabModalPanel from "../Tab/Modal/TabModalPanel";
-import ToastError from "../Toast/ToastError";
+import TabsModal from "../Material/Tabs/TabsModal";
+import TabModal from "../Material/Tab/TabModal";
+import TabModalPanel from "../Material/Tab/TabModalPanel";
 import { toastError } from "../Toast/ToastNotify";
+import { DialogContentBeta } from "../Dialog/_DialogContent";
+import { DialogTitleBeta } from "../Dialog/_DialogTitle";
+import { DialogActionsBeta } from "../Dialog/_DialogActions";
+import { DialogBeta } from "../Dialog/DialogBasic";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import CloseIcon from "@mui/icons-material/Close";
+import { FORM_INITIAL_ROL } from "../../utils/initials";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { schemaFormRol } from "../../utils/yup_validations";
+import InputCheckBox from "../Material/Input/InputCheckBox";
 
 const RolCreate = () => {
-  const [value, setValue] = useState(1);
-  const handleTab = (newValue: number) => setValue(newValue);
-  const { dispatch } = useContext(ModalContext);
-
-  const {
-    mutateAsync,
-    error: errorPost,
-    isLoading: isLoadingPost,
-    isError: isErrorPost,
-  } = usePostRol();
-
-  //CRUD
-  // const {
-  //   data: dataModules,
-  //   error: errorModules,
-  //   isLoading: isLoadingModules,
-  // } = useModules();
+  const [value, setValue] = useState(0);
+  const { dispatch, dialogState } = useContext(ModalContext);
+  const { mutateAsync, isLoading: isLoadingPost } = usePostRol();
 
   const {
     data: dataModules,
@@ -42,21 +33,22 @@ const RolCreate = () => {
     isLoading: isLoadingModules,
   } = useModulesAvailables();
 
-  const {
-    register,
-    handleSubmit,
-    setValue: setValueModel,
-    formState: { errors },
-    watch,
-  } = useForm<IRol>({
-    defaultValues: {
-      name: "",
-      description: "",
-      module: [],
-    },
+  const methods = useForm<IRol>({
+    defaultValues: FORM_INITIAL_ROL,
+    resolver: yupResolver(schemaFormRol),
+    mode: "onChange",
   });
 
-  const getModulos = watch("module") as string[];
+  const {
+    control,
+    register,
+    handleSubmit,
+    formState: { errors, isDirty, isValid },
+  } = methods;
+
+  const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setValue(newValue);
+  };
 
   const onSubmit: SubmitHandler<IRol> = async (values) => {
     try {
@@ -78,20 +70,35 @@ const RolCreate = () => {
     return [];
   }, [dataModules]);
 
-  const handleCheck = (values: string[]) => setValueModel("module", values);
-
   return (
     <>
-      <DialogBasic height={450} width={550}>
-        <DialogTitle>Nuevo Rol</DialogTitle>
-        <DialogBody>
-          <TabModal value={value} onChange={handleTab}>
-            <TabModalItem value={1}>General</TabModalItem>
-            <TabModalItem value={2}>Modulos</TabModalItem>
-          </TabModal>
+      <DialogBeta open={dialogState.open}>
+        <DialogTitleBeta>Nuevo rol</DialogTitleBeta>
+        <IconButton
+          aria-label="close"
+          onClick={() => dispatch({ type: "INIT" })}
+          sx={{
+            position: "absolute",
+            right: 8,
+            top: 8,
+            padding: "3px",
+            height: 18,
+            fontSize: "16px",
+            color: "#fff",
+          }}
+        >
+          <CloseIcon sx={{ width: "16px", height: "16px" }} />
+        </IconButton>
+
+        <TabsModal aria-label="BasicTabs" value={value} onChange={handleChange}>
+          <TabModal label="General" index={0} />
+          <TabModal label="Modulos" index={1} />
+        </TabsModal>
+
+        <DialogContentBeta>
           <form>
-            <TabModalPanel value={value} index={1}>
-              <div className="flex flex-row mt-3">
+            <TabModalPanel value={value} index={0}>
+              <div className="flex flex-row">
                 <div className="w-1/3">
                   <label>
                     Nombre: <strong className="text-primary">*</strong>
@@ -99,17 +106,7 @@ const RolCreate = () => {
                 </div>
                 <div className="w-2/3 flex flex-col">
                   <input
-                    {...register("name", {
-                      required: { value: true, message: "Ingrese nombre" },
-                      minLength: {
-                        value: 3,
-                        message: "Ingrese mínimo 3 caracteres",
-                      },
-                      maxLength: {
-                        value: 45,
-                        message: "Ingrese máximo 45 caracteres",
-                      },
-                    })}
+                    {...register("name")}
                     autoFocus
                     type="text"
                     className={`border w-8/12 focus:outline-none pl-1 rounded-sm ${
@@ -128,12 +125,7 @@ const RolCreate = () => {
                 </div>
                 <div className="w-2/3 flex flex-col">
                   <textarea
-                    {...register("description", {
-                      maxLength: {
-                        value: 150,
-                        message: "Ingrese máximo 150 caracteres permitidos",
-                      },
-                    })}
+                    {...register("description")}
                     cols={10}
                     rows={8}
                     className={`border w-8/12 focus:outline-none pl-1 rounded-sm ${
@@ -148,55 +140,87 @@ const RolCreate = () => {
                 </div>
               </div>
             </TabModalPanel>
-            <TabModalPanel value={value} index={2}>
-              <div className="mt-3 flex flex-col">
+            <TabModalPanel value={value} index={1}>
+              <div className="flex flex-col">
                 <strong>Modulos disponibles</strong>
-                {getModulos.length === 0 && (
-                  <span className="text-primary">
-                    Seleccione mínimo 1 módulo disponible
-                  </span>
-                )}
               </div>
 
-              {errorModules ? (
-                <label>{errorModules.response.data.message}</label>
-              ) : (
-                <></>
-              )}
               {isLoadingModules ? (
                 <span>Cargando modulos...</span>
+              ) : errorModules ? (
+                <span className="text-red-500 w-full">
+                  {errorModules.response.data.message}
+                </span>
               ) : (
-                <div className="flex mt-3">
+                <div className="flex">
                   <div className="w-1/3 flex flex-col">
-                    <CheckBoxItem
-                      options={memoModulos}
-                      values={getModulos}
-                      handleChange={handleCheck}
+                    <Controller
+                      control={control}
+                      name={`module`}
+                      render={({ field }) => (
+                        <>
+                          {memoModulos.map((modulo) => {
+                            return (
+                              <label
+                                key={modulo.value}
+                                className="cursor-pointer flex gap-2"
+                              >
+                                <InputCheckBox
+                                  checked={field.value.includes(modulo.value)}
+                                  onChange={() => {
+                                    const modulos = field.value;
+                                    const index = modulos.indexOf(modulo.value);
+                                    if (index === -1) {
+                                      // Si no está presente, agrégalo
+                                      field.onChange([
+                                        ...modulos,
+                                        modulo.value,
+                                      ]);
+                                    } else {
+                                      // Si está presente, quítalo
+                                      field.onChange(
+                                        modulos.filter(
+                                          (moduloValue) =>
+                                            moduloValue !== modulo.value
+                                        )
+                                      );
+                                    }
+                                  }}
+                                />
+                                {modulo.label}
+                              </label>
+                            );
+                          })}
+                        </>
+                      )}
                     />
                   </div>
                 </div>
               )}
             </TabModalPanel>
           </form>
-        </DialogBody>
-        <DialogButtons>
-          <button
+        </DialogContentBeta>
+        <DialogActionsBeta>
+          <Button
+            size="small"
+            className="text-textDefault"
+            variant="text"
+            color="secondary"
             onClick={() => dispatch({ type: "INIT" })}
-            className="min-w-[84px] min-h-[24px] mr-[8px] text-[#066397] cursor-pointer bg-transparent border border-solid rounded-md"
           >
             Cancelar
-          </button>
-          <button
-            disabled={isLoadingPost}
-            onClick={handleSubmit(onSubmit)}
-            className={`min-w-[84px] min-h-[24px] text-white cursor-pointer  border border-solid rounded-md ${
-              isLoadingPost ? "bg-red-500" : "bg-primary"
-            }`}
+          </Button>
+          <Button
+            disabled={isLoadingPost || !isDirty || !isValid}
+            onClick={(e) => handleSubmit(onSubmit)(e)}
+            size="small"
+            variant="contained"
+            color="primary"
           >
             OK
-          </button>
-        </DialogButtons>
-      </DialogBasic>
+          </Button>
+        </DialogActionsBeta>
+      </DialogBeta>
     </>
   );
 };
