@@ -735,8 +735,12 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                                   : ""
                               }`}
                             />
-                            Refresh modulos
+                            Refrescar modulos
                           </label>
+                        </div>
+
+                        <div className="flex flex-col">
+                          <strong>Modulos disponibles</strong>
                         </div>
 
                         <div className="flex">
@@ -750,7 +754,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                                     return (
                                       <label
                                         key={modulo.value}
-                                        className="cursor-pointer flex gap-2"
+                                        className="cursor-pointer flex gap-2 select-none"
                                       >
                                         <InputCheckBox
                                           checked={field.value?.includes(
@@ -815,7 +819,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                                   : ""
                               }`}
                             />
-                            Refresh permisos
+                            Refrescar permisos
                           </label>
                         </div>
                         <div className="flex w-1/2">

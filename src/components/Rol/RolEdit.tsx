@@ -325,7 +325,7 @@ const RolEdit = ({ data, closeEdit }: Props) => {
                               return (
                                 <label
                                   key={modulo.value}
-                                  className="cursor-pointer flex gap-2"
+                                  className="cursor-pointer flex gap-2 select-none"
                                 >
                                   <InputCheckBox
                                     checked={field.value.includes(modulo.value)}
