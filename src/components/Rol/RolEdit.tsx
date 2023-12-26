@@ -44,6 +44,9 @@ interface GroupCheckBox {
 const RolEdit = ({ data, closeEdit }: Props) => {
   const { dispatch, dialogState } = useContext(ModalContext);
   const [value, setValue] = useState(0);
+  const [categorys, setCategorys] = useState<GroupCheckBox[]>([]);
+  const [checkAllCategorys, setCheckAllCategorys] = useState<boolean>(false);
+  const [isRefreshModulos, setRefreshModulos] = useState(false);
 
   const {
     data: dataModules,
@@ -96,6 +99,10 @@ const RolEdit = ({ data, closeEdit }: Props) => {
     refetch2();
   };
 
+  const handleRefreshModules = () => {
+    setRefreshModulos(true);
+  };
+
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     const sendRol: IRol = {
       name: values.name,
@@ -130,9 +137,6 @@ const RolEdit = ({ data, closeEdit }: Props) => {
     return [];
   }, [dataModules]);
 
-  const [categorys, setCategorys] = useState<GroupCheckBox[]>([]);
-  const [checkAllCategorys, setCheckAllCategorys] = useState<boolean>(false);
-
   const memoPermisos = useMemo(() => {
     if (dataPermisos) {
       return dataPermisos;
@@ -153,6 +157,16 @@ const RolEdit = ({ data, closeEdit }: Props) => {
   useEffect(() => {
     if (dataPermisosRole || isRefetching2) {
       setValueModel("resources", dataPermisosRole);
+    }
+
+    if (isRefreshModulos) {
+      setTimeout(() => {
+        setValueModel(
+          "module",
+          data.module.map((a: any) => a._id)
+        );
+        setRefreshModulos(false);
+      }, 1000);
     }
 
     if (
@@ -190,7 +204,15 @@ const RolEdit = ({ data, closeEdit }: Props) => {
 
       setCategorys(defaultCategorys);
     }
-  }, [dataPermisosRole, setValueModel, isRefetching2, dataPermisos, getValues]);
+  }, [
+    dataPermisosRole,
+    setValueModel,
+    isRefetching2,
+    dataPermisos,
+    getValues,
+    isRefreshModulos,
+    data?.module,
+  ]);
 
   return (
     <>
@@ -264,10 +286,6 @@ const RolEdit = ({ data, closeEdit }: Props) => {
               </div>
             </TabModalPanel>
             <TabModalPanel value={value} index={1}>
-              <div className="mt-3 flex flex-col">
-                <strong>Modulos disponibles</strong>
-              </div>
-
               {isLoadingModules ? (
                 <span>Cargando modulos...</span>
               ) : errorModules ? (
@@ -275,50 +293,74 @@ const RolEdit = ({ data, closeEdit }: Props) => {
                   {errorModules.response.data.message}
                 </span>
               ) : (
-                <div className="flex mt-3">
-                  <div className="w-1/3 flex flex-col">
-                    <Controller
-                      control={control}
-                      name={`module`}
-                      render={({ field }) => (
-                        <>
-                          {memoModulos.map((modulo) => {
-                            return (
-                              <label
-                                key={modulo.value}
-                                className="cursor-pointer flex gap-2"
-                              >
-                                <InputCheckBox
-                                  checked={field.value.includes(modulo.value)}
-                                  onChange={() => {
-                                    const modulos = field.value;
-                                    const index = modulos.indexOf(modulo.value);
-                                    if (index === -1) {
-                                      // Si no está presente, agrégalo
-                                      field.onChange([
-                                        ...modulos,
-                                        modulo.value,
-                                      ]);
-                                    } else {
-                                      // Si está presente, quítalo
-                                      field.onChange(
-                                        modulos.filter(
-                                          (moduloValue) =>
-                                            moduloValue !== modulo.value
-                                        )
-                                      );
-                                    }
-                                  }}
-                                />
-                                {modulo.label}
-                              </label>
-                            );
-                          })}
-                        </>
-                      )}
-                    />
+                <>
+                  <div className="flex flex-row w-full justify-end">
+                    <label
+                      className="flex items-center gap-1 cursor-pointer text-textDefault select-none"
+                      onClick={handleRefreshModules}
+                    >
+                      <TfiReload
+                        className={`${
+                          isRefreshModulos
+                            ? "animate-[spin_2s_linear_infinite]"
+                            : ""
+                        }`}
+                      />
+                      Refrescar modulos
+                    </label>
                   </div>
-                </div>
+
+                  <div className="flex flex-col">
+                    <strong>Modulos disponibles</strong>
+                  </div>
+
+                  <div className="flex">
+                    <div className="w-1/3 flex flex-col">
+                      <Controller
+                        control={control}
+                        name={`module`}
+                        render={({ field }) => (
+                          <>
+                            {memoModulos.map((modulo) => {
+                              return (
+                                <label
+                                  key={modulo.value}
+                                  className="cursor-pointer flex gap-2"
+                                >
+                                  <InputCheckBox
+                                    checked={field.value.includes(modulo.value)}
+                                    onChange={() => {
+                                      const modulos = field.value;
+                                      const index = modulos.indexOf(
+                                        modulo.value
+                                      );
+                                      if (index === -1) {
+                                        // Si no está presente, agrégalo
+                                        field.onChange([
+                                          ...modulos,
+                                          modulo.value,
+                                        ]);
+                                      } else {
+                                        // Si está presente, quítalo
+                                        field.onChange(
+                                          modulos.filter(
+                                            (moduloValue) =>
+                                              moduloValue !== modulo.value
+                                          )
+                                        );
+                                      }
+                                    }}
+                                  />
+                                  {modulo.label}
+                                </label>
+                              );
+                            })}
+                          </>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </>
               )}
             </TabModalPanel>
             <TabModalPanel value={value} index={2}>
@@ -347,7 +389,7 @@ const RolEdit = ({ data, closeEdit }: Props) => {
                               : ""
                           }`}
                         />
-                        Refresh permisos
+                        Refrescar permisos
                       </label>
                     </div>
                     <div className="flex w-1/2">
