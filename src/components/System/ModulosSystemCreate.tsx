@@ -1,71 +1,63 @@
 import { useContext, useMemo, useState } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { SubmitHandler, useForm, Controller } from "react-hook-form";
 import { toast } from "react-toastify";
 import { ModalContext } from "../../context/modalContext";
 import { useMenus } from "../../hooks/useMenus";
 import { usePostModule } from "../../hooks/useModuleS";
 import { IModulosSystem } from "../../interface/modulo_system.interface";
 import { isError } from "../../utils/functions";
-import DialogBasic from "../Dialog/DialogBasic";
-import DialogBody from "../Dialog/DialogBody";
-import DialogButtons from "../Dialog/DialogButtons";
-import DialogTitle from "../Dialog/DialogTitle";
-import CheckBoxItem from "../Input/CheckBoxItem";
-import TabModal from "../Tab/Modal/TabModal";
-import TabModalItem from "../Tab/Modal/TabModalItem";
-import TabModalPanel from "../Tab/Modal/TabModalPanel";
-import ToastError from "../Toast/ToastError";
+import TabsModal from "../Material/Tabs/TabsModal";
+import TabModal from "../Material/Tab/TabModal";
+import TabModalPanel from "../Material/Tab/TabModalPanel";
 import { toastError } from "../Toast/ToastNotify";
+import { DialogActionsBeta } from "../Dialog/_DialogActions";
+import { DialogContentBeta } from "../Dialog/_DialogContent";
+import { DialogTitleBeta } from "../Dialog/_DialogTitle";
+import { DialogBeta } from "../Dialog/DialogBasic";
+import IconButton from "@mui/material/IconButton";
+import CloseIcon from "@mui/icons-material/Close";
+import Button from "@mui/material/Button";
+import InputCheckBox from "../Material/Input/InputCheckBox";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { FORM_INITIAL_MODULO } from "../../utils/initials";
+import { schemaFormModulo } from "../../utils/yup_validations";
+import { IMenuSystem } from "../../interface/menu_system.interface";
 
 const ModulosSystemCreate = () => {
-  const { dispatch } = useContext(ModalContext);
+  const { dispatch, dialogState } = useContext(ModalContext);
+
   const {
     data: dataMenus,
     error: errorMenu,
     isLoading: isLoadingMenu,
   } = useMenus();
-  const {
-    register,
-    handleSubmit,
-    setValue: setValueModel,
-    formState: { errors },
-    watch,
-  } = useForm<IModulosSystem>({
-    defaultValues: {
-      name: "",
-      description: "",
-      menu: [],
-    },
+
+  const methods = useForm<IModulosSystem>({
+    defaultValues: FORM_INITIAL_MODULO,
+    resolver: yupResolver(schemaFormModulo),
+    mode: "onChange",
   });
 
-  const [value, setValue] = useState(1);
-
   const {
-    mutateAsync,
-    error: errorPost,
-    isLoading: isLoadingPost,
-  } = usePostModule();
+    control,
+    register,
+    handleSubmit,
+    formState: { errors, isDirty, isValid },
+  } = methods;
 
-  const getMenus = watch("menu") as string[];
+  const [value, setValue] = useState(0);
+
+  const { mutateAsync, isLoading: isLoadingPost } = usePostModule();
 
   const memoMenus = useMemo(() => {
     if (dataMenus) {
-      const list = dataMenus.map((a) => {
-        return {
-          label: a.name,
-          value: a._id as string,
-        };
-      });
-
-      return list;
+      return dataMenus;
     }
 
     return [];
   }, [dataMenus]);
 
-  const handleCheck = (values: string[]) => setValueModel("menu", values);
-
-  const handleTab = (newValue: number) => {
+  const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
 
@@ -83,16 +75,33 @@ const ModulosSystemCreate = () => {
 
   return (
     <>
-      <DialogBasic height={450} width={550}>
-        <DialogTitle>Nuevo Modulo</DialogTitle>
-        <DialogBody>
-          <TabModal value={value} onChange={handleTab}>
-            <TabModalItem value={1}>General</TabModalItem>
-            <TabModalItem value={2}>Menu</TabModalItem>
-          </TabModal>
+      <DialogBeta open={dialogState.open}>
+        <DialogTitleBeta>Nuevo Modulo</DialogTitleBeta>
+        <IconButton
+          aria-label="close"
+          onClick={() => dispatch({ type: "INIT" })}
+          sx={{
+            position: "absolute",
+            right: 8,
+            top: 8,
+            padding: "3px",
+            height: 18,
+            fontSize: "16px",
+            color: "#fff",
+          }}
+        >
+          <CloseIcon sx={{ width: "16px", height: "16px" }} />
+        </IconButton>
+
+        <TabsModal aria-label="BasicTabs" value={value} onChange={handleChange}>
+          <TabModal label="General" index={0} />
+          <TabModal label="Menu" index={1} />
+        </TabsModal>
+
+        <DialogContentBeta>
           <form>
-            <TabModalPanel value={value} index={1}>
-              <div className="flex flex-row mt-3">
+            <TabModalPanel value={value} index={0}>
+              <div className="flex flex-row">
                 <div className="w-1/3">
                   <label>
                     Nombre: <strong className="text-primary">*</strong>
@@ -100,17 +109,7 @@ const ModulosSystemCreate = () => {
                 </div>
                 <div className="w-2/3 flex flex-col">
                   <input
-                    {...register("name", {
-                      required: { value: true, message: "Ingrese nombre" },
-                      minLength: {
-                        value: 3,
-                        message: "Ingrese mínimo 3 caracteres",
-                      },
-                      maxLength: {
-                        value: 45,
-                        message: "Ingrese máximo 45 caracteres",
-                      },
-                    })}
+                    {...register("name")}
                     autoFocus
                     type="text"
                     className={`border w-8/12 focus:outline-none pl-1 rounded-sm ${
@@ -129,12 +128,7 @@ const ModulosSystemCreate = () => {
                 </div>
                 <div className="w-2/3 flex flex-col">
                   <textarea
-                    {...register("description", {
-                      maxLength: {
-                        value: 150,
-                        message: "Ingrese máximo 150 caracteres permitidos",
-                      },
-                    })}
+                    {...register("description")}
                     cols={10}
                     rows={8}
                     className={`border w-8/12 focus:outline-none pl-1 rounded-sm ${
@@ -150,64 +144,87 @@ const ModulosSystemCreate = () => {
               </div>
             </TabModalPanel>
 
-            <TabModalPanel value={value} index={2}>
-              <div className="mt-3 flex flex-col">
+            <TabModalPanel value={value} index={1}>
+              <div className="flex flex-col">
                 <strong>Menus disponibles</strong>
-                {getMenus.length === 0 && (
-                  <span className="text-primary">
-                    Seleccione mínimo 1 menu disponible
-                  </span>
-                )}
               </div>
-              {errorMenu ? (
-                <label>{errorMenu.response.data.message}</label>
-              ) : (
-                <></>
-              )}
+
               {isLoadingMenu ? (
                 <span>Cargando menus...</span>
+              ) : errorMenu ? (
+                <span className="text-red-500 w-full">
+                  {errorMenu.response.data.message}
+                </span>
               ) : (
-                <div className="flex mt-3">
-                  <div className="w-1/3 flex flex-col">
-                    <CheckBoxItem
-                      options={memoMenus}
-                      values={getMenus}
-                      handleChange={handleCheck}
+                <div className="flex">
+                  <div className="grid grid-cols-[repeat(5,_1fr)] gap-[5px] w-full">
+                    <Controller
+                      control={control}
+                      name="menu"
+                      render={({ field }) => (
+                        <>
+                          {memoMenus.map((menu: IMenuSystem) => {
+                            const values = field.value as string[];
+                            return (
+                              <label
+                                key={menu._id}
+                                className="cursor-pointer flex gap-2 select-none"
+                              >
+                                <InputCheckBox
+                                  checked={values.includes(String(menu._id))}
+                                  onChange={() => {
+                                    const menus = values ?? [];
+                                    const index = menus.indexOf(
+                                      String(menu._id)
+                                    );
+                                    if (index === -1) {
+                                      // Si no está presente, agrégalo
+                                      field.onChange([...menus, menu._id]);
+                                    } else {
+                                      // Si está presente, quítalo
+                                      field.onChange(
+                                        menus.filter(
+                                          (menuValue) => menuValue !== menu._id
+                                        )
+                                      );
+                                    }
+                                  }}
+                                />
+                                {menu.name}
+                              </label>
+                            );
+                          })}
+                        </>
+                      )}
                     />
                   </div>
                 </div>
               )}
             </TabModalPanel>
           </form>
-        </DialogBody>
-        <DialogButtons>
-          <button
+        </DialogContentBeta>
+
+        <DialogActionsBeta>
+          <Button
+            size="small"
+            className="text-textDefault"
+            variant="text"
+            color="secondary"
             onClick={() => dispatch({ type: "INIT" })}
-            className="min-w-[84px] min-h-[24px] mr-[8px] text-[#066397] cursor-pointer bg-transparent border border-solid rounded-md"
           >
             Cancelar
-          </button>
-          <button
-            disabled={isLoadingPost}
-            onClick={handleSubmit(onSubmit)}
-            className={`min-w-[84px] min-h-[24px] text-white cursor-pointer  border border-solid rounded-md ${
-              isLoadingPost ? "bg-red-500" : "bg-primary"
-            }`}
+          </Button>
+          <Button
+            disabled={!isDirty || !isValid || isLoadingPost}
+            onClick={(e) => handleSubmit(onSubmit)(e)}
+            size="small"
+            variant="contained"
+            color="primary"
           >
             OK
-          </button>
-        </DialogButtons>
-      </DialogBasic>
-
-      <ToastError
-        className={`${
-          errorPost
-            ? "opacity-[1] transform-none"
-            : "opacity-0 translate-y-[20px]"
-        }`}
-        placeholder={errorPost ? true : false}
-        message={errorPost?.response.data.message}
-      />
+          </Button>
+        </DialogActionsBeta>
+      </DialogBeta>
     </>
   );
 };

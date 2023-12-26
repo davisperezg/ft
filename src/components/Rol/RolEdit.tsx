@@ -216,7 +216,7 @@ const RolEdit = ({ data, closeEdit }: Props) => {
 
   return (
     <>
-      <DialogBeta open={dialogState.open}>
+      <DialogBeta open={dialogState.open && !dialogState.nameDialog}>
         <DialogTitleBeta>{`Rol ${data.name}`}</DialogTitleBeta>
         <IconButton
           aria-label="close"

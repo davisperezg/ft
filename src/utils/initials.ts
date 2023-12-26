@@ -1,8 +1,15 @@
 import { IEmpresa } from "../interface/empresa.interface";
+import { IModulosSystem } from "../interface/modulo_system.interface";
 import { IRol } from "../interface/rol.interface";
 import { IUser, IUserWithPassword } from "../interface/user.interface";
 
 export const initialMenuContext = {};
+
+export const FORM_INITIAL_MODULO: IModulosSystem = {
+  name: "",
+  description: "",
+  menu: [],
+};
 
 export const FORM_INITIAL_ROL: IRol = {
   name: "",
