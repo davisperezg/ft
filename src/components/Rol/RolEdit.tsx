@@ -151,11 +151,7 @@ const RolEdit = ({ data, closeEdit }: Props) => {
   };
 
   useEffect(() => {
-    if (dataPermisosRole) {
-      setValueModel("resources", dataPermisosRole);
-    }
-
-    if (isRefetching2) {
+    if (dataPermisosRole || isRefetching2) {
       setValueModel("resources", dataPermisosRole);
     }
 
@@ -339,7 +335,7 @@ const RolEdit = ({ data, closeEdit }: Props) => {
                   </span>
                 ) : (
                   <>
-                    <div className="flex flex-row w-full justify-end pr-5">
+                    <div className="flex flex-row w-full justify-end">
                       <label
                         className="flex items-center gap-1 cursor-pointer text-textDefault select-none"
                         onClick={handleRefresh}

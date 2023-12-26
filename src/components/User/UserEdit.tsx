@@ -1,19 +1,16 @@
-/* eslint-disable no-useless-escape */
-import {
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  useLayoutEffect,
-} from "react";
+import { ChangeEvent, useContext, useEffect, useMemo, useState } from "react";
 import { ModalContext } from "../../context/modalContext";
-import { SubmitHandler, useForm, FormProvider } from "react-hook-form";
+import {
+  SubmitHandler,
+  useForm,
+  FormProvider,
+  Controller,
+} from "react-hook-form";
 import { IUserWithPassword, IUser } from "../../interface/user.interface";
 import { useRolesAvailables } from "../../hooks/useRoles";
 import { useReniec } from "../../hooks/useServices";
 import { FcSearch } from "react-icons/fc";
 import { useEditPassword, useEditUser } from "../../hooks/useUsers";
-import CheckBoxItem from "../Input/CheckBoxItem";
 import { useModulesAvailables } from "../../hooks/useModuleS";
 import {
   usePermisosAvailables,
@@ -40,6 +37,7 @@ import Box from "@mui/material/Box";
 import UserEditAsignarEmpresa from "./FormEdit/UserEditAsignarEmpresa";
 import { useAsignEmpresasByIdPartner } from "../../hooks/useEmpresa";
 import { FORM_EDIT_INITIAL_USER } from "../../utils/initials";
+import InputCheckBox from "../Material/Input/InputCheckBox";
 
 interface Props {
   data: any;
@@ -50,6 +48,11 @@ interface FormValues extends IUserWithPassword {
   resources?: string[];
   modules?: string[];
   [key: string]: any;
+}
+
+interface GroupCheckBox {
+  name: string;
+  checked: boolean;
 }
 
 const UserEdit = ({ data, closeEdit }: Props) => {
@@ -145,6 +148,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
   });
 
   const {
+    control,
     register,
     handleSubmit,
     setValue: setValueModel,
@@ -180,7 +184,8 @@ const UserEdit = ({ data, closeEdit }: Props) => {
   } = useServicesXuser(data._id);
 
   const [value, setValue] = useState(0);
-  const [refresh, setRefresh] = useState(false);
+  const [categorys, setCategorys] = useState<GroupCheckBox[]>([]);
+  const [checkAllCategorys, setCheckAllCategorys] = useState<boolean>(false);
 
   const validateOption = (value: string) => {
     const tipDocumento = watch("tipDocument");
@@ -195,12 +200,10 @@ const UserEdit = ({ data, closeEdit }: Props) => {
   };
 
   const handleRefresh = () => {
-    setRefresh(true);
     refetch2();
   };
 
   const handleRefreshModules = () => {
-    setRefresh(true);
     refetch3();
   };
 
@@ -254,74 +257,21 @@ const UserEdit = ({ data, closeEdit }: Props) => {
     setValue(newValue);
   };
 
-  const getResources_users = watch("resources") as string[];
-  const getResources_modules = watch("modules") as string[];
-
-  const validateCheckBoxCategoryAndCheckAll = () => {
-    //Recorremos los inputs x categoria para desmarcar categoria
-    const allCategorys = memoPermisos?.map((a) => {
-      //Obtenemos todos los inputs con la misma clase de la categoria
-      const checkboxesResource = document.querySelectorAll(
-        `.group-${a.category}`
-      ) as NodeListOf<HTMLInputElement>;
-
-      //Validamos que todos los inputs deben ser marcados, de no ser retorna false
-      const resourcesCheckeds = Array.from(checkboxesResource).every(
-        (checkbox) => checkbox.checked
-      );
-
-      //Si se encuentra 1 input desmarcado, anulamos la categoria a false actualizando su estado de lo contrario(todos marcados) actualizamos el estado de la categoria a true
-      if (!resourcesCheckeds) setValueModel(`${a.category}`, false);
-      else setValueModel(`${a.category}`, true);
-
-      //Una vez revisado el estado por inputs ahora retornamos todos los inputs que son categoria
-      return document.querySelector(`#all-${a.category}`) as HTMLInputElement;
-    });
-
-    //Validamos que todos los inputs deben ser marcados, de no ser retorna false
-    const categorysCheckeds = Array.from(allCategorys).every(
-      (checkbox) => checkbox?.checked
-    );
-
-    //Si de todas las categorias encontramos un desmarcado o false actualizamos el estado del CHECK-ALL a false de no ser asi actualizamos CHECK-ALL a true es decir que todos los inputs categorias estan marcados
-    if (!categorysCheckeds) setValueModel("check-all", false);
-    else setValueModel("check-all", true);
-  };
-
-  const handleCheckResources = (values: string[]) => {
-    //Actualizamos el estado de los recursos marcados y desmarcados
-    setValueModel("resources", values);
-
-    validateCheckBoxCategoryAndCheckAll();
-  };
-
-  const handleCheckServices = (values: string[]) => {
-    setValueModel("modules", values);
-  };
-
   const memoModulos = useMemo(() => {
-    if (!isErrorServicesUser) {
-      if (dataModules) {
-        return dataModules;
-      }
-    } else {
-      toast.error(errorServicesUser.response.data.message);
+    if (dataModules) {
+      return dataModules;
     }
 
     return [];
-  }, [dataModules, errorServicesUser, isErrorServicesUser]);
+  }, [dataModules]);
 
   const memoPermisos = useMemo(() => {
-    if (!isErrorPermisosUser) {
-      if (dataPermisos) {
-        return dataPermisos;
-      }
-    } else {
-      toast.error(errorPermisosUser.response.data.message);
+    if (dataPermisos) {
+      return dataPermisos;
     }
 
     return [];
-  }, [dataPermisos, errorPermisosUser, isErrorPermisosUser]);
+  }, [dataPermisos]);
 
   const memoRoles = useMemo(() => {
     if (dataRoles && dataRoles.length > 0) {
@@ -347,55 +297,62 @@ const UserEdit = ({ data, closeEdit }: Props) => {
       );
     }
 
-    if (value === 4) {
-      validateCheckBoxCategoryAndCheckAll();
-    }
-
-    if (isRefetching2) {
+    if (dataPermisosUser || isRefetching2) {
       setValueModel("resources", dataPermisosUser);
-    } else {
-      if (value === 4) {
-        validateCheckBoxCategoryAndCheckAll();
-        setTimeout(() => {
-          setRefresh(false);
-        }, 2000);
-      }
     }
 
-    if (isRefetching3) {
+    if (dataServicesUser || isRefetching3) {
       const idsModules = dataServicesUser.map((a: any) => a._id);
       setValueModel("modules", idsModules);
-    } else {
-      if (value === 3) {
-        setTimeout(() => {
-          setRefresh(false);
-        }, 2000);
-      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    if (
+      dataPermisos &&
+      dataPermisos?.length > 0 &&
+      dataPermisosUser &&
+      dataPermisosUser?.length > 0
+    ) {
+      //Si los recursos del rol incluyen todos de los recursos de la categoria, entonces la categoria estara marcada
+      const defaultCategorys = dataPermisos.map((permiso) => {
+        const categoryChecked =
+          permiso.resources.every((a: any) =>
+            getValues("resources")?.includes(a.value)
+          ) ?? false;
+
+        if (categoryChecked) {
+          return {
+            name: String(permiso.category),
+            checked: true,
+          };
+        } else {
+          return {
+            name: String(permiso.category),
+            checked: false,
+          };
+        }
+      });
+
+      //Si todas las categorias estan marcadas, entonces marcamos todos los permisos
+      if (defaultCategorys.every((a) => a.checked)) {
+        setCheckAllCategorys(true);
+      } else {
+        setCheckAllCategorys(false);
+      }
+
+      setCategorys(defaultCategorys);
+    }
   }, [
-    dataPersona,
-    value,
-    isRefetching2,
-    isErrorPersona,
-    isRefetching3,
-    errorPersona?.response.data.message,
-    setValueModel,
-    //validateCheckBoxCategoryAndCheckAll,
+    dataPermisos,
     dataPermisosUser,
+    dataPersona,
     dataServicesUser,
+    errorPersona?.response.data.message,
+    getValues,
+    isErrorPersona,
+    isRefetching2,
+    isRefetching3,
+    setValueModel,
   ]);
-
-  useLayoutEffect(() => {
-    if (dataPermisosUser) {
-      setValueModel("resources", dataPermisosUser);
-    }
-
-    if (dataServicesUser) {
-      const idsModules = dataServicesUser.map((a: any) => a._id);
-      setValueModel("modules", idsModules);
-    }
-  }, [dataPermisosUser, dataServicesUser, setValueModel]);
 
   return (
     <>
@@ -405,7 +362,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
         }`}</DialogTitleBeta>
         <IconButton
           aria-label="close"
-          onClick={() => dispatch({ type: "INIT" })}
+          onClick={closeModal}
           sx={{
             position: "absolute",
             right: 8,
@@ -757,21 +714,23 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                     {isLoadingModules || isLoadingServicesUser ? (
                       "Cargando modulos..."
                     ) : isErrorModules ? (
-                      <label className="text-primary">
+                      <span className="text-primary w-full">
                         {errorModules.response.data.message}
-                      </label>
+                      </span>
                     ) : isErrorServicesUser ? (
-                      <label>{errorServicesUser.response.data.message}</label>
+                      <span className="text-red-500 w-full">
+                        {errorServicesUser.response.data.message}
+                      </span>
                     ) : (
                       <>
-                        <div className="flex flex-row w-full justify-end pr-5">
+                        <div className="flex flex-row w-full justify-end">
                           <label
                             className="flex items-center gap-1 cursor-pointer text-textDefault select-none"
                             onClick={handleRefreshModules}
                           >
                             <TfiReload
                               className={`${
-                                refresh
+                                isRefetching3
                                   ? "animate-[spin_2s_linear_infinite]"
                                   : ""
                               }`}
@@ -780,11 +739,54 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                           </label>
                         </div>
 
-                        <CheckBoxItem
-                          options={memoModulos}
-                          values={getResources_modules}
-                          handleChange={handleCheckServices}
-                        />
+                        <div className="flex">
+                          <div className="w-1/3 flex flex-col">
+                            <Controller
+                              control={control}
+                              name="modules"
+                              render={({ field }) => (
+                                <>
+                                  {memoModulos.map((modulo) => {
+                                    return (
+                                      <label
+                                        key={modulo.value}
+                                        className="cursor-pointer flex gap-2"
+                                      >
+                                        <InputCheckBox
+                                          checked={field.value?.includes(
+                                            modulo.value
+                                          )}
+                                          onChange={() => {
+                                            const modulos = field.value ?? [];
+                                            const index = modulos.indexOf(
+                                              modulo.value
+                                            );
+                                            if (index === -1) {
+                                              // Si no está presente, agrégalo
+                                              field.onChange([
+                                                ...modulos,
+                                                modulo.value,
+                                              ]);
+                                            } else {
+                                              // Si está presente, quítalo
+                                              field.onChange(
+                                                modulos.filter(
+                                                  (moduloValue) =>
+                                                    moduloValue !== modulo.value
+                                                )
+                                              );
+                                            }
+                                          }}
+                                        />
+                                        {modulo.label}
+                                      </label>
+                                    );
+                                  })}
+                                </>
+                              )}
+                            />
+                          </div>
+                        </div>
                       </>
                     )}
                   </div>
@@ -801,14 +803,14 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                       <label>{errorPermisosUser.response.data.message}</label>
                     ) : (
                       <>
-                        <div className="flex flex-row w-full justify-end pr-5">
+                        <div className="flex flex-row w-full justify-end">
                           <label
                             className="flex items-center gap-1 cursor-pointer text-textDefault select-none"
                             onClick={handleRefresh}
                           >
                             <TfiReload
                               className={`${
-                                refresh
+                                isRefetching2
                                   ? "animate-[spin_2s_linear_infinite]"
                                   : ""
                               }`}
@@ -816,180 +818,253 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                             Refresh permisos
                           </label>
                         </div>
+                        <div className="flex w-1/2">
+                          <label className="cursor-pointer flex gap-2 ml-[5px] select-none font-bold">
+                            <InputCheckBox
+                              checked={checkAllCategorys}
+                              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                                const checked = e.target.checked;
+                                setCheckAllCategorys(checked);
 
-                        <div className="flex w-1/2 mt-2">
-                          <input
-                            className="border w-1/12 focus:outline-none pl-1 rounded-sm cursor-pointer"
-                            type="checkbox"
-                            id="check-all"
-                            {...register("check-all", {
-                              onChange: (e) => {
-                                const value = e.target.checked;
-                                let keys: string[] = [];
-
-                                if (!value) {
-                                  memoPermisos.map((a) => {
-                                    //Desmarcamos todas las categorias
-                                    setValueModel(`${a.category}`, false);
-
-                                    //Buscamores todos los inputs x categoria
-                                    const checkboxesCategory =
-                                      document.querySelectorAll(
-                                        `.group-${a.category}`
-                                      );
-
-                                    //Desmarcamos inputs x categoria y almacenamos array para el estado
-                                    Array.from(checkboxesCategory).map(
-                                      (a: any) => {
-                                        a.checked = false;
-                                        keys = [...keys, a.name];
-                                      }
-                                    );
-                                  });
-
-                                  //Quitamos todos los permisos x categoria y actualizamos estado
-                                  const filter = getResources_users.filter(
-                                    (x) => !keys.includes(x)
+                                if (checked) {
+                                  //Si todos las categorias estan marcadas entonces marcamos todos los recursos
+                                  setValueModel(
+                                    "resources",
+                                    memoPermisos.flatMap((a) =>
+                                      a.resources.map((a: any) => a.value)
+                                    ),
+                                    {
+                                      shouldDirty: true,
+                                    }
                                   );
-                                  setValueModel("resources", filter);
+                                  //Todas las categorias seran true
+                                  setCategorys(
+                                    categorys.map((cat) => {
+                                      return {
+                                        ...cat,
+                                        checked: true,
+                                      };
+                                    })
+                                  );
                                 } else {
-                                  memoPermisos.map((a) => {
-                                    //Marcamos todas las categorias
-                                    setValueModel(`${a.category}`, true);
-
-                                    //Buscamores todos los inputs x categoria
-                                    const checkboxesCategory =
-                                      document.querySelectorAll(
-                                        `.group-${a.category}`
-                                      );
-
-                                    //Marcamos inputs x categoria y almacenamos array para el estado
-                                    Array.from(checkboxesCategory).map(
-                                      (a: any) => {
-                                        a.checked = true;
-                                        keys = [...keys, a.name];
-                                      }
-                                    );
+                                  //Todas las categorias seran false y los recursos deesactivados
+                                  setValueModel("resources", [], {
+                                    shouldDirty: true,
                                   });
 
-                                  //Agregamos todos los permisos x categoria y actualizamos estado
-                                  const filter =
-                                    getResources_users.concat(keys);
-                                  setValueModel("resources", filter);
+                                  setCategorys(
+                                    categorys.map((cat) => {
+                                      return {
+                                        ...cat,
+                                        checked: false,
+                                      };
+                                    })
+                                  );
                                 }
-                              },
-                              value: false,
-                            })}
-                          />
-
-                          <label
-                            htmlFor="check-all"
-                            className="ml-2 cursor-pointer select-none font-bold"
-                          >
+                              }}
+                            />
                             Marcar todos los permisos
                           </label>
                         </div>
-
-                        <div className="mt-2 grid grid-cols-[repeat(4,_1fr)] gap-[15px]">
-                          {memoPermisos.map((a, i: number) => {
-                            //Mostraremos todos los recursos x categoria
-                            const resources = memoPermisos.find(
-                              (b) => b.category === a.category
-                            ).resources;
+                        <div className="grid grid-cols-[repeat(4,_1fr)] gap-[15px]">
+                          {memoPermisos.map((permiso, index) => {
+                            //Si los recursos del rol incluyen todos de los recursos de la categoria, entonces la categoria estara marcada
+                            const categoryChecked =
+                              permiso.resources.every((a: any) =>
+                                getValues("resources")?.includes(a.value)
+                              ) ?? false;
 
                             return (
-                              <div key={i} className="border p-2 pr-2">
-                                <div className="flex">
-                                  <label
-                                    htmlFor={`all-${a.category}`}
-                                    className="flex items-center font-bold underline cursor-pointer gap-2"
-                                  >
-                                    <input
-                                      {...register(`${a.category}`, {
-                                        value: false,
-                                      })}
-                                      onChange={(e) => {
-                                        //Obtenemos todos los inputs con la misma clase de la categoria
-                                        const checkboxesResource =
-                                          document.querySelectorAll(
-                                            `.group-${a.category}`
-                                          );
+                              <div key={index + 1} className="border">
+                                <div className="border-b-[1px]">
+                                  <label className="cursor-pointer flex gap-2 ml-[5px] select-none">
+                                    <InputCheckBox
+                                      checked={categoryChecked}
+                                      onChange={(
+                                        e: ChangeEvent<HTMLInputElement>
+                                      ) => {
+                                        const checked = e.target.checked;
+                                        const findCategory = categorys[index];
+                                        const mapCategorys = categorys.map(
+                                          (cat) => {
+                                            if (
+                                              cat.name === findCategory.name
+                                            ) {
+                                              return {
+                                                ...cat,
+                                                checked: checked,
+                                              };
+                                            }
+                                            return cat;
+                                          }
+                                        );
+                                        setCategorys(mapCategorys);
 
-                                        let keys: string[] = [];
-
-                                        //Si el checkbox es true
-                                        if (e.target.checked) {
-                                          //Marcamos inputs x categoria y almacenamos array para el estado
-                                          Array.from(checkboxesResource).map(
-                                            (a: any) => {
-                                              a.checked = true;
-                                              keys = [...keys, a.name];
+                                        if (checked) {
+                                          //Si marco la categoria, agregamos todos los recursos de la categoria
+                                          setValueModel(
+                                            "resources",
+                                            [
+                                              ...(getValues("resources") || []),
+                                              ...permiso.resources.map(
+                                                (a: any) => a.value
+                                              ),
+                                            ],
+                                            {
+                                              shouldDirty: true,
                                             }
                                           );
 
-                                          //Agregamos todos los permisos x categoria al estado resources
-                                          const append =
-                                            getResources_users.concat(keys);
-                                          setValueModel("resources", append);
-
-                                          //CHECK-ALL
-
-                                          //Revisar que todas las categorias son true para marcar true el check-all
-                                          const allCategorys = memoPermisos.map(
-                                            (x) => {
-                                              return document.querySelector(
-                                                `#all-${x.category}`
-                                              );
-                                            }
-                                          ) as HTMLInputElement[];
-
-                                          //Buscamos si todas las categorias son trues
-                                          const categorysCheckeds = Array.from(
-                                            allCategorys
-                                          ).every(
-                                            (checkbox) => checkbox.checked
-                                          );
-
-                                          //Si son trues actualizamos el estado de check-all como true
-                                          if (categorysCheckeds)
-                                            setValueModel("check-all", true);
-                                        } else {
-                                          //Desmarcamos inputs x categoria y almacenamos array para el estado
-                                          Array.from(checkboxesResource).map(
-                                            (a: any) => {
-                                              a.checked = false;
-                                              keys = [...keys, a.name];
-                                            }
-                                          );
-
-                                          //Quitamos todos los permisos x categoria y actualizamos estado
-                                          const filter =
-                                            getResources_users.filter(
-                                              (x) => !keys.includes(x)
+                                          const validTruesCategorys =
+                                            mapCategorys.every(
+                                              (a) => a.checked
                                             );
-                                          setValueModel("resources", filter);
 
-                                          //CHECK-ALL
-
-                                          //Si se desmarca una sola categoria el estado check-all sera false
-                                          setValueModel("check-all", false);
+                                          if (validTruesCategorys) {
+                                            setCheckAllCategorys(true);
+                                          }
+                                        } else {
+                                          //Si desmarco la categoria, quitamos todos los recursos de la categoria
+                                          setValueModel(
+                                            "resources",
+                                            (
+                                              getValues("resources") || []
+                                            ).filter(
+                                              (a: any) =>
+                                                !permiso.resources
+                                                  .map((a: any) => a.value)
+                                                  .includes(a)
+                                            ),
+                                            {
+                                              shouldDirty: true,
+                                            }
+                                          );
+                                          setCheckAllCategorys(false);
                                         }
                                       }}
-                                      className="border w-[21px] h-[18px] focus:outline-none pl-1 rounded-sm cursor-pointer"
-                                      type="checkbox"
-                                      id={`all-${a.category}`}
                                     />
-
-                                    {a.category}
+                                    {permiso.category}
                                   </label>
                                 </div>
-                                <CheckBoxItem
-                                  className="mt-2"
-                                  options={resources}
-                                  values={getResources_users}
-                                  handleChange={handleCheckResources}
-                                  category={a.category}
-                                />
+                                <div className="ml-[5px] text-[12px] mt-1 mb-1">
+                                  <Controller
+                                    control={control}
+                                    name="resources"
+                                    render={({ field }) => (
+                                      <>
+                                        {permiso.resources.map(
+                                          (resource: any) => {
+                                            return (
+                                              <label
+                                                className="cursor-pointer flex gap-2 select-none"
+                                                key={resource.value}
+                                              >
+                                                <InputCheckBox
+                                                  checked={field.value?.includes(
+                                                    resource.value
+                                                  )}
+                                                  onChange={(
+                                                    e: ChangeEvent<HTMLInputElement>
+                                                  ) => {
+                                                    const checked =
+                                                      e.target.checked;
+                                                    const recursos =
+                                                      field.value ?? [];
+                                                    const index =
+                                                      recursos.indexOf(
+                                                        resource.value
+                                                      );
+                                                    if (index === -1) {
+                                                      // Si no está presente, agrégalo
+                                                      field.onChange([
+                                                        ...recursos,
+                                                        resource.value,
+                                                      ]);
+                                                    } else {
+                                                      // Si está presente, quítalo
+                                                      field.onChange(
+                                                        recursos.filter(
+                                                          (recursoValue) =>
+                                                            recursoValue !==
+                                                            resource.value
+                                                        )
+                                                      );
+                                                    }
+
+                                                    if (!checked) {
+                                                      //Controlamos el estado de la categoria al realizar un cambio en los recursos
+                                                      const mapCategorys =
+                                                        categorys.map((cat) => {
+                                                          if (
+                                                            cat.name ===
+                                                            permiso.category
+                                                          ) {
+                                                            return {
+                                                              ...cat,
+                                                              checked: checked,
+                                                            };
+                                                          }
+                                                          return cat;
+                                                        });
+                                                      setCategorys(
+                                                        mapCategorys
+                                                      );
+                                                      setCheckAllCategorys(
+                                                        false
+                                                      );
+                                                    } else {
+                                                      //Validamos si todos los recursos de la categoria estan true, de ser asi actualizamos el estado de la categoria a true
+                                                      const findCategoryChecked =
+                                                        permiso.resources.every(
+                                                          (a: any) =>
+                                                            getValues(
+                                                              "resources"
+                                                            )?.includes(a.value)
+                                                        ) ?? false;
+
+                                                      if (findCategoryChecked) {
+                                                        const mapCategorys =
+                                                          categorys.map(
+                                                            (cat) => {
+                                                              if (
+                                                                cat.name ===
+                                                                permiso.category
+                                                              ) {
+                                                                return {
+                                                                  ...cat,
+                                                                  checked: true,
+                                                                };
+                                                              }
+                                                              return cat;
+                                                            }
+                                                          );
+                                                        setCategorys(
+                                                          mapCategorys
+                                                        );
+
+                                                        //Validamos si todas las categorias estan true, de ser asi el checkAllCategorys sera true
+                                                        const findTruesCategory =
+                                                          mapCategorys.every(
+                                                            (a) => a.checked
+                                                          );
+                                                        if (findTruesCategory) {
+                                                          setCheckAllCategorys(
+                                                            true
+                                                          );
+                                                        }
+                                                      }
+                                                    }
+                                                  }}
+                                                />
+                                                {resource.label}
+                                              </label>
+                                            );
+                                          }
+                                        )}
+                                      </>
+                                    )}
+                                  />
+                                </div>
                               </div>
                             );
                           })}
