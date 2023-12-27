@@ -83,34 +83,34 @@ const UserCreateGeneral = () => {
           </label>
         </div>
         <div className="w-1/3">
-          <select
-            autoFocus
-            {...register("role")}
-            className={`border w-full focus:outline-none pl-1 rounded-sm ${
-              errors.role || isErrorRoles ? "border-primary" : ""
-            }`}
-          >
-            {isLoadingRoles ? (
-              <option>Cargando...</option>
-            ) : (
-              memoRoles.map((a) => {
-                return (
-                  <option key={a._id} value={a._id}>
-                    {a.name}
-                  </option>
-                );
-              })
-            )}
-          </select>
+          {isErrorRoles ? (
+            <span className="text-primary w-full">
+              {errorRoles.response.data.message}
+            </span>
+          ) : (
+            <select
+              autoFocus
+              {...register("role")}
+              className={`border w-full focus:outline-none pl-1 rounded-sm ${
+                errors.role || isErrorRoles ? "border-primary" : ""
+              }`}
+            >
+              {isLoadingRoles ? (
+                <option>Cargando...</option>
+              ) : (
+                memoRoles.map((a) => {
+                  return (
+                    <option key={a._id} value={a._id}>
+                      {a.name}
+                    </option>
+                  );
+                })
+              )}
+            </select>
+          )}
 
           {errors.role && (
             <span className="text-primary">{errors.role.message}</span>
-          )}
-
-          {isErrorRoles && (
-            <span className="text-primary">
-              {errorRoles.response.data.message}
-            </span>
           )}
         </div>
       </div>

@@ -5,4 +5,5 @@ export interface IUserEmpresa {
   nombreCompleto: string;
   correo: string;
   usuario: string;
+  estado: boolean;
 }

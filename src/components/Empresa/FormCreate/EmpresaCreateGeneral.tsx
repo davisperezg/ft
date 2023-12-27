@@ -94,6 +94,7 @@ const EmpresaCreateGeneral = () => {
     dataUsers?.map((item) => ({
       value: item.id,
       label: `${item.id} - ${item.usuario}`,
+      disabled: !item.estado,
     })) || [];
 
   const onChangeFoto = (
@@ -203,6 +204,7 @@ const EmpresaCreateGeneral = () => {
                       isSearchable={false}
                       isLoading={isLoadingUsers}
                       options={listUsuarios}
+                      isOptionDisabled={(option) => Boolean(option.disabled)}
                       placeholder="Seleccione usuario"
                       error={!!errors.usuario || isErrorUsers}
                       helperText={
