@@ -101,6 +101,13 @@ const RolEdit = ({ data, closeEdit }: Props) => {
 
   const handleRefreshModules = () => {
     setRefreshModulos(true);
+    setTimeout(() => {
+      setValueModel(
+        "module",
+        data.module.map((a: any) => a._id)
+      );
+      setRefreshModulos(false);
+    }, 1000);
   };
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
@@ -159,16 +166,6 @@ const RolEdit = ({ data, closeEdit }: Props) => {
       setValueModel("resources", dataPermisosRole);
     }
 
-    if (isRefreshModulos) {
-      setTimeout(() => {
-        setValueModel(
-          "module",
-          data.module.map((a: any) => a._id)
-        );
-        setRefreshModulos(false);
-      }, 1000);
-    }
-
     if (
       dataPermisos &&
       dataPermisos?.length > 0 &&
@@ -210,7 +207,6 @@ const RolEdit = ({ data, closeEdit }: Props) => {
     isRefetching2,
     dataPermisos,
     getValues,
-    isRefreshModulos,
     data?.module,
   ]);
 
