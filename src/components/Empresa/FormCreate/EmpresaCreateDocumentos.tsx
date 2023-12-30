@@ -32,7 +32,7 @@ const EmpresaCreateDocumentos = () => {
 
   const listDocs =
     dataTipdocs?.map((item) => ({
-      value: item.id,
+      value: Number(item.id),
       label: `${item.codigo} - ${item.nombre}`,
       disabled: !item.status,
     })) || [];
