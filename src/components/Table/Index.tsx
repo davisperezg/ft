@@ -789,7 +789,19 @@ const ComponentTable = <T extends object>({
   const [spacing, setSpacing] = useState<boolean>(false);
   const [scrolled, setScrolled] = useState<boolean>(false);
   const [showOptions, setShowOptions] = useState<boolean>(false);
+
+  //visible column
+  const initialVisibleColumn = columns.reduce((acc, item) => {
+    if (item.visible !== undefined) {
+      acc[item.id] = item.visible;
+    }
+    return acc;
+  }, {});
+
   const [rowSelection, setRowSelection] = useState({});
+
+  const [columnVisibility, setColumnVisibility] =
+    useState(initialVisibleColumn);
 
   const refContentTable = useRef<HTMLDivElement>(null);
   const refContentTBody = useRef<HTMLDivElement>(null);
@@ -840,9 +852,11 @@ const ComponentTable = <T extends object>({
       pagination,
       columnOrder,
       rowSelection,
+      columnVisibility,
     },
     enableRowSelection: true, //enable row selection for all rows
     //enableRowSelection: row => row.original.age > 18, // or enable row selection conditionally per row
+    onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     onColumnOrderChange: setColumnOrder,
     onSortingChange: setSorting,

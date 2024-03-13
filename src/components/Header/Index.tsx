@@ -58,10 +58,30 @@ const Header = ({ result }: any) => {
           );
         }
 
-        setUserGlobal({
-          ...result?.data,
-          empresaActual: empresa ?? null,
-        });
+        if (result?.data?.empresas?.length > 0) {
+          const empresaActual = result?.data?.empresas.find(
+            (a: any) => a.id === empresa.id
+          );
+
+          const { establecimientos, ...rest } = empresaActual;
+
+          const establecimientoActual = establecimientos.find(
+            (a: any) => a.id === empresa.establecimiento.id
+          );
+
+          setUserGlobal({
+            ...result?.data,
+            empresaActual:
+              { ...rest, establecimiento: establecimientoActual } ?? null,
+          });
+
+          sessionStorage.setItem(
+            "empresa",
+            JSON.stringify(
+              { ...rest, establecimiento: establecimientoActual } ?? null
+            )
+          );
+        }
       } else {
         if (result?.data?.empresas?.length > 0) {
           const empresa = {
@@ -71,15 +91,16 @@ const Header = ({ result }: any) => {
             ruc: result?.data?.empresas[0].ruc,
             establecimiento: result?.data?.empresas[0].establecimientos[0],
             estado: result?.data.empresas[0].estado,
+            modo: result?.data.empresas[0].modo,
           };
 
           setSelectedOption(
             `idEmpresa:${empresa?.id},idEstablecimiento:${empresa?.establecimiento?.id}`
           );
-          setUserGlobal({
-            ...result?.data,
-            empresa,
-          });
+          // setUserGlobal({
+          //   ...result?.data,
+          //   empresa,
+          // });
           sessionStorage.setItem("empresa", JSON.stringify(empresa));
         }
       }

@@ -19,7 +19,7 @@ type SelectProps<
   helperText?: string;
 };
 
-export const SelectSimple = forwardRef(
+export const SelectMiddle = forwardRef(
   <
     IsMulti extends boolean = false,
     Group extends GroupBase<IOption> = GroupBase<IOption>
@@ -44,14 +44,16 @@ export const SelectSimple = forwardRef(
                     props.error ? "!border-[#d32f2f]" : "!border-inherit"
                   } !w-full !focus:outline-none !pl-1 !rounded-[4px] text-[14px] min-w-[175px]`,
             valueContainer: () => "!p-0 !m-0",
-            option: () => "!p-0 !m-0 !pl-1 !w-full !cursor-pointer",
+            option: () => "!p-0 !m-0 !pl-6 !w-full text-left !cursor-pointer",
             input: () => "!p-0 !m-0",
             indicatorsContainer: () => "!p-0 !m-0",
             loadingIndicator: () => "!p-0 !text-[4px]",
             dropdownIndicator: () => "!p-0 !m-0",
-            menu: () => "mt-[5px]",
+            menu: () =>
+              "mt-[5px] !min-w-[350px] left-[-100px] right-[-100px] mx-auto ",
             menuList: () => "!p-0",
-            clearIndicator: () => "!p-0 !m-0",
+            group: () => "!pb-0",
+            groupHeading: () => "text-left",
           }}
         />
         {props.error && (

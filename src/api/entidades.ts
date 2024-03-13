@@ -5,6 +5,7 @@ import {
   IDistrito,
   IProvincia,
 } from "../interface/entidades.interface";
+import { IEntidad } from "../interface/entidad.interface";
 
 export const getDepartamentos = async () => {
   const { data } = await axios.get<IDepartamento[]>(
@@ -23,6 +24,13 @@ export const getProvincias = async () => {
 export const getDistritos = async () => {
   const { data } = await axios.get<IDistrito[]>(
     `${BASE_API}/api/v1/entidades/distritos`
+  );
+  return data;
+};
+
+export const getAllEntidadesByEmpresa = async (idEmpresa: number) => {
+  const { data } = await axios.get<IEntidad[]>(
+    `${BASE_API}/api/v1/entidades/empresa/${idEmpresa}`
   );
   return data;
 };

@@ -7,6 +7,12 @@ import ContentEmpty from "./Content/ContentEmpty";
 import NavLeft from "./Nav/NavLeft";
 import TabItem from "./Tab/Views/TabItem";
 import UserScreen from "../views/UserScreen";
+import { DialogActionKind } from "../reducers/dialogReducer";
+import FacturaScreen from "../views/FacturaScreen";
+import PaperRounded from "./Material/Paper/PaperRounded";
+import { Divider, IconButton, Tooltip, Typography } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { WebsocketProvider } from "../context/socketContext";
 
 const initial_tab = {
   index: 0,
@@ -20,6 +26,7 @@ const Main = () => {
   const [menus, setMenus] = useState<any[]>([]);
   const [clicked, setClicked] = useState<number>(0);
   const {
+    dispatch,
     dialogState,
     userGlobal,
     setClickedGlobal,
@@ -236,73 +243,105 @@ const Main = () => {
 
   return (
     <>
-      <div className="flex absolute top-[60px] bottom-[10px] left-[10px] right-[10px]">
-        <NavLeft
-          menus={menus}
-          handleTab={handleTab}
-          setNroTab={setNroTab}
-          nroTab={nroTab}
-          clicked={clicked}
-          setNameMenuInit={setNameMenuInit}
-        />
-        <div className="flex flex-[1_1_auto] relative">
-          <div className="flex absolute h-full w-full top-0 left-0 flex-col">
-            <div className="flex relative flex-col flex-[1_1_auto] pl-[8px] min-h-0">
-              <div className="flex flex-[1_1_auto] min-h-0 flex-col">
-                <ul className="m-0 flex-[0_0_auto] list-none after:block content-[' '] clear-both">
-                  {/* <li className="select-none float-left ml-0 m-[0_0_8px_4px] cursor-pointer">
-                    <a
-                      onClick={() => handleToggle(0)}
-                      className={`top-0 pr-[5px] hover:no-underline ${
-                        clicked === 0
-                          ? "bg-secondary hover:bg-secondary text-[#fff] hover:text-white"
-                          : "bg-default text-[#000] hover:text-black"
-                      } hover:bg-hover rounded-[4px] relative z-[2] pl-0 text-[12px] font-bold leading-[1.2] text-center no-underline	whitespace-nowrap block`}
+      {dialogState.pageComplete &&
+        dialogState.nameDialog === DialogActionKind.SCREEN_FACTURA && (
+          // <FacturaScreen />
+          <div className="bg-[#EDF1F4] min-h-[100vh] flex justify-center pt-[60px]">
+            <div className="p-[30px] flex-[0_0_1050px]">
+              <PaperRounded>
+                <div className="pl-[15px] py-[10px] flex justify-start items-center">
+                  <Tooltip title="Regresar" arrow>
+                    <IconButton
+                      onClick={() => dispatch({ type: DialogActionKind.INIT })}
                     >
-                      <span className="flex justify-between items-center bg-none pl-[9px] p-[4px_0_4px_5px] w-auto h-auto min-w-0 min-h-[21px]">
-                        <label className="align-middle cursor-pointer relative">
-                          {nameComponentInit}
-                        </label>
-                        <label
-                          className={`ml-[5px] align-middle ${
-                            clicked === 0 ? "text-[#fff]" : "text-[#000]"
-                          } mr-[3px] text-[18px] font-normal text-center after:content-['x'] cursor-pointer`}
-                        ></label>
-                      </span>
-                    </a>
-                  </li> */}
-                  {nroTab.map((tab) => (
-                    <TabItem
-                      key={tab.index}
-                      onclick={() => handleToggle(tab.index)}
-                      active={clicked === tab.index}
-                      onClose={() => removeTab(tab.index)}
-                      entity={tab}
-                      size={nroTab}
-                    />
-                  ))}
-                  {nroTab.length <= 3 ? (
-                    <li className="float-left m-[0_0_8px_8px] border-[1px] border-solid border-transparent rounded-[2px]">
-                      <a className="bg-none top-0 pr-[5px] relative z-[2] pl-0 text-[12px] font-bold leading-[1.2] text-center no-underline	whitespace-nowrap block p-[0_8px]">
-                        <label
-                          onClick={addTab}
-                          className="text-[24px] font-bold text-center	 align-middle cursor-pointer inline-block after:content-['+'] text-green-600"
-                        ></label>
-                      </a>
-                    </li>
-                  ) : null}
-                </ul>
-                <div className="flex flex-col min-h-0 min-w-0 flex-[1_1_auto] p-0 h-auto">
-                  <div className="flex flex-col flex-[1_1_auto] relative text-[#000] overflow-hidden select-text">
-                    {/* {clicked === 0 ? ComponentInit : Component} */}
-                    {renderComponent()}
+                      <ArrowBackIcon />
+                    </IconButton>
+                  </Tooltip>{" "}
+                  <Typography variant="h6">
+                    Emitir <small className="text-textDefault">Factura</small>
+                  </Typography>
+                </div>
+                <Divider variant="fullWidth" />
+                <div className="pt-[20px]">
+                  <FacturaScreen />
+                </div>
+              </PaperRounded>
+            </div>
+          </div>
+        )}
+
+      {!dialogState.pageComplete && (
+        <>
+          <div className="flex absolute top-[60px] bottom-[10px] left-[10px] right-[10px]">
+            <NavLeft
+              menus={menus}
+              handleTab={handleTab}
+              setNroTab={setNroTab}
+              nroTab={nroTab}
+              clicked={clicked}
+              setNameMenuInit={setNameMenuInit}
+            />
+            <div className="flex flex-[1_1_auto] relative">
+              <div className="flex absolute h-full w-full top-0 left-0 flex-col">
+                <div className="flex relative flex-col flex-[1_1_auto] pl-[8px] min-h-0">
+                  <div className="flex flex-[1_1_auto] min-h-0 flex-col">
+                    <ul className="m-0 flex-[0_0_auto] list-none after:block content-[' '] clear-both">
+                      {/* <li className="select-none float-left ml-0 m-[0_0_8px_4px] cursor-pointer">
+                  <a
+                    onClick={() => handleToggle(0)}
+                    className={`top-0 pr-[5px] hover:no-underline ${
+                      clicked === 0
+                        ? "bg-secondary hover:bg-secondary text-[#fff] hover:text-white"
+                        : "bg-default text-[#000] hover:text-black"
+                    } hover:bg-hover rounded-[4px] relative z-[2] pl-0 text-[12px] font-bold leading-[1.2] text-center no-underline	whitespace-nowrap block`}
+                  >
+                    <span className="flex justify-between items-center bg-none pl-[9px] p-[4px_0_4px_5px] w-auto h-auto min-w-0 min-h-[21px]">
+                      <label className="align-middle cursor-pointer relative">
+                        {nameComponentInit}
+                      </label>
+                      <label
+                        className={`ml-[5px] align-middle ${
+                          clicked === 0 ? "text-[#fff]" : "text-[#000]"
+                        } mr-[3px] text-[18px] font-normal text-center after:content-['x'] cursor-pointer`}
+                      ></label>
+                    </span>
+                  </a>
+                </li> */}
+                      {nroTab.map((tab) => (
+                        <TabItem
+                          key={tab.index}
+                          onclick={() => handleToggle(tab.index)}
+                          active={clicked === tab.index}
+                          onClose={() => removeTab(tab.index)}
+                          entity={tab}
+                          size={nroTab}
+                        />
+                      ))}
+                      {nroTab.length <= 3 ? (
+                        <li className="float-left m-[0_0_8px_8px] border-[1px] border-solid border-transparent rounded-[2px]">
+                          <a className="bg-none top-0 pr-[5px] relative z-[2] pl-0 text-[12px] font-bold leading-[1.2] text-center no-underline	whitespace-nowrap block p-[0_8px]">
+                            <label
+                              onClick={addTab}
+                              className="text-[24px] font-bold text-center	 align-middle cursor-pointer inline-block after:content-['+'] text-green-600"
+                            ></label>
+                          </a>
+                        </li>
+                      ) : null}
+                    </ul>
+                    <div className="flex flex-col min-h-0 min-w-0 flex-[1_1_auto] p-0 h-auto">
+                      <div className="flex flex-col flex-[1_1_auto] relative text-[#000] overflow-hidden select-text">
+                        {/* {clicked === 0 ? ComponentInit : Component} */}
+                        {renderComponent()}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
+
       {/* {dialogState.open && (
         <div className="absolute transition-all duration-1000 ease-in-out overflow-hidden w-full h-full top-0 left-0 bg-dialog z-[11]"></div>
       )} */}

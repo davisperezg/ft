@@ -4,6 +4,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import ToastError from "../components/Toast/ToastError";
 import { storage } from "../utils/storage";
 import { toast } from "react-toastify";
+import { v4 as uuidv4 } from "uuid";
 
 interface Username {
   username: string;
@@ -34,12 +35,14 @@ const LoginScreen = () => {
   const onSubmit: SubmitHandler<Username> = async (data) => {
     setError(initialError);
     setDisabled(true);
+    //const uid = uuidv4();
     try {
       const res = await postLogin(data.username, data.password);
       const access_token = res.data.user.access_token;
       const refresh_token = res.data.user.refresh_token;
       storage.setItem("access_token", access_token, "SESSION");
       storage.setItem("refresh_token", refresh_token, "SESSION");
+      //storage.setItem("uid", uid, "SESSION");
       storage.removeItem("c_session", "LOCAL");
       if (data.checkbox) {
         storage.setItem("username", data.username, "LOCAL");

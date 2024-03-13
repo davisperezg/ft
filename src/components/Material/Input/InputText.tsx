@@ -23,6 +23,9 @@ const InputText = forwardRef(
           ".MuiFormHelperText-root": {
             marginLeft: 0,
           },
+          ".Mui-disabled": {
+            cursor: "not-allowed",
+          },
         }}
         InputProps={
           {

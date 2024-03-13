@@ -26,3 +26,10 @@ export interface IUserWithPassword extends IUser {
   password: string;
   confirm_password: string;
 }
+
+export interface IUserMysql {
+  id?: number;
+  nombres: string;
+  apellidos: string;
+  email: string;
+}

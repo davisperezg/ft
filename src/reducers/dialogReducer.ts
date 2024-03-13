@@ -9,6 +9,8 @@ export enum DialogActionKind {
   DIALOG_SERIES = "DIALOG_SERIES",
   DIALOG_SERIES_MIGRATE = "DIALOG_SERIES_MIGRATE",
   OPEN_EDIT = "OPEN_EDIT",
+  SCREEN_FACTURA = "SCREEN_FACTURA",
+  SCREEN_BOLETA = "SCREEN_BOLETA",
   //OPEN_EDIT_ROL = "OPEN_EDIT_ROL",
 }
 
@@ -16,6 +18,7 @@ export interface DialogState {
   open: boolean;
   nameDialog: string;
   origen?: any;
+  pageComplete?: boolean;
 }
 
 interface DialogActions {
@@ -27,6 +30,7 @@ interface DialogActions {
 export const initialValueDialog: DialogState = {
   open: false,
   nameDialog: "",
+  pageComplete: false,
 };
 
 export const dialogReducer = (state: DialogState, action: DialogActions) => {
@@ -88,6 +92,21 @@ export const dialogReducer = (state: DialogState, action: DialogActions) => {
         ...state,
         open: true,
         nameDialog: "DIALOG_SERIES_MIGRATE",
+      };
+
+    case DialogActionKind.SCREEN_FACTURA:
+      return {
+        ...state,
+        open: true,
+        pageComplete: true,
+        nameDialog: "SCREEN_FACTURA",
+      };
+
+    case DialogActionKind.SCREEN_BOLETA:
+      return {
+        ...state,
+        open: true,
+        nameDialog: "SCREEN_BOLETA",
       };
 
     case DialogActionKind.OPEN_EDIT:

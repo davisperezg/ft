@@ -12,7 +12,7 @@ export function jwtInterceptor() {
     const isApiUrl = request.url?.startsWith(base_API);
 
     if (isLoggedIn && isApiUrl) {
-      request.headers!["Authorization"] = `Bearer ${isLoggedIn}`;
+      request.headers["Authorization"] = `Bearer ${isLoggedIn}`;
     }
 
     return request;
@@ -48,7 +48,7 @@ export function jwtInterceptor() {
 
           const refreshToken = storage.getItem("refresh_token", "SESSION");
           const resToken: any = await getRefresh(
-            String(user.email_usuario),
+            String(user.usuario),
             String(refreshToken)
           );
           if (resToken.status === 201) {

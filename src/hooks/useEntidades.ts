@@ -6,14 +6,17 @@ import {
 } from "../interface/entidades.interface";
 import { IError } from "../interface/error.interface";
 import {
+  getAllEntidadesByEmpresa,
   getDepartamentos,
   getDistritos,
   getProvincias,
 } from "../api/entidades";
+import { IEntidad } from "../interface/entidad.interface";
 
 const KEY_DEPARTAMENTOS = "departamentos";
 const KEY_PROVINCIAS = "provincias";
 const KEY_DISTRITOS = "distritos";
+const KEY_ENTIDAD = "clientes";
 
 export const useDepartamentos = () => {
   return useQuery<IDepartamento[], IError>({
@@ -33,6 +36,14 @@ export const useDistritos = () => {
   return useQuery<IDistrito[], IError>({
     queryKey: [KEY_DISTRITOS],
     queryFn: () => getDistritos(),
+  });
+};
+
+export const useEntidadesByEmpresa = (idEmpresa: number) => {
+  return useQuery<IEntidad[], IError>({
+    queryKey: [KEY_ENTIDAD, idEmpresa],
+    queryFn: () => getAllEntidadesByEmpresa(idEmpresa),
+    enabled: !!idEmpresa,
   });
 };
 

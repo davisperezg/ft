@@ -12,9 +12,9 @@ export const whois = async () => {
   return await axios.get(`${BASE_API}/api/v1/users/whois`);
 };
 
-export const getRefresh = async (email: string, refreshToken: string) => {
-  return await axios.post(`${BASE_API}/api/v1/auth/login/token`, {
-    email,
+export const getRefresh = async (username: string, refreshToken: string) => {
+  return await axios.post(`${BASE_API}/api/v1/auth/token`, {
+    username,
     refreshToken,
   });
 };

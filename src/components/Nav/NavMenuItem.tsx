@@ -4,7 +4,7 @@ import { IMenuAccess } from "../../interface/menu.interface";
 import { IModuloAccess } from "../../interface/modulo.interface";
 import { DialogActionKind } from "../../reducers/dialogReducer";
 import {
-  MENU_FACTURA,
+  MENU_COMPROBANTES_ELECT,
   MENU_MODULOS,
   MENU_PERMISOS,
   MENU_ROLES,
@@ -18,12 +18,11 @@ import PermisosScreen from "../../views/PermisosScreen";
 import RolesScreen from "../../views/RolesScreen";
 import UserScreen from "../../views/UserScreen";
 import ContentEmpty from "../Content/ContentEmpty";
-import UserList from "../User/UserList";
 import { useAccess } from "../../hooks/useResources";
-import FacturaScreen from "../../views/FacturaScreen";
 import TipoDocsScreen from "../../views/TipoDocsScreen";
 import EmpresasScreen from "../../views/EmpresasScreen";
 import SeriesScreen from "../../views/SeriesScreen";
+import CPEScreen from "../../views/CPEScreen";
 
 interface Props {
   open: boolean;
@@ -111,8 +110,8 @@ const NavMenuItem = ({
       case MENU_USUARIOS:
         setNroTab(personalizedComponent(<UserScreen />));
         break;
-      case MENU_FACTURA:
-        setNroTab(personalizedComponent(<FacturaScreen />));
+      case MENU_COMPROBANTES_ELECT:
+        setNroTab(personalizedComponent(<CPEScreen />));
         break;
 
       case MENU_ALTAS:
@@ -143,6 +142,7 @@ const NavMenuItem = ({
             // } else {
             //   loadMenuContext(menu.nombre);
             // }
+            dispatch({ type: DialogActionKind.INIT });
             loadMenuContext(menu.nombre);
             return onClickMenu(index);
           }}
@@ -154,7 +154,9 @@ const NavMenuItem = ({
       {open && (
         <fieldset className="border rounded-sm p-[8px]">
           <legend className="font-bold p-[0_12px] dark:text-white">
-            Actions
+            {menu.nombre === MENU_COMPROBANTES_ELECT
+              ? "Documentos"
+              : "Acciones"}
           </legend>
           {menu.nombre === MENU_MODULOS && (
             <div className="p-[10px] text-center">
@@ -276,6 +278,43 @@ const NavMenuItem = ({
                   Migrar Series
                 </button>
               )}
+            </div>
+          )}
+
+          {menu.nombre === MENU_COMPROBANTES_ELECT && (
+            <div className="p-[10px] text-center">
+              {dataAccess?.some((a) => a === "canCreate_facturas") && (
+                <button
+                  onClick={() =>
+                    dispatch({ type: DialogActionKind.SCREEN_FACTURA })
+                  }
+                  type="button"
+                  className="w-[180px] mb-[5px] border  min-h-[24px] text-secondary dark:text-white hover:bg-hover"
+                >
+                  Factura
+                </button>
+              )}
+              <button
+                onClick={() =>
+                  dispatch({ type: DialogActionKind.SCREEN_BOLETA })
+                }
+                type="button"
+                className="w-[180px] mb-[5px] border  min-h-[24px] text-secondary dark:text-white hover:bg-hover"
+              >
+                Boleta
+              </button>
+              <button
+                type="button"
+                className="w-[180px] mb-[5px] border  min-h-[24px] text-secondary dark:text-white hover:bg-hover"
+              >
+                Nota de Credito
+              </button>
+              <button
+                type="button"
+                className="w-[180px] mb-[5px] border  min-h-[24px] text-secondary dark:text-white hover:bg-hover"
+              >
+                Nota de Debito
+              </button>
             </div>
           )}
         </fieldset>
