@@ -318,7 +318,7 @@ const THeadItem = <T extends object>({
       setStatus(2);
     }
 
-    let tamañoPantalla = window.innerWidth;
+    const tamañoPantalla = window.innerWidth;
 
     if (refContentTBody.current) {
       const altTbody = refContentTBody.current.offsetHeight;
@@ -339,13 +339,7 @@ const THeadItem = <T extends object>({
     return () => {
       window.removeEventListener("resize", changeWindows);
     };
-  }, [
-    operador,
-    table.getState().columnSizing,
-    refContentTBody.current?.offsetHeight,
-    table.getState().columnSizingInfo.startSize,
-    table.getState().columnSizingInfo.deltaOffset,
-  ]);
+  }, [header.column.columnDef.minSize, operador, refContentTBody, table]);
 
   if (table.getState().columnSizingInfo.deltaOffset !== null) {
     document.body.style.cursor = "col-resize";
@@ -381,7 +375,7 @@ const THeadItem = <T extends object>({
             changeClicked();
           }
         },
-        onMouseOut: (e) => {
+        onMouseOut: () => {
           if (header.id === "actions") {
             if (showOptions) {
               document.onmouseover = function (e) {
@@ -459,6 +453,7 @@ const THeadItem = <T extends object>({
   );
 };
 
+// million-ignore
 const TBodyItem = <T extends object>({
   cell,
   row,
@@ -490,13 +485,15 @@ const TBodyItem = <T extends object>({
         }
       }}
     >
-      <div
-        style={{
-          width: cell.column.getSize(),
-        }}
-      >
-        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-      </div>
+      <>
+        <div
+          style={{
+            width: cell.column.getSize(),
+          }}
+        >
+          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+        </div>
+      </>
     </td>
   );
 };
@@ -791,7 +788,7 @@ const ComponentTable = <T extends object>({
   const [showOptions, setShowOptions] = useState<boolean>(false);
 
   //visible column
-  const initialVisibleColumn = columns.reduce((acc, item) => {
+  const initialVisibleColumn = columns.reduce((acc: any, item: any) => {
     if (item.visible !== undefined) {
       acc[item.id] = item.visible;
     }

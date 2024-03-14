@@ -1,4 +1,4 @@
-import { useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form";
 import { IUserWithPassword } from "../../../interface/user.interface";
 import { useRolesAvailables } from "../../../hooks/useRoles";
 import { useMemo, useEffect } from "react";
@@ -14,6 +14,7 @@ const UserCreateGeneral = () => {
     register,
     watch,
     formState: { errors },
+    control,
   } = useFormContext<IUserWithPassword>();
 
   const {
@@ -30,18 +31,6 @@ const UserCreateGeneral = () => {
 
     return [{ name: "[SELECCIONE ROL]", _id: "null" }];
   }, [dataRoles]);
-
-  const validateOption = (value: string) => {
-    const tipDocumento = watch("tipDocument");
-
-    if (tipDocumento === "DNI" && value.length !== 8) {
-      return "El valor debe tener 8 caracteres";
-    }
-    if (tipDocumento === "RUC" && value.length !== 11) {
-      return "El valor debe tener 11 caracteres";
-    }
-    return true;
-  };
 
   const {
     data: dataPersona,
@@ -73,6 +62,8 @@ const UserCreateGeneral = () => {
     isErrorPersona,
     setValueModel,
   ]);
+
+  console.log(watch());
 
   return (
     <>
@@ -146,27 +137,32 @@ const UserCreateGeneral = () => {
 
         <div className="w-1/3 flex flex-row gap-1">
           <div className="w-10/12 flex flex-col relative">
-            <input
-              {...register("nroDocument", {
-                validate: validateOption,
-                onChange: (e) => {
-                  const value: string = e.target.value;
-                  const maxLength = value.slice(0, 8);
-                  if (value.length > 8) {
-                    return setValueModel("nroDocument", maxLength);
-                  }
-
-                  if (value.length !== 8) {
-                    setValueModel("name", "");
-                    setValueModel("lastname", "");
-                  }
-                },
-              })}
-              type="text"
-              disabled={isFetchingPersona}
-              className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                errors.nroDocument ? "border-primary" : ""
-              }`}
+            <Controller
+              name="nroDocument"
+              control={control}
+              render={({ field }) => (
+                <input
+                  {...field}
+                  //validate: validateOption,
+                  type="text"
+                  onChange={(e) => {
+                    field.onChange(e);
+                    const value: string = e.target.value;
+                    const maxLength = value.slice(0, 8);
+                    if (value.length > 8) {
+                      return setValueModel("nroDocument", maxLength);
+                    }
+                    if (value.length !== 8) {
+                      setValueModel("name", "");
+                      setValueModel("lastname", "");
+                    }
+                  }}
+                  disabled={isFetchingPersona}
+                  className={`border w-full focus:outline-none pl-1 rounded-sm ${
+                    errors.nroDocument ? "border-primary" : ""
+                  }`}
+                />
+              )}
             />
             {errors.nroDocument && (
               <span className="text-primary">{errors.nroDocument.message}</span>
@@ -194,13 +190,19 @@ const UserCreateGeneral = () => {
           </label>
         </div>
         <div className="w-1/3">
-          <input
-            {...register("name")}
-            type="text"
-            disabled={isFetchingPersona}
-            className={`border w-full focus:outline-none pl-1 rounded-sm ${
-              errors.name ? "border-primary" : ""
-            }`}
+          <Controller
+            name="name"
+            control={control}
+            render={({ field }) => (
+              <input
+                {...field}
+                type="text"
+                disabled={isFetchingPersona}
+                className={`border w-full focus:outline-none pl-1 rounded-sm ${
+                  errors.name ? "border-primary" : ""
+                }`}
+              />
+            )}
           />
           {errors.name && (
             <span className="text-primary">{errors.name.message}</span>
@@ -215,13 +217,19 @@ const UserCreateGeneral = () => {
           </label>
         </div>
         <div className="w-1/3">
-          <input
-            {...register("lastname")}
-            type="text"
-            disabled={isFetchingPersona}
-            className={`border w-full focus:outline-none pl-1 rounded-sm ${
-              errors.lastname ? "border-primary" : ""
-            }`}
+          <Controller
+            name="lastname"
+            control={control}
+            render={({ field }) => (
+              <input
+                {...field}
+                type="text"
+                disabled={isFetchingPersona}
+                className={`border w-full focus:outline-none pl-1 rounded-sm ${
+                  errors.lastname ? "border-primary" : ""
+                }`}
+              />
+            )}
           />
           {errors.lastname && (
             <span className="text-primary">{errors.lastname.message}</span>
@@ -236,12 +244,18 @@ const UserCreateGeneral = () => {
           </label>
         </div>
         <div className="w-1/3">
-          <input
-            {...register("email")}
-            type="text"
-            className={`border w-full focus:outline-none pl-1 rounded-sm ${
-              errors.email ? "border-primary" : ""
-            }`}
+          <Controller
+            name="email"
+            control={control}
+            render={({ field }) => (
+              <input
+                {...field}
+                type="text"
+                className={`border w-full focus:outline-none pl-1 rounded-sm ${
+                  errors.email ? "border-primary" : ""
+                }`}
+              />
+            )}
           />
           {errors.email && (
             <span className="text-primary">{errors.email.message}</span>
@@ -256,12 +270,18 @@ const UserCreateGeneral = () => {
           </label>
         </div>
         <div className="w-1/3">
-          <input
-            {...register("username")}
-            type="text"
-            className={`border w-full focus:outline-none pl-1 rounded-sm ${
-              errors.username ? "border-primary" : ""
-            }`}
+          <Controller
+            name="username"
+            control={control}
+            render={({ field }) => (
+              <input
+                {...field}
+                type="text"
+                className={`border w-full focus:outline-none pl-1 rounded-sm ${
+                  errors.username ? "border-primary" : ""
+                }`}
+              />
+            )}
           />
           {errors.username && (
             <span className="text-primary">{errors.username.message}</span>
@@ -276,12 +296,18 @@ const UserCreateGeneral = () => {
           </label>
         </div>
         <div className="w-1/3">
-          <input
-            {...register("password")}
-            type="text"
-            className={`border w-full focus:outline-none pl-1 rounded-sm ${
-              errors.password ? "border-primary" : ""
-            }`}
+          <Controller
+            name="password"
+            control={control}
+            render={({ field }) => (
+              <input
+                {...field}
+                type="text"
+                className={`border w-full focus:outline-none pl-1 rounded-sm ${
+                  errors.password ? "border-primary" : ""
+                }`}
+              />
+            )}
           />
           {errors.password && (
             <span className="text-primary">{errors.password.message}</span>
@@ -296,12 +322,18 @@ const UserCreateGeneral = () => {
           </label>
         </div>
         <div className="w-1/3">
-          <input
-            {...register("confirm_password")}
-            type="text"
-            className={`border w-full focus:outline-none pl-1 rounded-sm ${
-              errors.confirm_password ? "border-primary" : ""
-            }`}
+          <Controller
+            name="confirm_password"
+            control={control}
+            render={({ field }) => (
+              <input
+                {...field}
+                type="text"
+                className={`border w-full focus:outline-none pl-1 rounded-sm ${
+                  errors.confirm_password ? "border-primary" : ""
+                }`}
+              />
+            )}
           />
           {errors.confirm_password && (
             <span className="text-primary">

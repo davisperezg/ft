@@ -1,7 +1,8 @@
 import { Grid } from "@mui/material";
-import { useFormContext, useFieldArray } from "react-hook-form";
+import { useFormContext, useFieldArray, Controller } from "react-hook-form";
 import { IUser } from "../../../interface/user.interface";
 import { IError } from "../../../interface/error.interface";
+import InputCheckBox from "../../Material/Input/InputCheckBox";
 
 interface Props {
   isLoading: boolean;
@@ -9,7 +10,7 @@ interface Props {
 }
 
 const UserCreateAsignarEmpresa = ({ isLoading, error }: Props) => {
-  const { control, getValues, setValue, register } = useFormContext<IUser>();
+  const { control, getValues, setValue } = useFormContext<IUser>();
 
   const { fields } = useFieldArray({
     control,
@@ -39,15 +40,18 @@ const UserCreateAsignarEmpresa = ({ isLoading, error }: Props) => {
                 return (
                   <div key={empresa.uuid} className="border p-2 mb-2">
                     <div className="flex flex-col">
-                      <label className="flex gap-[2px] cursor-pointer">
-                        <input
-                          disabled={!empresa.estado}
-                          type="checkbox"
-                          {...register(
-                            `empresasAsign.${indexEmpresa}.checked`,
-                            {
-                              onChange: (e) => {
+                      <label className="flex gap-[2px] cursor-pointer items-center">
+                        <Controller
+                          name={`empresasAsign.${indexEmpresa}.checked`}
+                          control={control}
+                          render={({ field }) => (
+                            <InputCheckBox
+                              {...field}
+                              disabled={!empresa.estado}
+                              onChange={(e) => {
                                 const checked = e.target.checked;
+                                field.onChange(checked);
+
                                 //Si una empresa esta marcada se debe marcar minimo por defecto un establecimiento
                                 if (checked) {
                                   setValue(
@@ -68,8 +72,8 @@ const UserCreateAsignarEmpresa = ({ isLoading, error }: Props) => {
                                     }
                                   );
                                 }
-                              },
-                            }
+                              }}
+                            />
                           )}
                         />
                         {empresa.razon_social}
@@ -79,18 +83,20 @@ const UserCreateAsignarEmpresa = ({ isLoading, error }: Props) => {
                           return (
                             <label
                               key={establecimiento.id}
-                              className="ml-5 flex gap-[2px] text-[11px] cursor-pointer"
+                              className="ml-5 flex gap-[2px] text-[11px] cursor-pointer items-center"
                             >
-                              <input
-                                disabled={
-                                  !empresa.estado || !establecimiento.estado
-                                }
-                                type="checkbox"
-                                {...register(
-                                  `empresasAsign.${indexEmpresa}.establecimientos.${indexEstablecimiento}.checked`,
-                                  {
-                                    onChange: (e) => {
+                              <Controller
+                                name={`empresasAsign.${indexEmpresa}.establecimientos.${indexEstablecimiento}.checked`}
+                                control={control}
+                                render={({ field }) => (
+                                  <InputCheckBox
+                                    {...field}
+                                    disabled={
+                                      !empresa.estado || !establecimiento.estado
+                                    }
+                                    onChange={(e) => {
                                       const checked = e.target.checked;
+                                      field.onChange(checked);
                                       //Si un establecimiento esta marcado se debe marcar por defecto la empresa
                                       if (checked) {
                                         setValue(
@@ -118,8 +124,8 @@ const UserCreateAsignarEmpresa = ({ isLoading, error }: Props) => {
                                           );
                                         }
                                       }
-                                    },
-                                  }
+                                    }}
+                                  />
                                 )}
                               />
                               {`${establecimiento.codigo} - ${establecimiento.denominacion}`}
