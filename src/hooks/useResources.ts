@@ -30,7 +30,7 @@ export const useAccess = (id: string) => {
   return useQuery<any, IError, any[]>({
     queryKey: [KEY_ACCESS, id],
     queryFn: () => getAccess(id),
-    cacheTime: 0,
+    gcTime: 0,
     enabled: !!id,
   });
 };
@@ -167,7 +167,7 @@ export const useServicesXuser = (id: string) => {
   return useQuery<any, IError, any>({
     queryKey: [KEY_SERVICES_BY_USERS, id],
     queryFn: () => getModulesXUser(id),
-    cacheTime: 0,
+    gcTime: 0,
   });
 };
 
@@ -175,7 +175,7 @@ export const usePermisosXuser = (id: string) => {
   return useQuery<any, IError, any>({
     queryKey: [KEY_BY_USERS, id],
     queryFn: () => getResourcesXUser(id),
-    cacheTime: 0,
+    gcTime: 0,
   });
 };
 
@@ -183,6 +183,6 @@ export const usePermisosXrole = (id: string) => {
   return useQuery<any, IError, any>({
     queryKey: [KEY_BY_ROLES, id],
     queryFn: () => getResourcesXRol(id),
-    cacheTime: 0,
+    gcTime: 0,
   });
 };

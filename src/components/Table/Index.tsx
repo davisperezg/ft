@@ -25,8 +25,8 @@ import {
   useState,
 } from "react";
 import { useDrop, useDrag } from "react-dnd";
-import { useVirtual } from "react-virtual";
 import { ModalContext } from "../../context/modalContext";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 interface ITHeadItemProps<T> {
   header: Header<T, unknown>;
@@ -59,6 +59,10 @@ interface Props<T> {
   getItemsRestores?: (props: any) => void;
   openEdit?: (value: boolean, row: T) => void;
   loading?: boolean;
+  propsPagination?: any;
+  paginationState?: any;
+  setPaginationState?: any;
+  evento?: (page: number, pageSize: number) => void;
 }
 
 interface PropsHead<T> {
@@ -84,6 +88,8 @@ interface PropsFooter<T> extends Omit<Props<T>, "columns"> {
   configTable: Table<any>;
   getItemsRemoves?: (props: any) => void;
   getItemsRestores?: (props: any) => void;
+  propsPagination?: any;
+  evento?: (page: number, pageSize: number) => void;
 }
 
 const ShowOptions = (table: any) => {
@@ -508,18 +514,34 @@ const TBody = <T extends object>({
 
   //virtualized
   const { rows } = configTable.getRowModel();
-  const rowVirtualizer = useVirtual({
-    parentRef: refContentTBody,
-    size: rows.length,
-    overscan: 100,
-  });
-  const { virtualItems: virtualRows, totalSize } = rowVirtualizer;
 
-  const paddingTop = virtualRows.length > 0 ? virtualRows?.[0]?.start || 0 : 0;
-  const paddingBottom =
-    virtualRows.length > 0
-      ? totalSize - (virtualRows?.[virtualRows.length - 1]?.end || 0)
-      : 0;
+  //react-virutal
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    estimateSize: () => 33, //estimate row height for accurate scrollbar dragging
+    getScrollElement: () => refContentTBody.current,
+    //measure dynamic row height, except in firefox because it measures table border height incorrectly
+    measureElement:
+      typeof window !== "undefined" &&
+      navigator.userAgent.indexOf("Firefox") === -1
+        ? (element) => element?.getBoundingClientRect().height
+        : undefined,
+    overscan: 30,
+    debug: true,
+  });
+  //
+  // const rowVirtualizer = useVirtual({
+  //   parentRef: refContentTBody,
+  //   size: rows.length,
+  //   overscan: 100,
+  // });
+  // const { virtualItems: virtualRows, totalSize } = rowVirtualizer;
+
+  // const paddingTop = virtualRows.length > 0 ? virtualRows?.[0]?.start || 0 : 0;
+  // const paddingBottom =
+  //   virtualRows.length > 0
+  //     ? totalSize - (virtualRows?.[virtualRows.length - 1]?.end || 0)
+  //     : 0;
 
   return (
     <div
@@ -535,26 +557,30 @@ const TBody = <T extends object>({
           },
         }}
       >
-        {paddingTop > 0 && (
+        {/* {paddingTop > 0 && (
           <tr>
             <td style={{ height: `${paddingTop}px` }} />
           </tr>
-        )}
+        )} */}
 
-        <tbody>
-          {virtualRows.map((virtualRow, i) => {
+        <tbody
+          style={{
+            height: `${rowVirtualizer.getTotalSize()}px`, //tells scrollbar how big the table is
+            position: "relative", //needed for absolute positioning of rows
+          }}
+        >
+          {rowVirtualizer.getVirtualItems().map((virtualRow, i) => {
             const row = rows[virtualRow.index] as Row<any>;
             return (
               <tr
-                style={
-                  i % 2 !== 0
-                    ? {
-                        backgroundColor: "#f7f7f7",
-                      }
-                    : {
-                        backgroundColor: "#fff",
-                      }
-                }
+                data-index={virtualRow.index} //needed for dynamic row height measurement
+                ref={(node) => rowVirtualizer.measureElement(node)} //measure dynamic row height
+                style={{
+                  //display: "flex",
+                  position: "absolute",
+                  transform: `translateY(${virtualRow.start}px)`, //this should always be a `style` as it changes on scroll
+                  backgroundColor: i % 2 !== 0 ? "#f7f7f7" : "#fff",
+                }}
                 key={row.id}
                 className={`${
                   !row.original.status
@@ -577,26 +603,46 @@ const TBody = <T extends object>({
               </tr>
             );
           })}
-          {paddingBottom > 0 && (
+          {/* {paddingBottom > 0 && (
             <tr>
               <td style={{ height: `${paddingBottom}px` }} />
             </tr>
-          )}
+          )} */}
         </tbody>
       </table>
     </div>
   );
 };
 
+// million-ignore
 const TFooter = <T extends object>({
   configTable,
   data,
   getItemsRestores,
   getItemsRemoves,
+  propsPagination,
+  evento,
+  setPaginationState,
 }: PropsFooter<T>) => {
   const selects = configTable
     .getSelectedRowModel()
     .flatRows.map((a) => a.original);
+
+  let startRange = 0;
+  let endRange = 0;
+
+  // Calcular el rango de los registros mostrados
+  if (propsPagination) {
+    startRange =
+      (propsPagination.currentPage - 1) *
+        configTable.getState().pagination.pageSize +
+      1;
+
+    endRange = Math.min(
+      startRange + configTable.getState().pagination.pageSize - 1,
+      propsPagination.total
+    );
+  }
 
   return (
     <div className="bg-none overflow-hidden whitespace-nowrap relative flex-[0_0_auto] gap-2 flex items-center p-2">
@@ -653,36 +699,90 @@ const TFooter = <T extends object>({
           <select
             value={configTable.getState().pagination.pageSize}
             onChange={(e) => {
+              if (propsPagination && evento) {
+                setPaginationState({
+                  page: propsPagination.currentPage,
+                  pageSize: Number(e.target.value),
+                });
+                evento(propsPagination.currentPage, Number(e.target.value));
+                return;
+              }
+
               configTable.setPageSize(Number(e.target.value));
             }}
             className=" border-solid border min-h-[24px] p-[0_18px_0_0.5rem] rounded-sm align-middle text-[12px] text-left indent-[0.01px] overflow-ellipsis bg-white bg-no-repeat bg-[url(https://cms.wialon.us/static/skin/misc/ddn.svg)] text-[#464646] outline-none appearance-none cursor-pointer bg-right"
           >
-            {[10, 20, 50, 100, 500, 1000].map((pageSize) => (
-              <option key={pageSize} value={pageSize}>
-                {pageSize}
-              </option>
-            ))}
+            {propsPagination
+              ? [10, 20, 50].map((pageSize) => (
+                  <option key={pageSize} value={pageSize}>
+                    {pageSize}
+                  </option>
+                ))
+              : [10, 20, 50, 100, 500, 1000].map((pageSize) => (
+                  <option key={pageSize} value={pageSize}>
+                    {pageSize}
+                  </option>
+                ))}
           </select>
         </div>
         <div className="float-left bg-none h-[24px] m-[0_5px] align-middle whitespace-nowrap">
           <div
-            onClick={() => configTable.setPageIndex(0)}
+            onClick={() => {
+              if (propsPagination && evento) {
+                if (configTable.getState().pagination.pageIndex === 1) return;
+
+                configTable.setPageIndex(1);
+                setPaginationState({
+                  page: 1,
+                  pageSize: configTable.getState().pagination.pageSize,
+                });
+                evento(1, configTable.getState().pagination.pageSize);
+                return;
+              }
+
+              configTable.setPageIndex(0);
+            }}
             className={`
-            float-left w-[22px] h-[22px] border-0 cursor-pointer overflow-hidden text-[12px] text-center pt-[2px] text-[#9b9c9c] flex items-center justify-center ${
-              configTable.getState().pagination.pageIndex + 1 === 1
-                ? "text-borders cursor-auto"
-                : "text-[#9b9c9c]"
+            float-left w-[22px] h-[22px] border-0 overflow-hidden text-[12px] text-center pt-[2px] text-[#9b9c9c] flex items-center justify-center ${
+              propsPagination
+                ? configTable.getState().pagination.pageIndex === 1
+                  ? "text-borders"
+                  : "text-[#9b9c9c] cursor-pointer"
+                : configTable.getState().pagination.pageIndex + 1 === 1
+                ? "text-borders"
+                : "text-[#9b9c9c] cursor-pointer"
             }
             `}
           >
             <i className="gg-play-backwards"></i>
           </div>
           <div
-            onClick={() => configTable.previousPage()}
-            className={`float-left w-[22px] h-[22px] border-0 cursor-pointer overflow-hidden text-[12px] text-center pt-[2px] flex items-center justify-center ${
-              configTable.getState().pagination.pageIndex + 1 === 1
-                ? "text-borders cursor-auto"
-                : "text-[#9b9c9c]"
+            onClick={() => {
+              if (propsPagination && evento) {
+                if (configTable.getState().pagination.pageIndex === 1) return;
+
+                configTable.setPageIndex(propsPagination.currentPage - 1);
+                setPaginationState({
+                  page: propsPagination.currentPage - 1,
+                  pageSize: configTable.getState().pagination.pageSize,
+                });
+                evento(
+                  propsPagination.currentPage - 1,
+                  configTable.getState().pagination.pageSize
+                );
+                return;
+              }
+
+              configTable.previousPage();
+            }}
+            className={`float-left w-[22px] h-[22px] border-0 overflow-hidden text-[12px] text-center pt-[2px] flex items-center justify-center ${
+              propsPagination
+                ? configTable.getState().pagination.pageIndex === 1
+                  ? "text-borders"
+                  : "text-[#9b9c9c] cursor-pointer"
+                : configTable.getState().pagination.pageIndex + 1 === 1
+                ? "text-borders "
+                : "text-[#9b9c9c] cursor-pointer"
             }`}
           >
             <i className="gg-play-button rotate-180"></i>
@@ -701,12 +801,32 @@ const TFooter = <T extends object>({
                       <input
                         className="border-solid border w-[63px] text-[12px] p-[0_5px] relative ml-[8px] mr-[8px] min-h-[24px] text-left resize-none outline-none rounded-sm"
                         type="number"
-                        value={configTable.getState().pagination.pageIndex + 1}
+                        value={
+                          propsPagination
+                            ? configTable.getState().pagination.pageIndex
+                            : configTable.getState().pagination.pageIndex + 1
+                        }
                         onChange={(e) => {
-                          const page = e.target.value
-                            ? Number(e.target.value) - 1
-                            : 0;
-                          configTable.setPageIndex(page);
+                          if (propsPagination && evento) {
+                            const page = Number(e.target.value);
+                            if (page < 1) return;
+                            configTable.setPageIndex(Number(e.target.value));
+
+                            setPaginationState({
+                              page: Number(e.target.value),
+                              pageSize:
+                                configTable.getState().pagination.pageSize,
+                            });
+                            return evento(
+                              Number(e.target.value),
+                              configTable.getState().pagination.pageSize
+                            );
+                          } else {
+                            const page = e.target.value
+                              ? Number(e.target.value) - 1
+                              : 0;
+                            configTable.setPageIndex(page);
+                          }
                         }}
                       />
                     </td>
@@ -723,38 +843,92 @@ const TFooter = <T extends object>({
           </div>
           <div className="float-left bg-none h-[24px] m-[0_5px] align-middle whitespace-nowrap">
             <div
-              className={`float-left w-[22px] h-[22px] border-0 cursor-pointer overflow-hidden text-[12px] text-center pt-[2px] text-[#9b9c9c] flex items-center justify-center ${
-                configTable.getState().pagination.pageIndex + 1 ===
-                configTable.getPageCount()
-                  ? "text-borders cursor-auto"
-                  : "text-[#9b9c9c]"
+              className={`float-left w-[22px] h-[22px] border-0 overflow-hidden text-[12px] text-center pt-[2px] text-[#9b9c9c] flex items-center justify-center ${
+                propsPagination
+                  ? configTable.getState().pagination.pageIndex ===
+                    configTable.getPageCount()
+                    ? "text-borders"
+                    : "text-[#9b9c9c] cursor-pointer"
+                  : configTable.getState().pagination.pageIndex + 1 ===
+                    configTable.getPageCount()
+                  ? "text-borders"
+                  : "text-[#9b9c9c] cursor-pointer"
               }`}
-              onClick={() => configTable.nextPage()}
+              onClick={() => {
+                if (propsPagination && evento) {
+                  if (
+                    configTable.getState().pagination.pageIndex ===
+                    configTable.getPageCount()
+                  )
+                    return;
+
+                  configTable.setPageIndex(propsPagination.currentPage + 1);
+                  setPaginationState({
+                    page: propsPagination.currentPage + 1,
+                    pageSize: configTable.getState().pagination.pageSize,
+                  });
+                  evento(
+                    propsPagination.currentPage + 1,
+                    configTable.getState().pagination.pageSize
+                  );
+                  return;
+                }
+
+                configTable.nextPage();
+              }}
             >
               <i className="gg-play-button"></i>
             </div>
             <div
-              className={`float-left w-[22px] h-[22px] border-0 cursor-pointer overflow-hidden text-[12px] text-center pt-[2px] text-[#9b9c9c] flex items-center justify-center ${
-                configTable.getState().pagination.pageIndex + 1 ===
-                configTable.getPageCount()
-                  ? "text-borders cursor-auto"
-                  : "text-[#9b9c9c]"
+              className={`float-left w-[22px] h-[22px] border-0 overflow-hidden text-[12px] text-center pt-[2px] text-[#9b9c9c] flex items-center justify-center ${
+                propsPagination
+                  ? configTable.getState().pagination.pageIndex ===
+                    configTable.getPageCount()
+                    ? "text-borders"
+                    : "text-[#9b9c9c] cursor-pointer"
+                  : configTable.getState().pagination.pageIndex + 1 ===
+                    configTable.getPageCount()
+                  ? "text-borders"
+                  : "text-[#9b9c9c] cursor-pointer"
               }`}
-              onClick={() =>
-                configTable.setPageIndex(configTable.getPageCount() - 1)
-              }
+              onClick={() => {
+                if (propsPagination && evento) {
+                  if (
+                    configTable.getState().pagination.pageIndex ===
+                    configTable.getPageCount()
+                  )
+                    return;
+
+                  configTable.setPageIndex(propsPagination.totalPage);
+                  setPaginationState({
+                    page: propsPagination.totalPage,
+                    pageSize: configTable.getState().pagination.pageSize,
+                  });
+                  evento(
+                    propsPagination.totalPage,
+                    configTable.getState().pagination.pageSize
+                  );
+                  return;
+                }
+
+                configTable.setPageIndex(configTable.getPageCount() - 1);
+              }}
             >
               <i className="gg-play-forwards"></i>
             </div>
           </div>
           <div className="float-left bg-none h-[24px] m-[0_5px] align-middle text-[12px] flex items-center justify-center">
             <label>
-              Mostrando {configTable.options.data[0].index} a{" "}
-              {
-                configTable.options.data[configTable.options.data.length - 1]
-                  .index
-              }{" "}
-              de {data.length} registros
+              Mostrando{" "}
+              {propsPagination ? startRange : configTable.options.data[0].index}{" "}
+              a{" "}
+              {propsPagination
+                ? endRange
+                : configTable.options.data[configTable.options.data.length - 1]
+                    .index}{" "}
+              de {propsPagination ? propsPagination.total : data.length}{" "}
+              registros
+              {/* de {data.length} registros */}
             </label>
           </div>
         </div>
@@ -771,6 +945,10 @@ const ComponentTable = <T extends object>({
   getItemsRestores,
   openEdit,
   loading,
+  propsPagination,
+  paginationState,
+  setPaginationState,
+  evento,
 }: Props<T>) => {
   const refContentTHeader = useRef<HTMLDivElement>(null);
 
@@ -808,18 +986,26 @@ const ComponentTable = <T extends object>({
     columns.map((column) => column.id as string) //must start out with populated columnOrder so we can splice
   );
 
-  const resetOrder = () =>
-    setColumnOrder(columns.map((column) => column.id as string));
+  // const resetOrder = () =>
+  //   setColumnOrder(columns.map((column) => column.id as string));
   //end dragable
 
-  const dataQuery = {
-    rows: data
-      .map((column: any, i: number) => {
-        return { ...column, index: i + 1, status: column.status };
-      })
-      .slice(pageIndex * pageSize, (pageIndex + 1) * pageSize) as any[],
-    pageCount: Math.ceil(data.length / pageSize),
-  };
+  console.log(data);
+  const dataQuery = propsPagination
+    ? {
+        rows: data?.map((column: any, i: number) => {
+          return { ...column, index: i + 1, status: column.status };
+        }),
+        pageCount: propsPagination.totalPage,
+      }
+    : {
+        rows: data
+          .map((column: any, i: number) => {
+            return { ...column, index: i + 1, status: column.status };
+          })
+          .slice(pageIndex * pageSize, (pageIndex + 1) * pageSize) as any[],
+        pageCount: Math.ceil(data.length / pageSize),
+      };
 
   const pagination = useMemo(
     () => ({
@@ -860,13 +1046,21 @@ const ComponentTable = <T extends object>({
     onPaginationChange: setPagination,
     columnResizeMode,
     manualPagination: true,
+    debugTable: true,
   });
 
   useEffect(() => {
     if (refContentTHeader.current) {
       refContentTHeader.current.scrollLeft = 100; // Establece el scrollLeft a 100 píxeles
     }
-  }, [refContentTHeader]);
+
+    if (propsPagination) {
+      setPagination({
+        pageIndex: paginationState.page,
+        pageSize: paginationState.pageSize,
+      });
+    }
+  }, [refContentTHeader, propsPagination, paginationState]);
 
   return (
     <div className="flex flex-col flex-[1_1_auto] overflow-hidden border border-solid relative">
@@ -905,15 +1099,18 @@ const ComponentTable = <T extends object>({
             refContentTBody={refContentTBody}
             openEdit={openEdit}
           />
-          {footerVisible === true && data.length > 0 && (
-            <TFooter
-              configTable={table}
-              data={data}
-              getItemsRemoves={getItemsRemoves}
-              getItemsRestores={getItemsRestores}
-            />
-          )}
         </>
+      )}
+      {footerVisible === true && data?.length > 0 && (
+        <TFooter
+          configTable={table}
+          data={data}
+          getItemsRemoves={getItemsRemoves}
+          getItemsRestores={getItemsRestores}
+          propsPagination={propsPagination}
+          evento={evento}
+          setPaginationState={setPaginationState}
+        />
       )}
     </div>
   );

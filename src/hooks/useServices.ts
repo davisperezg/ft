@@ -10,7 +10,7 @@ export const useSunat = (tipDocumento: string, nroDocumento: string) => {
     queryKey: [KEY_EMPRESA, tipDocumento, nroDocumento],
     queryFn: () => getPersona(tipDocumento, nroDocumento),
     enabled: false,
-    cacheTime: 0,
+    gcTime: 0,
     retry: 0,
   });
 };
@@ -22,7 +22,7 @@ export const useReniec = (tipDocumento: string, nroDocumento: string) => {
     queryKey: [KEY, tipDocumento, nroDocumento],
     queryFn: () => getPersona(tipDocumento, nroDocumento),
     enabled: false,
-    cacheTime: 0,
+    gcTime: 0,
     retry: 0,
   });
 };

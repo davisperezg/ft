@@ -1,10 +1,10 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState, MouseEvent } from "react";
 import ComponentTable from "../Table/Index";
 import { ModalContext } from "../../context/modalContext";
 import { useSocketInvoice } from "../../hooks/useSocket";
 import { IInvoice } from "../../interface/invoice.interface";
 import { ColumnDef } from "@tanstack/react-table";
-import { Alert, IconButton, Tooltip } from "@mui/material";
+import { Alert } from "@mui/material";
 import { decimalesSimples } from "../../utils/letras_numeros";
 import { FaRegFilePdf } from "react-icons/fa";
 import { TfiTicket } from "react-icons/tfi";
@@ -21,12 +21,15 @@ import { FcInfo } from "react-icons/fc";
 import { IoIosCloseCircle } from "react-icons/io";
 import { IMoneda } from "../../interface/moneda.interface";
 import ToolTipIconButton from "../Material/Tooltip/IconButton";
+import { IEmpresa } from "../../interface/empresa.interface";
+import { IEstablecimiento } from "../../interface/establecimiento.interface";
+import CPEAcctionList from "./CPEAcctionList";
 
 interface ILog {
-  type: "";
-  message: "";
-  correlativo: "";
-  time: "";
+  type: string;
+  message: string;
+  correlativo: string;
+  time: string;
 }
 
 const CPEList = () => {
@@ -35,14 +38,18 @@ const CPEList = () => {
   const [invoices, setInvoices] = useState<IInvoice[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [minimizar, setMinimizar] = useState<boolean>(false);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 10,
+  });
+  const [propsPagination, setPropsPagination] = useState<any>();
+
   const configuraciones = userGlobal.empresaActual.establecimiento
     .configuraciones as IConfigEstablecimiento[];
 
   const [logs, setLogs] = useState<ILog[]>([]);
 
-  const loadDataInvoices = useMemo(() => {
-    return invoices;
-  }, [invoices]);
+  const loadDataInvoices = useMemo(() => invoices, [invoices]);
 
   const columns = useMemo<ColumnDef<IInvoice>[]>(
     () => [
@@ -518,37 +525,31 @@ const CPEList = () => {
           );
         },
         cell: ({ row }) => {
+          const empresa = Number((row.original.empresa as IEmpresa).id);
+          const establecimiento = Number(
+            (row.original.establecimiento as IEstablecimiento).id
+          );
+          const serie = row.original.serie;
+          const correlativo = row.original.correlativo;
+
           return (
-            <div className="p-[4px] pb-[4px] text-[14px] text-center flex justify-center">
-              <Tooltip
+            <div className="p-[4px] pb-[4px] text-[14px] text-center flex justify-center relative">
+              <ToolTipIconButton
                 title="Más opciones"
-                sx={{ marginTop: "-4px" }}
-                placement="top"
-                arrow
-                slotProps={{
-                  popper: {
-                    modifiers: [
-                      {
-                        name: "offset",
-                        options: {
-                          offset: [0, -8],
-                        },
-                      },
-                    ],
-                  },
+                onClick={(e) => {
+                  console.log(e);
+                  // alert(
+                  //   `${empresa}, ${establecimiento}, ${serie}, ${correlativo}`
+                  // )
+                  // setSeleccionRow(Number(row.index))
                 }}
               >
-                <IconButton
-                  sx={{
-                    margin: 0,
-                    padding: 0,
-                    fontSize: 14,
-                    cursor: "pointer",
-                  }}
-                >
-                  <SlOptionsVertical className="text-black-700 cursor-pointer" />
-                </IconButton>
-              </Tooltip>
+                <SlOptionsVertical className="text-black-700 cursor-pointer" />
+              </ToolTipIconButton>
+              {/* {seleccionRow !== null &&
+                Number(seleccionRow) === Number(row.index) && (
+                  <CPEAcctionList row={row.original} />
+                )} */}
             </div>
           );
         },
@@ -575,16 +576,27 @@ const CPEList = () => {
     [socket]
   );
 
+  const emitirInvoices = (page: number, pageSize: number) => {
+    setLoading(true);
+    if (socket) {
+      socket.emit("client::getInvoices", {
+        page: page,
+        pageSize: pageSize,
+      });
+    }
+  };
+
   useEffect(() => {
     if (socket) {
       socket.emit("client::getInvoices");
-      const interval = setInterval(() => {
-        socket.emit("client::getInvoices");
-      }, 1000 * 60);
 
-      const receiveInvoices = (invoice: IInvoice[]) => {
+      const receiveInvoices = (invoice: any) => {
+        console.log(invoice);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { data, ...rest } = invoice;
+        setPropsPagination(rest);
         setLoading(false);
-        setInvoices(invoice);
+        setInvoices(invoice.data);
       };
 
       const receiveLogs = (log: any) => {
@@ -618,16 +630,13 @@ const CPEList = () => {
       socket.on("server::notifyInvoice", receiveLogs);
 
       socket.on("exception", (data: any) => {
-        console.log(data);
-        //receiveLogs(data);
+        receiveLogs(data);
       });
 
       return () => {
         socket.off("server::listInvoices", receiveInvoices);
-        socket.off("error");
         socket.off("exception", receiveLogs);
         socket.off("server::notifyInvoice", receiveLogs);
-        clearInterval(interval);
       };
     }
   }, [socket]);
@@ -646,6 +655,10 @@ const CPEList = () => {
         loading={loading || reconnecting}
         data={loadDataInvoices}
         columns={columns}
+        propsPagination={propsPagination}
+        paginationState={pagination}
+        setPaginationState={setPagination}
+        evento={emitirInvoices}
       />
       <div className="flex flex-col mt-2">
         <div className="flex flex-row w-full bg-[#F6F6F6] p-2 justify-between items-center text-[12px]">
@@ -666,16 +679,18 @@ const CPEList = () => {
             {logs.length > 0 ? (
               <div className="h-[140px] flex-col w-full text-[11px] overflow-auto">
                 {logs.map((log, i) => {
+                  const type = log.type;
+
                   return (
                     <div
                       key={i}
-                      className={`${
-                        log.type === "error" || log.type === "sunat.failed"
+                      className={
+                        type === "sunat.failed" || type === "error"
                           ? "text-primary"
-                          : log.type === "sunat.success"
+                          : type === "sunat.success"
                           ? "text-green-600"
                           : "text-yellow-600"
-                      }`}
+                      }
                     >
                       {log.time} - {log.message}
                     </div>

@@ -55,7 +55,7 @@ export const useEntidadesByEmpresa = (idEmpresa: number) => {
 //     queryKey: [`${KEY_PROVINCIAS}_${idDinamica}`, idDepartamento],
 //     queryFn: () => getProvincias(idDepartamento),
 //     enabled: !!idDepartamento,
-//     cacheTime: Infinity,
+//     gcTime: Infinity,
 //   });
 // };
 
@@ -64,6 +64,6 @@ export const useEntidadesByEmpresa = (idEmpresa: number) => {
 //     queryKey: [`${KEY_DISTRITOS}_${idDinamica}`, idProvincia],
 //     queryFn: () => getDistritos(idProvincia),
 //     enabled: !!idProvincia,
-//     cacheTime: Infinity,
+//     gcTime: Infinity,
 //   });
 // };

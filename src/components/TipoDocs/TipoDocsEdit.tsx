@@ -39,7 +39,7 @@ const TipoDocsEdit = ({ data, closeEdit }: Props) => {
     dispatch({ type: "INIT" });
   };
 
-  const { mutateAsync: mutateTipoDoc, isLoading: isLoadingTipoDoc } =
+  const { mutateAsync: mutateTipoDoc, isPending: isLoadingTipoDoc } =
     useEditTipDoc();
 
   const onSubmit: SubmitHandler<ITipoDoc> = async (values) => {
