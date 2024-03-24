@@ -11,13 +11,13 @@ interface IExtendsProps extends IconButtonProps {
 const ToolTipIconButton = (props: IExtendsProps) => {
   const { children, title, sxTooltip, sxIconButton, ...restIcon } = props;
 
-  const defaultStylesToolTip = { marginTop: "-4px" };
+  const defaultStylesToolTip: SxProps = { marginTop: "-4px" };
 
   const mergedStylesToolTip = sxTooltip
     ? { ...defaultStylesToolTip, ...sxTooltip }
     : defaultStylesToolTip;
 
-  const defaultStylesIconButton = {
+  const defaultStylesIconButton: SxProps = {
     margin: 0,
     padding: 0,
     fontSize: 15,

@@ -8,6 +8,7 @@ import LoginScreen from "./views/LoginScreen";
 import Header from "./components/Header/Index";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { DndProvider } from "react-dnd";
+import { TableProvider } from "./context/tableContext";
 
 function App() {
   const [sessionActive, setSession] = useState(false);
@@ -100,10 +101,12 @@ function App() {
     <>
       {sessionActive ? (
         <ModalProvider>
-          <DndProvider backend={HTML5Backend}>
-            <Header result={result} />
-            <Main />
-          </DndProvider>
+          <TableProvider>
+            <DndProvider backend={HTML5Backend}>
+              <Header result={result} />
+              <Main />
+            </DndProvider>
+          </TableProvider>
         </ModalProvider>
       ) : (
         <LoginScreen />

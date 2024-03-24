@@ -50,4 +50,5 @@ export interface IInvoice {
   xml?: string;
   xmlSigned?: string;
   cdr?: string;
+  status?:boolean
 }

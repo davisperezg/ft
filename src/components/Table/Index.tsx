@@ -1,22 +1,20 @@
 import {
-  useReactTable,
-  ColumnDef,
-  getCoreRowModel,
-  Row,
-  Header,
   Cell,
-  flexRender,
-  getSortedRowModel,
-  ColumnResizeMode,
-  SortingState,
-  PaginationState,
-  ColumnOrderState,
   Column,
+  ColumnOrderState,
+  ColumnResizeMode,
+  PaginationState,
+  Row,
+  SortingState,
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
 } from "@tanstack/react-table";
-import { getPaginationRowModel, Table } from "@tanstack/table-core";
 import {
   Dispatch,
-  RefObject,
+  SetStateAction,
   UIEvent,
   useContext,
   useEffect,
@@ -24,208 +22,26 @@ import {
   useRef,
   useState,
 } from "react";
-import { useDrop, useDrag } from "react-dnd";
+import { TableContext } from "../../context/tableContext";
+import { useDrag, useDrop } from "react-dnd";
 import { ModalContext } from "../../context/modalContext";
-import { useVirtualizer } from "@tanstack/react-virtual";
 
-interface ITHeadItemProps<T> {
-  header: Header<T, unknown>;
-  refElement1: RefObject<HTMLTableCellElement>;
-  refElement2: RefObject<HTMLDivElement>;
-  refContentTHeader: RefObject<HTMLDivElement>;
-  setShowOptions: Dispatch<React.SetStateAction<boolean>>;
-  showOptions: boolean;
-  table: Table<T>;
-  isClicked: boolean;
-  changeClicked: () => void;
-  setSpacing: Dispatch<React.SetStateAction<boolean>>;
-  setScrolled: Dispatch<React.SetStateAction<boolean>>;
-  setLeftTable: Dispatch<React.SetStateAction<number>>;
-  refContentTBody: RefObject<HTMLDivElement>;
-}
-
-interface ITBodyItemProps<T> {
-  cell: Cell<any, unknown>;
-  row: Row<any>;
-  table: Table<T>;
-  openEdit?: (value: boolean, row: T) => void;
-}
-
-interface Props<T> {
-  data: T[];
-  columns: ColumnDef<T, unknown>[];
+interface IComponentTableProps {
+  loading: boolean;
+  data: any[];
+  columns: any[];
+  propsPagination: any;
   footerVisible?: boolean;
   getItemsRemoves?: (props: any) => void;
   getItemsRestores?: (props: any) => void;
-  openEdit?: (value: boolean, row: T) => void;
-  loading?: boolean;
-  propsPagination?: any;
-  paginationState?: any;
-  setPaginationState?: any;
-  evento?: (page: number, pageSize: number) => void;
+  setPaginationState?: Dispatch<
+    SetStateAction<{
+      pageIndex: number;
+      pageSize: number;
+    }>
+  >;
+  openEdit?: (value: boolean, row: any) => void;
 }
-
-interface PropsHead<T> {
-  refTHeader: RefObject<HTMLDivElement>;
-  configTable: Table<T>;
-  setLeftTable: Dispatch<React.SetStateAction<number>>;
-  setSpacing: Dispatch<React.SetStateAction<boolean>>;
-  setScrolled: Dispatch<React.SetStateAction<boolean>>;
-  setShowOptions: Dispatch<React.SetStateAction<boolean>>;
-  refElement2: RefObject<HTMLDivElement>;
-  showOptions: boolean;
-  refContentTBody: RefObject<HTMLDivElement>;
-}
-
-interface PropsBody<T> {
-  handleScroll: (e: UIEvent<HTMLDivElement>) => void;
-  configTable: Table<T>;
-  refContentTBody: RefObject<HTMLDivElement>;
-  openEdit?: (value: boolean, row: T) => void;
-}
-
-interface PropsFooter<T> extends Omit<Props<T>, "columns"> {
-  configTable: Table<any>;
-  getItemsRemoves?: (props: any) => void;
-  getItemsRestores?: (props: any) => void;
-  propsPagination?: any;
-  evento?: (page: number, pageSize: number) => void;
-}
-
-const ShowOptions = (table: any) => {
-  const widthHeader =
-    table.props.refContentTHeader.current &&
-    table.props.refContentTHeader.current.clientWidth;
-  const widthTable = table.props.leftTable;
-
-  const widthGroup =
-    table.props.refElement2.current &&
-    table.props.refElement2.current.clientWidth;
-
-  const calcScrollHeigth =
-    table.props.refElement2.current &&
-    table.props.refElement2.current.scrollHeight >
-      table.props.refElement2.current.clientHeight;
-
-  const widthInScroll = widthHeader - widthGroup - (calcScrollHeigth ? 34 : 17);
-  const widthNoScroll = widthTable - 17;
-
-  return (
-    <div
-      ref={table.props.refElement2}
-      style={{
-        backgroundColor: "#fff",
-        boxShadow: "0 1px 5px rgb(0 0 0 / 30%)",
-        position: "absolute",
-        zIndex: 1,
-        float: "left",
-        overflowX: "hidden",
-        overflowY: "auto",
-        height: "auto",
-        width: "auto",
-        whiteSpace: "nowrap",
-        visibility: table.props.showOptions ? "visible" : "hidden",
-        top: 25.5,
-        left: table.props.spacing
-          ? table.props.scrolled
-            ? widthInScroll
-            : widthTable - widthGroup - (calcScrollHeigth ? 6 : -11.5)
-          : widthNoScroll,
-        maxHeight: 210,
-      }}
-    >
-      {table.props.getAllLeafColumns().map((column: any) => {
-        if (column.id !== "actions") {
-          return (
-            <div
-              key={column.id}
-              style={{ padding: 8, borderBottom: "1px solid #e2e2e2" }}
-            >
-              <label
-                style={{ display: "block", paddingLeft: 15, textIndent: -15 }}
-              >
-                <input
-                  {...{
-                    type: "checkbox",
-                    checked: column.getIsVisible(),
-                    onChange: column.getToggleVisibilityHandler(),
-                    style: {
-                      overflow: "hidden",
-                      top: "-3px",
-                      position: "relative",
-                      verticalAlign: "bottom",
-                    },
-                  }}
-                />{" "}
-                {column.id}
-              </label>
-            </div>
-          );
-        }
-      })}
-    </div>
-  );
-};
-
-const THead = <T extends object>({
-  configTable,
-  refTHeader,
-  setLeftTable,
-  setSpacing,
-  setScrolled,
-  setShowOptions,
-  refElement2,
-  showOptions,
-  refContentTBody,
-}: PropsHead<T>) => {
-  const [clicked, setClicked] = useState<number>(0);
-  const refElement1 = useRef<HTMLTableCellElement>(null);
-
-  const changeClicked = (index: number) => setClicked(index);
-
-  useEffect(() => {
-    if (configTable) {
-      setLeftTable(configTable.getCenterTotalSize());
-    }
-  }, [configTable]);
-
-  return (
-    <div ref={refTHeader} className="flex flex-[0_0_auto] relative ">
-      <div className="float-left pr-[40px] text-[#464646]">
-        <table className="border-r border-solid border-[#444]">
-          <thead>
-            {configTable.getHeaderGroups().map((headerGroup) => {
-              return (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header, i) => {
-                    return (
-                      <THeadItem
-                        key={header.id}
-                        header={header}
-                        isClicked={clicked === i}
-                        changeClicked={() => changeClicked(i)}
-                        refElement1={refElement1}
-                        refElement2={refElement2}
-                        showOptions={showOptions}
-                        setShowOptions={setShowOptions}
-                        table={configTable}
-                        refContentTHeader={refTHeader}
-                        setSpacing={setSpacing}
-                        setScrolled={setScrolled}
-                        setLeftTable={setLeftTable}
-                        refContentTBody={refContentTBody}
-                      />
-                    );
-                  })}
-                </tr>
-              );
-            })}
-          </thead>
-        </table>
-      </div>
-    </div>
-  );
-};
 
 const reorderColumn = (
   draggedColumnId: string,
@@ -240,7 +56,7 @@ const reorderColumn = (
   return [...columnOrder];
 };
 
-const THeadItem = <T extends object>({
+const THeadItem = ({
   header,
   refElement1,
   refElement2,
@@ -254,7 +70,7 @@ const THeadItem = <T extends object>({
   setScrolled,
   setLeftTable,
   refContentTBody,
-}: ITHeadItemProps<T>) => {
+}: any) => {
   const [tableBody, setTableBody] = useState(270);
   const [status, setStatus] = useState(0);
   const [lengthMin, setLengthMin] = useState(0);
@@ -459,511 +275,147 @@ const THeadItem = <T extends object>({
   );
 };
 
-// million-ignore
-const TBodyItem = <T extends object>({
-  cell,
-  row,
-  table,
-  openEdit,
-}: ITBodyItemProps<T>) => {
-  const { dispatch } = useContext(ModalContext);
+const ShowOptions = (table: any) => {
+  const widthHeader =
+    table.props.refContentTHeader.current &&
+    table.props.refContentTHeader.current.clientWidth;
+  const widthTable = table.props.leftTable;
 
-  return (
-    <td
-      className={`${
-        cell.id !== row.id + "_actions"
-          ? "border-r border-solid whitespace-nowrap  align-middle p-0 border-b relative overflow-hidden"
-          : "border-none bg-white select-none"
-      } ${
-        table.getState().columnSizingInfo.deltaOffset !== null
-          ? "cursor-col-resize"
-          : !row.original.status
-          ? ""
-          : "cursor-pointer"
-      }`}
-      {...{
-        key: cell.id,
-      }}
-      onClick={() => {
-        if (row.original.status && cell.id !== row.id + "_select") {
-          dispatch({ type: "OPEN_EDIT", payload: row.original });
-          openEdit && openEdit(true, row.original);
-        }
-      }}
-    >
-      <>
-        <div
-          style={{
-            width: cell.column.getSize(),
-          }}
-        >
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-        </div>
-      </>
-    </td>
-  );
-};
+  const widthGroup =
+    table.props.refElement2.current &&
+    table.props.refElement2.current.clientWidth;
 
-const TBody = <T extends object>({
-  configTable,
-  handleScroll,
-  refContentTBody,
-  openEdit,
-}: PropsBody<T>) => {
-  //configTable.getRowModel().rows
+  const calcScrollHeigth =
+    table.props.refElement2.current &&
+    table.props.refElement2.current.scrollHeight >
+      table.props.refElement2.current.clientHeight;
 
-  //virtualized
-  const { rows } = configTable.getRowModel();
-
-  //react-virutal
-  const rowVirtualizer = useVirtualizer({
-    count: rows.length,
-    estimateSize: () => 33, //estimate row height for accurate scrollbar dragging
-    getScrollElement: () => refContentTBody.current,
-    //measure dynamic row height, except in firefox because it measures table border height incorrectly
-    measureElement:
-      typeof window !== "undefined" &&
-      navigator.userAgent.indexOf("Firefox") === -1
-        ? (element) => element?.getBoundingClientRect().height
-        : undefined,
-    overscan: 30,
-    debug: true,
-  });
-  //
-  // const rowVirtualizer = useVirtual({
-  //   parentRef: refContentTBody,
-  //   size: rows.length,
-  //   overscan: 100,
-  // });
-  // const { virtualItems: virtualRows, totalSize } = rowVirtualizer;
-
-  // const paddingTop = virtualRows.length > 0 ? virtualRows?.[0]?.start || 0 : 0;
-  // const paddingBottom =
-  //   virtualRows.length > 0
-  //     ? totalSize - (virtualRows?.[virtualRows.length - 1]?.end || 0)
-  //     : 0;
+  const widthInScroll = widthHeader - widthGroup - (calcScrollHeigth ? 34 : 17);
+  const widthNoScroll = widthTable - 17;
 
   return (
     <div
-      onScroll={handleScroll}
-      ref={refContentTBody}
-      className="flex-[1_1_auto] bg-white relative overflow-auto w-full h-[260px] select-text border-t-1  border-solid border-t border-b"
+      ref={table.props.refElement2}
+      style={{
+        backgroundColor: "#fff",
+        boxShadow: "0 1px 5px rgb(0 0 0 / 30%)",
+        position: "absolute",
+        zIndex: 1,
+        float: "left",
+        overflowX: "hidden",
+        overflowY: "auto",
+        height: "auto",
+        width: "auto",
+        whiteSpace: "nowrap",
+        visibility: table.props.showOptions ? "visible" : "hidden",
+        top: 25.5,
+        left: table.props.spacing
+          ? table.props.scrolled
+            ? widthInScroll
+            : widthTable - widthGroup - (calcScrollHeigth ? 6 : -11.5)
+          : widthNoScroll,
+        maxHeight: 210,
+      }}
     >
-      <table
-        {...{
-          style: {
-            width: configTable.getCenterTotalSize(),
-            marginBottom: 10,
-          },
-        }}
-      >
-        {/* {paddingTop > 0 && (
-          <tr>
-            <td style={{ height: `${paddingTop}px` }} />
-          </tr>
-        )} */}
-
-        <tbody
-          style={{
-            height: `${rowVirtualizer.getTotalSize()}px`, //tells scrollbar how big the table is
-            position: "relative", //needed for absolute positioning of rows
-          }}
-        >
-          {rowVirtualizer.getVirtualItems().map((virtualRow, i) => {
-            const row = rows[virtualRow.index] as Row<any>;
-            return (
-              <tr
-                data-index={virtualRow.index} //needed for dynamic row height measurement
-                ref={(node) => rowVirtualizer.measureElement(node)} //measure dynamic row height
-                style={{
-                  //display: "flex",
-                  position: "absolute",
-                  transform: `translateY(${virtualRow.start}px)`, //this should always be a `style` as it changes on scroll
-                  backgroundColor: i % 2 !== 0 ? "#f7f7f7" : "#fff",
-                }}
-                key={row.id}
-                className={`${
-                  !row.original.status
-                    ? " text-borders cursor-default"
-                    : "hover:!bg-hover"
-                }`}
-                // [#e2e2e2]
+      {table.props.getAllLeafColumns().map((column: any) => {
+        if (column.id !== "actions") {
+          return (
+            <div
+              key={column.id}
+              style={{ padding: 8, borderBottom: "1px solid #e2e2e2" }}
+            >
+              <label
+                style={{ display: "block", paddingLeft: 15, textIndent: -15 }}
               >
-                {row.getVisibleCells().map((cell, i) => {
-                  return (
-                    <TBodyItem
-                      key={i}
-                      cell={cell}
-                      row={row}
-                      table={configTable}
-                      openEdit={openEdit}
-                    />
-                  );
-                })}
-              </tr>
-            );
-          })}
-          {/* {paddingBottom > 0 && (
-            <tr>
-              <td style={{ height: `${paddingBottom}px` }} />
-            </tr>
-          )} */}
-        </tbody>
-      </table>
+                <input
+                  {...{
+                    type: "checkbox",
+                    checked: column.getIsVisible(),
+                    onChange: column.getToggleVisibilityHandler(),
+                    style: {
+                      overflow: "hidden",
+                      top: "-3px",
+                      position: "relative",
+                      verticalAlign: "bottom",
+                    },
+                  }}
+                />{" "}
+                {column.id}
+              </label>
+            </div>
+          );
+        }
+      })}
     </div>
   );
 };
 
-// million-ignore
-const TFooter = <T extends object>({
-  configTable,
-  data,
-  getItemsRestores,
-  getItemsRemoves,
-  propsPagination,
-  evento,
-  setPaginationState,
-}: PropsFooter<T>) => {
-  const selects = configTable
-    .getSelectedRowModel()
-    .flatRows.map((a) => a.original);
-
-  let startRange = 0;
-  let endRange = 0;
-
-  // Calcular el rango de los registros mostrados
-  if (propsPagination) {
-    startRange =
-      (propsPagination.currentPage - 1) *
-        configTable.getState().pagination.pageSize +
-      1;
-
-    endRange = Math.min(
-      startRange + configTable.getState().pagination.pageSize - 1,
-      propsPagination.total
-    );
-  }
-
-  return (
-    <div className="bg-none overflow-hidden whitespace-nowrap relative flex-[0_0_auto] gap-2 flex items-center p-2">
-      <div className="m-[6px_3px_6px_6px] float-left w-full whitespace-nowrap select-none">
-        {getItemsRemoves && (
-          <div className="float-left bg-none h-[24px] m-[0_10px_0_0] align-middle whitespace-nowrap flex items-center">
-            <label
-              className={`${
-                selects.filter((a) => !a.status).length > 0 ||
-                selects.length === 0
-                  ? "text-borders cursor-default"
-                  : "text-primary cursor-pointer"
-              } text-[16px]`}
-              onClick={() => {
-                if (selects.length > 0 && !selects.find((a) => !a.status)) {
-                  if (getItemsRemoves) {
-                    return getItemsRemoves(
-                      configTable.getSelectedRowModel().flatRows
-                    );
-                  }
-                }
-              }}
-            >
-              x
-            </label>
-          </div>
-        )}
-
-        {getItemsRestores && (
-          <div className="float-left bg-none h-[24px] m-[0_10px_0_0] align-middle whitespace-nowrap flex items-center">
-            <label
-              className={`${
-                selects.filter((a) => a.status).length > 0 ||
-                selects.length === 0
-                  ? "text-borders cursor-default"
-                  : "text-[#464646] cursor-pointer"
-              }`}
-              onClick={() => {
-                if (selects.length > 0 && !selects.find((a) => a.status)) {
-                  if (getItemsRestores) {
-                    return getItemsRestores(
-                      configTable.getSelectedRowModel().flatRows
-                    );
-                  }
-                }
-              }}
-            >
-              <i className="gg-undo w-[11px] h-[11px]"></i>
-            </label>
-          </div>
-        )}
-
-        <div className="float-left bg-none h-[24px] m-[0_5px_0_0] align-middle whitespace-nowrap">
-          <select
-            value={configTable.getState().pagination.pageSize}
-            onChange={(e) => {
-              if (propsPagination && evento) {
-                setPaginationState({
-                  page: propsPagination.currentPage,
-                  pageSize: Number(e.target.value),
-                });
-                evento(propsPagination.currentPage, Number(e.target.value));
-                return;
-              }
-
-              configTable.setPageSize(Number(e.target.value));
-            }}
-            className=" border-solid border min-h-[24px] p-[0_18px_0_0.5rem] rounded-sm align-middle text-[12px] text-left indent-[0.01px] overflow-ellipsis bg-white bg-no-repeat bg-[url(https://cms.wialon.us/static/skin/misc/ddn.svg)] text-[#464646] outline-none appearance-none cursor-pointer bg-right"
-          >
-            {propsPagination
-              ? [10, 20, 50].map((pageSize) => (
-                  <option key={pageSize} value={pageSize}>
-                    {pageSize}
-                  </option>
-                ))
-              : [10, 20, 50, 100, 500, 1000].map((pageSize) => (
-                  <option key={pageSize} value={pageSize}>
-                    {pageSize}
-                  </option>
-                ))}
-          </select>
-        </div>
-        <div className="float-left bg-none h-[24px] m-[0_5px] align-middle whitespace-nowrap">
-          <div
-            onClick={() => {
-              if (propsPagination && evento) {
-                if (configTable.getState().pagination.pageIndex === 1) return;
-
-                configTable.setPageIndex(1);
-                setPaginationState({
-                  page: 1,
-                  pageSize: configTable.getState().pagination.pageSize,
-                });
-                evento(1, configTable.getState().pagination.pageSize);
-                return;
-              }
-
-              configTable.setPageIndex(0);
-            }}
-            className={`
-            float-left w-[22px] h-[22px] border-0 overflow-hidden text-[12px] text-center pt-[2px] text-[#9b9c9c] flex items-center justify-center ${
-              propsPagination
-                ? configTable.getState().pagination.pageIndex === 1
-                  ? "text-borders"
-                  : "text-[#9b9c9c] cursor-pointer"
-                : configTable.getState().pagination.pageIndex + 1 === 1
-                ? "text-borders"
-                : "text-[#9b9c9c] cursor-pointer"
-            }
-            `}
-          >
-            <i className="gg-play-backwards"></i>
-          </div>
-          <div
-            onClick={() => {
-              if (propsPagination && evento) {
-                if (configTable.getState().pagination.pageIndex === 1) return;
-
-                configTable.setPageIndex(propsPagination.currentPage - 1);
-                setPaginationState({
-                  page: propsPagination.currentPage - 1,
-                  pageSize: configTable.getState().pagination.pageSize,
-                });
-                evento(
-                  propsPagination.currentPage - 1,
-                  configTable.getState().pagination.pageSize
-                );
-                return;
-              }
-
-              configTable.previousPage();
-            }}
-            className={`float-left w-[22px] h-[22px] border-0 overflow-hidden text-[12px] text-center pt-[2px] flex items-center justify-center ${
-              propsPagination
-                ? configTable.getState().pagination.pageIndex === 1
-                  ? "text-borders"
-                  : "text-[#9b9c9c] cursor-pointer"
-                : configTable.getState().pagination.pageIndex + 1 === 1
-                ? "text-borders "
-                : "text-[#9b9c9c] cursor-pointer"
-            }`}
-          >
-            <i className="gg-play-button rotate-180"></i>
-          </div>
-          <div className="float-left bg-none h-[24px] m-[0_5px] align-middle whitespace-nowrap">
-            <span className="relative overflow-visible">
-              <table>
-                <tbody>
-                  <tr>
-                    <td>
-                      <b id="page" className="font-bold" dir="auto">
-                        Página
-                      </b>
-                    </td>
-                    <td>
-                      <input
-                        className="border-solid border w-[63px] text-[12px] p-[0_5px] relative ml-[8px] mr-[8px] min-h-[24px] text-left resize-none outline-none rounded-sm"
-                        type="number"
-                        value={
-                          propsPagination
-                            ? configTable.getState().pagination.pageIndex
-                            : configTable.getState().pagination.pageIndex + 1
-                        }
-                        onChange={(e) => {
-                          if (propsPagination && evento) {
-                            const page = Number(e.target.value);
-                            if (page < 1) return;
-                            configTable.setPageIndex(Number(e.target.value));
-
-                            setPaginationState({
-                              page: Number(e.target.value),
-                              pageSize:
-                                configTable.getState().pagination.pageSize,
-                            });
-                            return evento(
-                              Number(e.target.value),
-                              configTable.getState().pagination.pageSize
-                            );
-                          } else {
-                            const page = e.target.value
-                              ? Number(e.target.value) - 1
-                              : 0;
-                            configTable.setPageIndex(page);
-                          }
-                        }}
-                      />
-                    </td>
-                    <td dir="auto">
-                      <b id="of" className="font-bold">
-                        de{" "}
-                      </b>
-                      <span>{configTable.getPageCount()}</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </span>
-          </div>
-          <div className="float-left bg-none h-[24px] m-[0_5px] align-middle whitespace-nowrap">
-            <div
-              className={`float-left w-[22px] h-[22px] border-0 overflow-hidden text-[12px] text-center pt-[2px] text-[#9b9c9c] flex items-center justify-center ${
-                propsPagination
-                  ? configTable.getState().pagination.pageIndex ===
-                    configTable.getPageCount()
-                    ? "text-borders"
-                    : "text-[#9b9c9c] cursor-pointer"
-                  : configTable.getState().pagination.pageIndex + 1 ===
-                    configTable.getPageCount()
-                  ? "text-borders"
-                  : "text-[#9b9c9c] cursor-pointer"
-              }`}
-              onClick={() => {
-                if (propsPagination && evento) {
-                  if (
-                    configTable.getState().pagination.pageIndex ===
-                    configTable.getPageCount()
-                  )
-                    return;
-
-                  configTable.setPageIndex(propsPagination.currentPage + 1);
-                  setPaginationState({
-                    page: propsPagination.currentPage + 1,
-                    pageSize: configTable.getState().pagination.pageSize,
-                  });
-                  evento(
-                    propsPagination.currentPage + 1,
-                    configTable.getState().pagination.pageSize
-                  );
-                  return;
-                }
-
-                configTable.nextPage();
-              }}
-            >
-              <i className="gg-play-button"></i>
-            </div>
-            <div
-              className={`float-left w-[22px] h-[22px] border-0 overflow-hidden text-[12px] text-center pt-[2px] text-[#9b9c9c] flex items-center justify-center ${
-                propsPagination
-                  ? configTable.getState().pagination.pageIndex ===
-                    configTable.getPageCount()
-                    ? "text-borders"
-                    : "text-[#9b9c9c] cursor-pointer"
-                  : configTable.getState().pagination.pageIndex + 1 ===
-                    configTable.getPageCount()
-                  ? "text-borders"
-                  : "text-[#9b9c9c] cursor-pointer"
-              }`}
-              onClick={() => {
-                if (propsPagination && evento) {
-                  if (
-                    configTable.getState().pagination.pageIndex ===
-                    configTable.getPageCount()
-                  )
-                    return;
-
-                  configTable.setPageIndex(propsPagination.totalPage);
-                  setPaginationState({
-                    page: propsPagination.totalPage,
-                    pageSize: configTable.getState().pagination.pageSize,
-                  });
-                  evento(
-                    propsPagination.totalPage,
-                    configTable.getState().pagination.pageSize
-                  );
-                  return;
-                }
-
-                configTable.setPageIndex(configTable.getPageCount() - 1);
-              }}
-            >
-              <i className="gg-play-forwards"></i>
-            </div>
-          </div>
-          <div className="float-left bg-none h-[24px] m-[0_5px] align-middle text-[12px] flex items-center justify-center">
-            <label>
-              Mostrando{" "}
-              {propsPagination ? startRange : configTable.options.data[0].index}{" "}
-              a{" "}
-              {propsPagination
-                ? endRange
-                : configTable.options.data[configTable.options.data.length - 1]
-                    .index}{" "}
-              de {propsPagination ? propsPagination.total : data.length}{" "}
-              registros
-              {/* de {data.length} registros */}
-            </label>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ComponentTable = <T extends object>({
+const ComponentTable = ({
+  loading,
   data,
   columns,
+  propsPagination,
   footerVisible = true,
   getItemsRemoves,
   getItemsRestores,
-  openEdit,
-  loading,
-  propsPagination,
-  paginationState,
   setPaginationState,
-  evento,
-}: Props<T>) => {
-  const refContentTHeader = useRef<HTMLDivElement>(null);
+  openEdit,
+}: IComponentTableProps) => {
+  const { paginationSize, setPaginationSize } = useContext(TableContext);
 
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 20,
+    pageSize: paginationSize,
   });
 
+  const [dataQuery, setDataQuery] = useState({
+    rows: [],
+    pageCount: 0,
+  });
+  const [spacing, setSpacing] = useState<boolean>(false);
   const [columnResizeMode] = useState<ColumnResizeMode>("onEnd");
   const [sorting, setSorting] = useState<SortingState>([]);
+  const refContentTHeader = useRef<HTMLDivElement>(null);
   const refElement2 = useRef<HTMLDivElement>(null);
   const [leftTable, setLeftTable] = useState<number>(0);
-  const [spacing, setSpacing] = useState<boolean>(false);
-  const [scrolled, setScrolled] = useState<boolean>(false);
   const [showOptions, setShowOptions] = useState<boolean>(false);
+  const refContentTable = useRef<HTMLDivElement>(null);
+  const refContentTBody = useRef<HTMLDivElement>(null);
+  const [scrolled, setScrolled] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (propsPagination) {
+      setDataQuery({
+        rows: data?.map((column: any, i: number) => {
+          return { ...column, index: i + 1, status: column.status };
+        }) as never[],
+        pageCount: propsPagination.totalPage,
+      });
+      setPagination((old) => {
+        return {
+          ...old,
+          pageIndex: propsPagination.currentPage,
+        };
+      });
+    } else {
+      setDataQuery({
+        rows: data
+          ?.map((column: any, i: number) => {
+            return { ...column, index: i + 1, status: column.status };
+          })
+          .slice(pageIndex * pageSize, (pageIndex + 1) * pageSize) as never[],
+        pageCount: Math.ceil(data?.length / pageSize),
+      });
+    }
+  }, [data, pageIndex, pageSize, propsPagination]);
+
+  const pagination = useMemo(
+    () => ({
+      pageIndex,
+      pageSize,
+    }),
+    [pageIndex, pageSize]
+  );
 
   //visible column
   const initialVisibleColumn = columns.reduce((acc: any, item: any) => {
@@ -974,46 +426,15 @@ const ComponentTable = <T extends object>({
   }, {});
 
   const [rowSelection, setRowSelection] = useState({});
-
   const [columnVisibility, setColumnVisibility] =
     useState(initialVisibleColumn);
-
-  const refContentTable = useRef<HTMLDivElement>(null);
-  const refContentTBody = useRef<HTMLDivElement>(null);
+  //fin visible column
 
   //dragable
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(
     columns.map((column) => column.id as string) //must start out with populated columnOrder so we can splice
   );
-
-  // const resetOrder = () =>
-  //   setColumnOrder(columns.map((column) => column.id as string));
-  //end dragable
-
-  console.log(data);
-  const dataQuery = propsPagination
-    ? {
-        rows: data?.map((column: any, i: number) => {
-          return { ...column, index: i + 1, status: column.status };
-        }),
-        pageCount: propsPagination.totalPage,
-      }
-    : {
-        rows: data
-          .map((column: any, i: number) => {
-            return { ...column, index: i + 1, status: column.status };
-          })
-          .slice(pageIndex * pageSize, (pageIndex + 1) * pageSize) as any[],
-        pageCount: Math.ceil(data.length / pageSize),
-      };
-
-  const pagination = useMemo(
-    () => ({
-      pageIndex,
-      pageSize,
-    }),
-    [pageIndex, pageSize]
-  );
+  //fin dragable
 
   const handleScroll = (e: UIEvent<HTMLDivElement>) => {
     if (typeof refContentTHeader === "object") {
@@ -1023,7 +444,7 @@ const ComponentTable = <T extends object>({
     }
   };
 
-  const table = useReactTable({
+  const table = useReactTable<any>({
     data: dataQuery.rows,
     columns,
     pageCount: dataQuery.pageCount,
@@ -1038,7 +459,6 @@ const ComponentTable = <T extends object>({
       columnVisibility,
     },
     enableRowSelection: true, //enable row selection for all rows
-    //enableRowSelection: row => row.original.age > 18, // or enable row selection conditionally per row
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     onColumnOrderChange: setColumnOrder,
@@ -1049,18 +469,51 @@ const ComponentTable = <T extends object>({
     debugTable: true,
   });
 
+  const { rows } = table.getRowModel();
+
+  const selects = table
+    .getSelectedRowModel()
+    .flatRows.map((a) => a.original) as any[];
+
   useEffect(() => {
     if (refContentTHeader.current) {
       refContentTHeader.current.scrollLeft = 100; // Establece el scrollLeft a 100 píxeles
     }
+  }, [refContentTHeader]);
 
-    if (propsPagination) {
-      setPagination({
-        pageIndex: paginationState.page,
-        pageSize: paginationState.pageSize,
-      });
+  //Hedaer options
+  const [clicked, setClicked] = useState<number>(0);
+  const refElement1 = useRef<HTMLTableCellElement>(null);
+
+  const changeClicked = (index: number) => setClicked(index);
+
+  useEffect(() => {
+    if (table) {
+      setLeftTable(table.getCenterTotalSize());
     }
-  }, [refContentTHeader, propsPagination, paginationState]);
+  }, [table]);
+  //Header Fin options
+
+  //Body options
+  const { dispatch } = useContext(ModalContext);
+  //Body fin options
+
+  //Footer options
+  let startRangeRow = 0;
+  let endRangeRow = 0;
+
+  // Calcular el rango de los registros mostrados
+  if (propsPagination) {
+    startRangeRow =
+      (propsPagination.currentPage - 1) * table.getState().pagination.pageSize +
+      1;
+
+    endRangeRow = Math.min(
+      startRangeRow + table.getState().pagination.pageSize - 1,
+      propsPagination.total
+    );
+  }
+  //Footer fin options
 
   return (
     <div className="flex flex-col flex-[1_1_auto] overflow-hidden border border-solid relative">
@@ -1070,6 +523,7 @@ const ComponentTable = <T extends object>({
         </div>
       ) : (
         <>
+          {/* SELECTION SHOW COLUMN */}
           <ShowOptions
             props={{
               ...table,
@@ -1082,36 +536,400 @@ const ComponentTable = <T extends object>({
               scrolled,
             }}
           />
-          <THead
-            configTable={table}
-            refTHeader={refContentTHeader}
-            setLeftTable={setLeftTable}
-            setSpacing={setSpacing}
-            setScrolled={setScrolled}
-            setShowOptions={setShowOptions}
-            refElement2={refElement2}
-            showOptions={showOptions}
-            refContentTBody={refContentTBody}
-          />
-          <TBody
-            configTable={table}
-            handleScroll={handleScroll}
-            refContentTBody={refContentTBody}
-            openEdit={openEdit}
-          />
+          {/* FIN SELECTION SHOW COLUMN */}
+          {/* TABLE HEAD INICIO */}
+          <div
+            ref={refContentTHeader}
+            className="flex flex-[0_0_auto] relative "
+          >
+            <div className="float-left pr-[40px] text-[#464646]">
+              <table className="border-r border-solid border-[#444]">
+                <thead>
+                  {table.getHeaderGroups().map((headerGroup) => {
+                    return (
+                      <tr key={headerGroup.id}>
+                        {headerGroup.headers.map((header, i) => {
+                          return (
+                            <THeadItem
+                              key={header.id}
+                              header={header}
+                              isClicked={clicked === i}
+                              changeClicked={() => changeClicked(i)}
+                              refElement1={refElement1}
+                              refElement2={refElement2}
+                              showOptions={showOptions}
+                              setShowOptions={setShowOptions}
+                              table={table}
+                              refContentTHeader={refContentTHeader}
+                              setSpacing={setSpacing}
+                              setScrolled={setScrolled}
+                              setLeftTable={setLeftTable}
+                              refContentTBody={refContentTBody}
+                            />
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </thead>
+              </table>
+            </div>
+          </div>
+          {/* TABLE HEAD FIN */}
+          {/* TABLE BODY INICIO */}
+          <div
+            onScroll={handleScroll}
+            ref={refContentTBody}
+            className="flex-[1_1_auto] bg-white relative overflow-auto w-full h-[260px] select-text border-t-1  border-solid border-t border-b"
+          >
+            <table
+              {...{
+                style: {
+                  width: table.getCenterTotalSize(),
+                  marginBottom: 10,
+                },
+              }}
+            >
+              <tbody>
+                {rows.map((row: Row<any>, i) => {
+                  return (
+                    <tr
+                      style={{
+                        backgroundColor: i % 2 !== 0 ? "#f7f7f7" : "#fff",
+                      }}
+                      key={row.id}
+                      className={`${
+                        !row.original.status
+                          ? " text-borders cursor-default"
+                          : "hover:!bg-hover"
+                      }`}
+                      // [#e2e2e2]
+                    >
+                      {row.getVisibleCells().map((cell: Cell<any, any>) => {
+                        return (
+                          <td
+                            className={`${
+                              cell.id !== row.id + "_actions"
+                                ? "border-r border-solid whitespace-nowrap  align-middle p-0 border-b overflow-hidden"
+                                : "border-none bg-white select-none"
+                            } ${
+                              table.getState().columnSizingInfo.deltaOffset !==
+                              null
+                                ? "cursor-col-resize"
+                                : !row.original.status
+                                ? ""
+                                : "cursor-pointer"
+                            }`}
+                            {...{
+                              key: cell.id,
+                            }}
+                            onClick={() => {
+                              if (
+                                row.original.status &&
+                                cell.id !== row.id + "_select"
+                              ) {
+                                dispatch({
+                                  type: "OPEN_EDIT",
+                                  payload: row.original,
+                                });
+                                openEdit && openEdit(true, row.original);
+                              }
+                            }}
+                          >
+                            <>
+                              <div
+                                style={{
+                                  width: cell.column.getSize(),
+                                }}
+                              >
+                                {flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext()
+                                )}
+                              </div>
+                            </>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {/* TABLE BODY FIN */}
         </>
       )}
-      {footerVisible === true && data?.length > 0 && (
-        <TFooter
-          configTable={table}
-          data={data}
-          getItemsRemoves={getItemsRemoves}
-          getItemsRestores={getItemsRestores}
-          propsPagination={propsPagination}
-          evento={evento}
-          setPaginationState={setPaginationState}
-        />
+      {/* TABLE FOOTER */}
+      {footerVisible === true && data.length > 0 && (
+        <div className="bg-none overflow-hidden whitespace-nowrap relative flex-[0_0_auto] gap-2 flex items-center p-2">
+          <div className="m-[6px_3px_6px_6px] float-left w-full whitespace-nowrap select-none">
+            {getItemsRemoves && (
+              <div className="float-left bg-none h-[24px] m-[0_10px_0_0] align-middle whitespace-nowrap flex items-center">
+                <label
+                  className={`${
+                    selects.filter((a) => !a.status).length > 0 ||
+                    selects.length === 0
+                      ? "text-borders cursor-default"
+                      : "text-primary cursor-pointer"
+                  } text-[16px]`}
+                  onClick={() => {
+                    if (selects.length > 0 && !selects.find((a) => !a.status)) {
+                      if (getItemsRemoves) {
+                        return getItemsRemoves(
+                          table.getSelectedRowModel().flatRows
+                        );
+                      }
+                    }
+                  }}
+                >
+                  x
+                </label>
+              </div>
+            )}
+
+            {getItemsRestores && (
+              <div className="float-left bg-none h-[24px] m-[0_10px_0_0] align-middle whitespace-nowrap flex items-center">
+                <label
+                  className={`${
+                    selects.filter((a) => a.status).length > 0 ||
+                    selects.length === 0
+                      ? "text-borders cursor-default"
+                      : "text-[#464646] cursor-pointer"
+                  }`}
+                  onClick={() => {
+                    if (selects.length > 0 && !selects.find((a) => a.status)) {
+                      if (getItemsRestores) {
+                        return getItemsRestores(
+                          table.getSelectedRowModel().flatRows
+                        );
+                      }
+                    }
+                  }}
+                >
+                  <i className="gg-undo w-[11px] h-[11px]"></i>
+                </label>
+              </div>
+            )}
+            <div className="float-left bg-none h-[24px] m-[0_5px_0_0] align-middle whitespace-nowrap">
+              <select
+                value={table.getState().pagination.pageSize}
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  if (propsPagination) {
+                    setPaginationSize(value);
+                    setPaginationState &&
+                      setPaginationState({
+                        pageIndex: propsPagination.currentPage,
+                        pageSize: value,
+                      });
+                    table.setPageSize(value);
+                  } else {
+                    table.setPageSize(value);
+                  }
+                }}
+                className=" border-solid border min-h-[24px] p-[0_18px_0_0.5rem] rounded-sm align-middle text-[12px] text-left indent-[0.01px] overflow-ellipsis bg-white bg-no-repeat bg-[url(https://cms.wialon.us/static/skin/misc/ddn.svg)] text-[#464646] outline-none appearance-none cursor-pointer bg-right"
+              >
+                {[10, 20, 50, 100].map((pageSize) => (
+                  <option key={pageSize} value={pageSize}>
+                    {pageSize}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="float-left bg-none h-[24px] m-[0_5px] align-middle whitespace-nowrap">
+              <div
+                onClick={() => {
+                  if (propsPagination) {
+                    if (table.getState().pagination.pageIndex === 1) return;
+                    table.setPageIndex(1);
+                    setPaginationState &&
+                      setPaginationState({
+                        pageIndex: 1,
+                        pageSize: table.getState().pagination.pageSize,
+                      });
+                    return;
+                  } else {
+                    table.setPageIndex(0);
+                  }
+                }}
+                className={`
+            float-left w-[22px] h-[22px] border-0 overflow-hidden text-[12px] text-center pt-[2px] text-[#9b9c9c] flex items-center justify-center ${
+              propsPagination
+                ? table.getState().pagination.pageIndex === 1
+                  ? "text-borders"
+                  : "text-[#9b9c9c] cursor-pointer"
+                : table.getState().pagination.pageIndex + 1 === 1
+                ? "text-borders"
+                : "text-[#9b9c9c] cursor-pointer"
+            }
+            `}
+              >
+                <i className="gg-play-backwards"></i>
+              </div>
+              <div
+                onClick={() => {
+                  if (propsPagination) {
+                    if (table.getState().pagination.pageIndex === 1) return;
+                    table.setPageIndex(propsPagination.currentPage - 1);
+                    setPaginationState &&
+                      setPaginationState({
+                        pageIndex: propsPagination.currentPage - 1,
+                        pageSize: table.getState().pagination.pageSize,
+                      });
+                  } else {
+                    table.previousPage();
+                  }
+                }}
+                className={`float-left w-[22px] h-[22px] border-0 overflow-hidden text-[12px] text-center pt-[2px] flex items-center justify-center ${
+                  propsPagination
+                    ? table.getState().pagination.pageIndex === 1
+                      ? "text-borders"
+                      : "text-[#9b9c9c] cursor-pointer"
+                    : table.getState().pagination.pageIndex + 1 === 1
+                    ? "text-borders "
+                    : "text-[#9b9c9c] cursor-pointer"
+                }`}
+              >
+                <i className="gg-play-button rotate-180"></i>
+              </div>
+              <div className="float-left bg-none h-[24px] m-[0_5px] align-middle whitespace-nowrap">
+                <span className="relative overflow-visible">
+                  <table>
+                    <tbody>
+                      <tr>
+                        <td>
+                          <b id="page" className="font-bold" dir="auto">
+                            Página
+                          </b>
+                        </td>
+                        <td>
+                          <input
+                            className="border-solid border w-[63px] text-[12px] p-[0_5px] relative ml-[8px] mr-[8px] min-h-[24px] text-left resize-none outline-none rounded-sm"
+                            type="number"
+                            value={
+                              propsPagination
+                                ? table.getState().pagination.pageIndex
+                                : table.getState().pagination.pageIndex + 1
+                            }
+                            onChange={(e) => {
+                              if (propsPagination) {
+                                const page = Number(e.target.value);
+                                if (page < 1) return;
+                                setPaginationState &&
+                                  setPaginationState({
+                                    pageIndex: Number(e.target.value),
+                                    pageSize:
+                                      table.getState().pagination.pageSize,
+                                  });
+                              } else {
+                                const page = e.target.value
+                                  ? Number(e.target.value) - 1
+                                  : 0;
+                                table.setPageIndex(page);
+                              }
+                            }}
+                          />
+                        </td>
+                        <td dir="auto">
+                          <b id="of" className="font-bold">
+                            de{" "}
+                          </b>
+                          <span>{table.getPageCount()}</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </span>
+              </div>
+              <div className="float-left bg-none h-[24px] m-[0_5px] align-middle whitespace-nowrap">
+                <div
+                  className={`float-left w-[22px] h-[22px] border-0 overflow-hidden text-[12px] text-center pt-[2px] text-[#9b9c9c] flex items-center justify-center ${
+                    propsPagination
+                      ? table.getState().pagination.pageIndex ===
+                        table.getPageCount()
+                        ? "text-borders"
+                        : "text-[#9b9c9c] cursor-pointer"
+                      : table.getState().pagination.pageIndex + 1 ===
+                        table.getPageCount()
+                      ? "text-borders"
+                      : "text-[#9b9c9c] cursor-pointer"
+                  }`}
+                  onClick={() => {
+                    if (propsPagination) {
+                      if (
+                        table.getState().pagination.pageIndex ===
+                        table.getPageCount()
+                      )
+                        return;
+
+                      table.nextPage();
+                      setPaginationState &&
+                        setPaginationState({
+                          pageIndex: propsPagination.currentPage + 1,
+                          pageSize: table.getState().pagination.pageSize,
+                        });
+                    } else {
+                      table.nextPage();
+                    }
+                  }}
+                >
+                  <i className="gg-play-button"></i>
+                </div>
+                <div
+                  className={`float-left w-[22px] h-[22px] border-0 overflow-hidden text-[12px] text-center pt-[2px] text-[#9b9c9c] flex items-center justify-center ${
+                    propsPagination
+                      ? table.getState().pagination.pageIndex ===
+                        table.getPageCount()
+                        ? "text-borders"
+                        : "text-[#9b9c9c] cursor-pointer"
+                      : table.getState().pagination.pageIndex + 1 ===
+                        table.getPageCount()
+                      ? "text-borders"
+                      : "text-[#9b9c9c] cursor-pointer"
+                  }`}
+                  onClick={() => {
+                    if (propsPagination) {
+                      if (
+                        table.getState().pagination.pageIndex ===
+                        table.getPageCount()
+                      )
+                        return;
+
+                      table.setPageIndex(propsPagination.totalPage);
+                      setPaginationState &&
+                        setPaginationState({
+                          pageIndex: propsPagination.totalPage,
+                          pageSize: table.getState().pagination.pageSize,
+                        });
+                    } else {
+                      table.setPageIndex(table.getPageCount() - 1);
+                    }
+                  }}
+                >
+                  <i className="gg-play-forwards"></i>
+                </div>
+              </div>
+              <div className="float-left bg-none h-[24px] m-[0_5px] align-middle text-[12px] flex items-center justify-center">
+                <label>
+                  Mostrando{" "}
+                  {propsPagination
+                    ? startRangeRow
+                    : table.options.data?.[0]?.index}{" "}
+                  a{" "}
+                  {propsPagination
+                    ? endRangeRow
+                    : table.options.data?.[table.options.data.length - 1]
+                        ?.index}{" "}
+                  de {propsPagination ? propsPagination.total : data.length}{" "}
+                  registros
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
+      {/* TABLE FOOTER FIN */}
     </div>
   );
 };

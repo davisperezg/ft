@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { IInvoice } from "../../interface/invoice.interface";
+import { MenuDropdown } from "../Material/Menu/MenuList";
+import { MenuItem } from "@mui/material";
 
 interface CPEAcctionListProps {
   row: IInvoice;
@@ -10,8 +12,10 @@ const CPEAcctionList = ({ row }: CPEAcctionListProps) => {
 
   console.log(invoice);
   return (
-    <div className="absolute">
-      <h1>CPEAcctionList</h1>
+    <div className="absolute bottom-[-20px] w-[100px] bg-white border borders shadow-2xl z-10">
+      <div>
+        <span>Anular</span>
+      </div>
     </div>
   );
 };
