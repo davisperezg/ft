@@ -34,7 +34,22 @@ const ToolTipIconButton = (props: IExtendsProps) => {
       sx={mergedStylesToolTip}
       placement="top"
       arrow
+      //followCursor
+      className="text-textDefault"
       slotProps={{
+        tooltip: {
+          sx: {
+            backgroundColor: "#fff",
+            color: "#213547",
+            border: "1px solid #E6E8ED",
+            "& .MuiTooltip-arrow": {
+              "&::before": {
+                border: "1px solid #E6E8ED",
+              },
+              color: "#fff",
+            },
+          },
+        },
         popper: {
           modifiers: [
             {

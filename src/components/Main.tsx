@@ -245,27 +245,31 @@ const Main = () => {
     <>
       {dialogState.pageComplete &&
         dialogState.nameDialog === DialogActionKind.SCREEN_FACTURA && (
-          // <FacturaScreen />
-          <div className="bg-[#EDF1F4] min-h-[100vh] flex justify-center pt-[60px]">
-            <div className="p-[30px] flex-[0_0_1050px]">
-              <PaperRounded>
-                <div className="pl-[15px] py-[10px] flex justify-start items-center">
-                  <Tooltip title="Regresar" arrow>
-                    <IconButton
-                      onClick={() => dispatch({ type: DialogActionKind.INIT })}
-                    >
-                      <ArrowBackIcon />
-                    </IconButton>
-                  </Tooltip>{" "}
-                  <Typography variant="h6">
-                    Emitir <small className="text-textDefault">Factura</small>
-                  </Typography>
-                </div>
-                <Divider variant="fullWidth" />
-                <div className="pt-[20px]">
-                  <FacturaScreen />
-                </div>
-              </PaperRounded>
+          // <FacturaScreen /> bg-[#EDF1F4] border borders min-h-[100vh] flex justify-center pt-[60px]
+          <div className="bg-[#F8F8F8] min-h-[100vh] min-w-max">
+            <div className="min-w-[1050px] relative mt-[60px] mx-auto">
+              <div className="p-[30px] w-[1050px] mx-auto">
+                <PaperRounded>
+                  <div className="pl-[15px] py-[10px] flex justify-start items-center">
+                    <Tooltip title="Regresar" arrow>
+                      <IconButton
+                        onClick={() =>
+                          dispatch({ type: DialogActionKind.INIT })
+                        }
+                      >
+                        <ArrowBackIcon />
+                      </IconButton>
+                    </Tooltip>{" "}
+                    <Typography variant="h6">
+                      Emitir <small className="text-textDefault">Factura</small>
+                    </Typography>
+                  </div>
+                  <Divider variant="fullWidth" />
+                  <div className="pt-[20px]">
+                    <FacturaScreen />
+                  </div>
+                </PaperRounded>
+              </div>
             </div>
           </div>
         )}

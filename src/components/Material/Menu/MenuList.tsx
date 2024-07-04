@@ -36,7 +36,7 @@ export const MenuDropdown = styled((props: MenuProps) => (
       },
       "&:active": {
         backgroundColor: alpha(
-          theme.palette.primary.main,
+          theme.palette.secondary.main,
           theme.palette.action.selectedOpacity
         ),
       },

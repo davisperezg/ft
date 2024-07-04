@@ -19,11 +19,12 @@ export interface DialogState {
   nameDialog: string;
   origen?: any;
   pageComplete?: boolean;
+  payload?: any;
 }
 
 interface DialogActions {
   type: DialogActionKind;
-  payload?: {};
+  payload?: any;
   // payload: values
 }
 
@@ -97,6 +98,7 @@ export const dialogReducer = (state: DialogState, action: DialogActions) => {
     case DialogActionKind.SCREEN_FACTURA:
       return {
         ...state,
+        payload: action.payload,
         open: true,
         pageComplete: true,
         nameDialog: "SCREEN_FACTURA",

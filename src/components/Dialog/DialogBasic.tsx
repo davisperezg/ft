@@ -8,6 +8,8 @@ import { ModalContext } from "../../context/modalContext";
 import Paper, { PaperProps } from "@mui/material/Paper";
 import Draggable from "react-draggable";
 import Dialog, { DialogProps } from "@mui/material/Dialog";
+import { SxProps } from "@mui/material";
+import { Theme } from "@mui/material/styles";
 
 interface Props {
   children: JSX.Element[];
@@ -19,6 +21,20 @@ interface Props {
 const PaperComponent = (props: PaperProps) => {
   const nodeRef = useRef(null);
 
+  const defaultStyles: SxProps<Theme> = {
+    backgroundColor: "transparent",
+    overflow: "hidden",
+    boxShadow: "none",
+    borderRadius: "6px",
+    "&.MuiDialog-paper": {
+      overflow: "hidden",
+      maxWidth: 855,
+      width: 855,
+      height: 652,
+      maxHeight: 652,
+    },
+  };
+
   return (
     <Draggable
       nodeRef={nodeRef}
@@ -26,22 +42,7 @@ const PaperComponent = (props: PaperProps) => {
       cancel={'[class*="MuiDialogContent-root"]'}
     >
       <div ref={nodeRef}>
-        <Paper
-          sx={{
-            backgroundColor: "transparent",
-            overflow: "hidden",
-            boxShadow: "none",
-            borderRadius: "6px",
-            "&.MuiDialog-paper": {
-              overflow: "hidden",
-              maxWidth: 855,
-              width: 855,
-              height: 652,
-              maxHeight: 652,
-            },
-          }}
-          {...props}
-        />
+        <Paper sx={defaultStyles} {...props} />
       </div>
     </Draggable>
   );

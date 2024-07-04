@@ -466,7 +466,7 @@ const ComponentTable = ({
     onPaginationChange: setPagination,
     columnResizeMode,
     manualPagination: true,
-    debugTable: true,
+    //debugTable: true,
   });
 
   const { rows } = table.getRowModel();

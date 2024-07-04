@@ -54,34 +54,51 @@ export const useSocketInvoice = () => {
   }, [storageEmpresa]);
 
   useEffect(() => {
+    let isMounted = true; // Para evitar el efecto en un componente desmontado
+
     if (socket) {
+      const handleReconnect = () => {
+        isMounted = false;
+        console.log("reconnecting");
+        setReconnecting(true);
+        socket.connect();
+      };
+
+      const handleReconnectSuccess = () => {
+        isMounted = true;
+        console.log("reconnect success");
+        setReconnecting(false);
+        socket.disconnect();
+      };
+
+      const handleReconnectFailed = () => {
+        console.log("reconnect failed");
+        storage.clear("SESSION");
+        window.location.reload();
+      };
+
       socket.on("error", (data: any) => {
         if (data.message === "jwt expired") {
           window.location.reload();
         }
       });
 
-      socket.io.on("reconnect_attempt", function () {
-        console.log("reconnecting");
-        setReconnecting(true);
-      });
+      socket.io.on("reconnect_attempt", handleReconnect);
 
-      socket.io.on("reconnect", function () {
-        console.log("reconnect");
-        setReconnecting(false);
-      });
+      socket.io.on("reconnect", handleReconnectSuccess);
 
-      socket.io.on("reconnect_failed", function () {
-        console.log("reconnect failed");
-        storage.clear("SESSION");
-        window.location.reload();
-      });
+      socket.io.on("reconnect_failed", handleReconnectFailed);
 
+      // Devolvemos una función de limpieza
       return () => {
-        socket.off("error");
-        socket.off("reconnect_attempt");
-        socket.off("reconnect");
-        socket.off("reconnect_failed");
+        if (isMounted) {
+          // Solo desconectamos el socket si el componente está montado
+          socket.off("error");
+          socket.io.off("reconnect_attempt", handleReconnect);
+          socket.io.off("reconnect", handleReconnectSuccess);
+          socket.io.off("reconnect_failed", handleReconnectFailed);
+          socket.disconnect();
+        }
       };
     }
   }, [socket]);

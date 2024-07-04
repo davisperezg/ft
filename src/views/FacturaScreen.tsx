@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { ModalContext } from "../context/modalContext";
 import {
+  BaseSyntheticEvent,
   useCallback,
   useContext,
   useEffect,
@@ -30,19 +30,24 @@ import ModalObservacion from "../components/Ventas/ModalObservacion";
 import ModalProductos from "../components/Ventas/ModalProductos";
 import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
 import InputDate from "../components/Material/Input/InputDate";
-import { decimalesSimples, numeroALetras } from "../utils/letras_numeros";
 import { IProducto } from "../interface/producto.interface";
 import { IInvoice } from "../interface/invoice.interface";
-import { usePostInvoice } from "../hooks/useInvoices";
 import { getPersona } from "../api/ext";
-import { isError } from "../utils/functions";
+import { fixed, isError, round } from "../utils/functions";
 import { toast } from "react-toastify";
 import { useMonedas } from "../hooks/useMoneda";
 import { useFormaPago } from "../hooks/useFormaPago";
 import { useEntidadesByEmpresa } from "../hooks/useEntidades";
-import { IEntidad } from "../interface/entidad.interface";
 import { useSocketInvoice } from "../hooks/useSocket";
 import CachedIcon from "@mui/icons-material/Cached";
+import { numeroALetras } from "../utils/letras_numeros";
+import Backdrop from "@mui/material/Backdrop";
+import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 
 const INITIAL_PRODUCTO: IProducto = {
   tipAfeIgv: "10",
@@ -52,12 +57,12 @@ const INITIAL_PRODUCTO: IProducto = {
   descripcion: "",
   porcentajeIgv: 18,
   mtoValorUnitario: "",
-  mtoBaseIgv: "0.00",
-  igv: "0.00",
-  totalImpuestos: "0.00",
-  mtoTotalItem: "0.00",
-  igvUnitario: "0.00",
-  mtoPrecioUnitario: "",
+  // mtoBaseIgv: "0.00",
+  // igv: "0.00",
+  // totalImpuestos: "0.00",
+  // mtoTotalItem: "0.00",
+  //igvUnitario: 0,
+  //mtoPrecioUnitario: 0,
   //precio_base: "",
   //precio_unitario: "",
 };
@@ -82,14 +87,51 @@ const INITIAL_FACTURA: IInvoice = {
   producto: INITIAL_PRODUCTO,
 };
 
+interface IProductsExtend extends IProducto {
+  uuid?: string;
+  mtoPrecioUnitario: string;
+  mtoTotalItem: string;
+}
+
+interface IProductTable {
+  operacion_gravada: number;
+  igv: number;
+  operacion_exonerada: number;
+  operacion_inafecta: number;
+  operacion_exportacion: number;
+  operacion_gratuita: number;
+  operacion_total: number;
+  items: IProductsExtend[];
+}
+
 const FacturaScreen = () => {
-  const { userGlobal, setUserGlobal } = useContext(ModalContext);
+  const { userGlobal, setUserGlobal, dialogState } = useContext(ModalContext);
   const [isActiveModalObs, setActiveModalObs] = useState(false);
   const [isActiveModalProductos, setActiveModalProductos] = useState(false);
   const [isOpenDateEmision, setIsOpenDateEmision] = useState(false);
   const [isOpenDateVencimiento, setIsOpenDateVencimiento] = useState(false);
-
+  const [isNewItem, setNewItem] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [openBackdrop, setBackdrop] = useState(false);
+  const [confirmDialog, setConfigDialog] = useState(false);
+  const [isDraft, setDraft] = useState(false);
+
+  const handleCloseBackdrop = () => setBackdrop(false);
+  const handleOpenBackdrop = (e: any) => {
+    setBackdrop(true);
+    handleSubmit((data) => onSubmit(data, isDraft))(e);
+    handleCloseConfirmDialog();
+  };
+
+  const handleCloseConfirmDialog = () => {
+    setConfigDialog(false);
+    setDraft(false);
+  };
+  const handleOpenConfirmDialog = (draft: boolean) => {
+    setConfigDialog(true);
+    setDraft(draft);
+  };
 
   //const [format, setFormat] = useState<string | undefined>("");
   const empresa = JSON.parse(String(sessionStorage.getItem("empresa")));
@@ -103,13 +145,21 @@ const FacturaScreen = () => {
   }, [myDocument]);
 
   const methods = useForm<IInvoice>({
-    defaultValues: INITIAL_FACTURA,
-    values: {
+    defaultValues: {
       ...INITIAL_FACTURA,
-      serie: mySeries[0].serie,
-      numero: mySeries[0].numero,
-      numeroConCeros: mySeries[0].numeroConCeros,
+      productos: dialogState.payload ? dialogState.payload.productos : [],
     },
+    values: dialogState.payload
+      ? {
+          ...dialogState.payload,
+        }
+      : {
+          ...INITIAL_FACTURA,
+          serie: mySeries[0].serie,
+          numero: mySeries[0].numero,
+          numeroConCeros: mySeries[0].numeroConCeros,
+          //fecha_emision: dayjs(new Date()),
+        },
     mode: "onChange",
   });
 
@@ -117,11 +167,12 @@ const FacturaScreen = () => {
     control,
     register,
     handleSubmit,
-    formState: { errors, isDirty, isValid },
+    formState: { errors, isDirty, isValid, dirtyFields, touchedFields },
     watch,
     getValues,
     setValue,
     unregister,
+    setError,
   } = methods;
 
   const {
@@ -144,8 +195,6 @@ const FacturaScreen = () => {
     name: "productos",
     keyName: "uuid",
   });
-
-  console.log(watch());
 
   const eliminarProducto = (posicionTabla: number) => {
     removeProducts(posicionTabla);
@@ -178,106 +227,120 @@ const FacturaScreen = () => {
   const handleCloseProductos = () => {
     setActiveModalProductos(false);
     setValue("producto", INITIAL_PRODUCTO);
+    setNewItem(false);
   };
 
-  //sumar todos los montos de las operaciones gravadas de los productos
-  const sumarImporteTotal = () => {
-    let total = 0;
-    fieldsProducts.forEach((item) => {
-      total += Number(item.mtoTotalItem);
-    });
+  const DECIMAL = 6;
 
-    return total;
-  };
+  const operacionesProductos = fieldsProducts.reduce(
+    (prev: IProductTable, curr) => {
+      //gravada onerosa
+      if (curr.tipAfeIgv === "10") {
+        const mtoValorUnitario = round(Number(curr.mtoValorUnitario), DECIMAL);
+        const porcentaje = Number(curr.porcentajeIgv);
+        const cantidad = Number(curr.cantidad);
+        const igv = round(mtoValorUnitario * (porcentaje / 100), DECIMAL);
 
-  const findGravadas = fieldsProducts.filter(
-    (producto) => producto.tipAfeIgv === "10"
+        const precioUnitario = mtoValorUnitario + igv;
+        const totalItem = (mtoValorUnitario + igv) * cantidad;
+
+        prev.items.push({
+          ...curr,
+          mtoPrecioUnitario: fixed(precioUnitario, DECIMAL),
+          mtoTotalItem: fixed(totalItem),
+        });
+        prev.operacion_gravada += round(mtoValorUnitario * cantidad);
+        prev.igv += round(igv * cantidad);
+        prev.operacion_total +=
+          round(mtoValorUnitario * cantidad) + round(igv * cantidad);
+      }
+
+      //exonerado onerosa
+      if (curr.tipAfeIgv === "20") {
+        const mtoValorUnitario = round(Number(curr.mtoValorUnitario), DECIMAL);
+        const cantidad = Number(curr.cantidad);
+        const precioUnitario = mtoValorUnitario + 0;
+        const totalItem = round(
+          Number((mtoValorUnitario + 0) * cantidad),
+          DECIMAL
+        );
+
+        prev.items.push({
+          ...curr,
+          mtoPrecioUnitario: fixed(precioUnitario, DECIMAL),
+          mtoTotalItem: fixed(totalItem),
+        });
+
+        prev.operacion_exonerada += totalItem;
+        prev.operacion_total += totalItem;
+      }
+
+      //inafecta onerosa(30) y exportacion(40)
+      if (curr.tipAfeIgv === "30" || curr.tipAfeIgv === "40") {
+        const mtoValorUnitario = round(Number(curr.mtoValorUnitario), DECIMAL);
+        const cantidad = Number(curr.cantidad);
+        const precioUnitario = mtoValorUnitario + 0;
+        const totalItem = round(
+          Number((mtoValorUnitario + 0) * cantidad),
+          DECIMAL
+        );
+
+        prev.items.push({
+          ...curr,
+          mtoPrecioUnitario: fixed(precioUnitario, DECIMAL),
+          mtoTotalItem: fixed(totalItem),
+        });
+
+        prev.operacion_inafecta += totalItem;
+        prev.operacion_total += totalItem;
+      }
+
+      //gratuitas gravadas("11", "12", "13", "14", "15", "16", "17"), inafectas("31", "32", "33", "34", "35", "36", "37") e exonorado transfe gratuitas(21)
+      if (
+        [
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "21",
+          "31",
+          "32",
+          "33",
+          "34",
+          "35",
+          "36",
+          "37",
+        ].includes(curr.tipAfeIgv)
+      ) {
+        const mtoValorUnitario = round(Number(curr.mtoValorUnitario), DECIMAL);
+        const cantidad = Number(curr.cantidad);
+        const totalItem = round(Number(mtoValorUnitario * cantidad), DECIMAL);
+
+        prev.items.push({
+          ...curr,
+          mtoPrecioUnitario: fixed(mtoValorUnitario, DECIMAL),
+          mtoTotalItem: fixed(totalItem),
+        });
+
+        prev.operacion_gratuita += totalItem;
+      }
+
+      return prev;
+    },
+    {
+      operacion_gravada: 0,
+      operacion_exonerada: 0,
+      operacion_inafecta: 0,
+      operacion_exportacion: 0,
+      operacion_gratuita: 0,
+      operacion_total: 0,
+      igv: 0,
+      items: [],
+    }
   );
-
-  const sumarIGVTotal = () => {
-    let total = 0;
-    findGravadas.forEach((item) => {
-      total += Number(item.totalImpuestos);
-    });
-
-    return total;
-  };
-
-  const sumarOpeGravadasTotal = () => {
-    let total = 0;
-    findGravadas.forEach((item) => {
-      total += Number(item.mtoValorVenta);
-    });
-
-    return total;
-  };
-
-  const findExoneradas = fieldsProducts.filter(
-    (producto) => producto.tipAfeIgv === "20"
-  );
-
-  const sumarExoneradasTotal = () => {
-    let total = 0;
-    findExoneradas.forEach((item) => {
-      total += Number(item.mtoValorVenta);
-    });
-
-    return total;
-  };
-
-  const findInafectas = fieldsProducts.filter(
-    (producto) => producto.tipAfeIgv === "30"
-  );
-
-  const sumarInafectasTotal = () => {
-    let total = 0;
-    findInafectas.forEach((item) => {
-      total += Number(item.mtoValorVenta);
-    });
-
-    return total;
-  };
-
-  const findGravadasGratuitas = fieldsProducts.filter(
-    (producto) =>
-      producto.tipAfeIgv === "11" ||
-      producto.tipAfeIgv === "12" ||
-      producto.tipAfeIgv === "13" ||
-      producto.tipAfeIgv === "14" ||
-      producto.tipAfeIgv === "15" ||
-      producto.tipAfeIgv === "16" ||
-      producto.tipAfeIgv === "17" ||
-      producto.tipAfeIgv === "21" ||
-      producto.tipAfeIgv === "31" ||
-      producto.tipAfeIgv === "32" ||
-      producto.tipAfeIgv === "33" ||
-      producto.tipAfeIgv === "34" ||
-      producto.tipAfeIgv === "35" ||
-      producto.tipAfeIgv === "36" ||
-      producto.tipAfeIgv === "37"
-  );
-
-  const sumarOpeGratuitasTotal = () => {
-    let total = 0;
-    findGravadasGratuitas.forEach((item) => {
-      total += Number(item.mtoValorVenta);
-    });
-
-    return total;
-  };
-
-  const findExportaciones = fieldsProducts.filter(
-    (producto) => producto.tipAfeIgv === "40"
-  );
-
-  const sumarExportacionTotal = () => {
-    let total = 0;
-    findExportaciones.forEach((item) => {
-      total += Number(item.mtoValorVenta);
-    });
-
-    return total;
-  };
 
   const {
     data: dataEntidades,
@@ -351,8 +414,6 @@ const FacturaScreen = () => {
     const handleOutsideClick = (event: any) => {
       // Verificar si el clic fue fuera del componente
       if (rucSelect.current && !rucSelect.current.contains(event.target)) {
-        console.log(rucSelect.current);
-        console.log(event.target);
         setOpenSearch(false);
       }
     };
@@ -368,7 +429,7 @@ const FacturaScreen = () => {
 
   const { socket, reconnecting } = useSocketInvoice();
 
-  const onSubmit: SubmitHandler<IInvoice> = async (values) => {
+  const onSubmit = async (values: IInvoice, borrador: boolean) => {
     setLoading(true);
 
     const {
@@ -399,11 +460,14 @@ const FacturaScreen = () => {
       fecha_emision: fechaEmision,
       fecha_vencimiento: fechaVencimiento,
       tipo_documento: myDocument.codigo,
+      borrador: borrador,
       // total_igv: decimalesSimples(String(sumarIGVTotal())),
       // total_pagar: decimalesSimples(String(sumarImporteTotal())),
       // total_gravada: decimalesSimples(String(sumarOpeGravadasTotal())),
     };
 
+    console.log(data);
+    // return;
     socket?.volatile.emit("client::newInvoice", data);
 
     // setTimeout(() => {
@@ -413,48 +477,57 @@ const FacturaScreen = () => {
 
   const handleIdInvoice = useCallback(
     (data: any) => {
-      if (data.estado !== "error") {
-        const serie = mySeries.find(
-          (item: any) => item.serie === getValues("serie")
-        );
-        const updateSerie = {
-          ...empresa,
-          establecimiento: {
-            ...empresa.establecimiento,
-            documentos: empresa.establecimiento.documentos.map((doc: any) => {
-              if (doc.nombre === myDocument.nombre) {
-                return {
-                  ...doc,
-                  series: doc.series.map((item: any) => {
-                    if (item.serie === serie.serie) {
+      switch (data.estado) {
+        case "success": {
+          setSuccess(true);
+          const serie = mySeries.find(
+            (item: any) => item.serie === getValues("serie")
+          );
+          const updateSerie = {
+            ...empresa,
+            establecimiento: {
+              ...empresa.establecimiento,
+              documentos: empresa.establecimiento.documentos.map((doc: any) => {
+                if (doc.nombre === myDocument.nombre) {
+                  return {
+                    ...doc,
+                    series: doc.series.map((item: any) => {
+                      if (item.serie === serie.serie) {
+                        return {
+                          ...item,
+                          numero: String(Number(item.numero) + 1),
+                          numeroConCeros: data.numeroConCeros,
+                        };
+                      }
                       return {
                         ...item,
-                        numero: String(Number(item.numero) + 1),
-                        numeroConCeros: data.numeroConCeros,
                       };
-                    }
-                    return {
-                      ...item,
-                    };
-                  }),
-                };
-              } else {
-                return {
-                  ...doc,
-                };
-              }
-            }),
-          },
-        };
+                    }),
+                  };
+                } else {
+                  return {
+                    ...doc,
+                  };
+                }
+              }),
+            },
+          };
 
-        setUserGlobal({
-          ...userGlobal,
-          empresaActual: updateSerie,
-        });
-        sessionStorage.setItem("empresa", JSON.stringify(updateSerie));
-        setLoading(data.loading);
-      } else {
-        setLoading(data.loading);
+          setUserGlobal({
+            ...userGlobal,
+            empresaActual: updateSerie,
+          });
+          sessionStorage.setItem("empresa", JSON.stringify(updateSerie));
+          setLoading(data.loading);
+          handleCloseBackdrop();
+          break;
+        }
+
+        case "error": {
+          setLoading(data.loading);
+          handleCloseBackdrop();
+          break;
+        }
       }
     },
     [empresa, getValues, myDocument.nombre, mySeries, setUserGlobal, userGlobal]
@@ -466,17 +539,124 @@ const FacturaScreen = () => {
 
       socket.on("exception", (data: any) => {
         toast.error(data.message);
+        setLoading(false);
       });
 
       return () => {
         socket.off("server::getIdInvoice", handleIdInvoice);
+        socket.off("exception");
       };
     }
   }, [handleIdInvoice, socket]);
 
+  useEffect(() => {
+    if (!dialogState.payload) {
+      setValue("fecha_emision", dayjs(new Date()));
+    }
+  }, [dialogState.payload, setValue]);
+
   return (
     <>
       <div className="flex flex-col flex-1 w-full">
+        {confirmDialog ? (
+          <Dialog
+            open={true}
+            aria-labelledby="alert-dialog-title-confirm"
+            aria-describedby="alert-dialog-description-confirm"
+          >
+            <DialogTitle id="alert-dialog-title-confirm">Confirmar</DialogTitle>
+            <DialogContent>
+              <DialogContentText id="alert-dialog-description-confirm">
+                Confirme que desea generar este documento.
+              </DialogContentText>
+
+              <div className="flex gap-2 flex-col mt-3">
+                <Button
+                  fullWidth
+                  color="error"
+                  variant="contained"
+                  onClick={handleCloseConfirmDialog}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  fullWidth
+                  color="success"
+                  variant="contained"
+                  onClick={handleOpenBackdrop}
+                >
+                  Confirmar
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        ) : null}
+
+        {loading ? (
+          <Backdrop
+            sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+            open={openBackdrop}
+          >
+            <CircularProgress color="inherit" />
+          </Backdrop>
+        ) : (
+          success && (
+            <Dialog
+              open={true}
+              aria-labelledby="alert-dialog-title-success"
+              aria-describedby="alert-dialog-description-success"
+            >
+              <DialogTitle id="alert-dialog-title-success">
+                FACTURA ELECTRÓNICA
+              </DialogTitle>
+              <DialogContent>
+                <DialogContentText id="alert-dialog-description-success">
+                  FFF1-5
+                </DialogContentText>
+                <DialogContentText id="alert-dialog-description-success">
+                  TOTAL: S/118.0
+                </DialogContentText>
+                <div className="w-full border py-3 px-5 flex justify-center items-center mt-2">
+                  <Button variant="contained" color="primary">
+                    IMPRIMIR
+                  </Button>
+                </div>
+                <div className="w-full border py-3 px-5 flex gap-2 justify-center items-center mt-2">
+                  <Button variant="contained" color="secondary">
+                    VER PDF
+                  </Button>
+                  <Button variant="contained" color="success">
+                    DESCARGAR XML
+                  </Button>
+                  <Button variant="contained" color="primary">
+                    DESCARGAR CDR
+                  </Button>
+                </div>
+                <div className="w-full border py-3 px-5 gap-2 flex flex-col justify-center items-center mt-2">
+                  <a>Enviar al WhatsApp del cliente</a>
+                  <a>Enviar al correo del cliente</a>
+                  <a>Enviar a un correo personalizado</a>
+                  <a>Generar otra FACTURA</a>
+                  <a>Enviar otra BOLETA DE VENTA</a>
+                  <a>Ver comprobantes</a>
+                </div>
+                <div className="w-full border py-3 px-5 flex justify-center items-center mt-2">
+                  <Button variant="contained" color="primary" fullWidth>
+                    ANULAR o comunicat de baja
+                  </Button>
+                </div>
+                <div className="w-full border py-3 px-5 flex gap-2 mt-2">
+                  <span>
+                    Enviada a la Sunat?: Aceptada por la Sunat?: Código: 0
+                    Descripción: La Factura Electrónica FFF1-5 ha sido ACEPTADA
+                    CON OBSERVACIONES Otros:
+                  </span>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )
+        )}
+
         {userGlobal.empresaActual.modo === "DESARROLLO" && (
           <div className="px-3">
             {reconnecting && (
@@ -526,6 +706,9 @@ const FacturaScreen = () => {
               actualizarProducto={actualizarProducto}
               getValues={getValues}
               unregister={unregister}
+              errors={errors}
+              setError={setError}
+              isNewItem={isNewItem}
             />
           )}
           <form>
@@ -822,7 +1005,7 @@ const FacturaScreen = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {fieldsProducts.map((item, i: number) => {
+                          {operacionesProductos.items.map((item, i: number) => {
                             return (
                               <tr key={item.uuid}>
                                 <td className="text-right w-[80px]">
@@ -873,11 +1056,7 @@ const FacturaScreen = () => {
                                     <input
                                       className="w-[140px] px-2 text-right text-textDisabled text-shadow-disabled cursor-not-allowed"
                                       disabled
-                                      value={String(
-                                        item.mtoValorGratuito
-                                          ? item.mtoValorGratuito
-                                          : item.mtoValorUnitario
-                                      )}
+                                      value={item.mtoPrecioUnitario}
                                     />
                                   </div>
                                 </td>
@@ -890,7 +1069,7 @@ const FacturaScreen = () => {
                                     <input
                                       className="w-[140px] px-2 text-right text-textDisabled text-shadow-disabled cursor-not-allowed"
                                       disabled
-                                      value={String(item.mtoValorVenta)}
+                                      value={item.mtoTotalItem}
                                     />
                                   </div>
                                 </td>
@@ -929,7 +1108,10 @@ const FacturaScreen = () => {
                       </table>
                     </div>
                     <ButtonSimple
-                      onClick={() => setActiveModalProductos(true)}
+                      onClick={() => {
+                        setActiveModalProductos(true);
+                        setNewItem(true);
+                      }}
                       className="w-full !border !border-dashed !border-bordersAux !mt-1"
                     >
                       <AddIcon />
@@ -944,7 +1126,10 @@ const FacturaScreen = () => {
                       className="text-borders cursor-pointer"
                     />
                     <ButtonSimple
-                      onClick={() => setActiveModalProductos(true)}
+                      onClick={() => {
+                        setActiveModalProductos(true);
+                        setNewItem(true);
+                      }}
                       className="!border !border-dashed !border-bordersAux"
                     >
                       <AddIcon />
@@ -966,13 +1151,13 @@ const FacturaScreen = () => {
                           className="w-[175px] text-right border p-[4px_8px] text-textDisabled text-shadow-disabled cursor-not-allowed"
                           disabled
                           placeholder="0.00"
-                          value={decimalesSimples(
-                            String(sumarOpeGravadasTotal())
+                          value={operacionesProductos.operacion_gravada.toFixed(
+                            2
                           )}
                         />
                       </div>
                     </div>
-                    {findExoneradas.length > 0 && (
+                    {operacionesProductos.operacion_exonerada > 0 && (
                       <>
                         <div className="flex justify-end w-full h-auto items-center">
                           <div className="px-[5px] text-right block flex-[0_0_16%]">
@@ -983,15 +1168,15 @@ const FacturaScreen = () => {
                               className="w-[175px] text-right border p-[4px_8px] text-textDisabled text-shadow-disabled cursor-not-allowed"
                               disabled
                               placeholder="0.00"
-                              value={decimalesSimples(
-                                String(sumarExoneradasTotal())
+                              value={operacionesProductos.operacion_exonerada.toFixed(
+                                2
                               )}
                             />
                           </div>
                         </div>
                       </>
                     )}
-                    {findInafectas.length > 0 && (
+                    {operacionesProductos.operacion_inafecta > 0 && (
                       <>
                         <div className="flex justify-end w-full h-auto items-center">
                           <div className="px-[5px] text-right block flex-[0_0_16%]">
@@ -1002,15 +1187,15 @@ const FacturaScreen = () => {
                               className="w-[175px] text-right border p-[4px_8px] text-textDisabled text-shadow-disabled cursor-not-allowed"
                               disabled
                               placeholder="0.00"
-                              value={decimalesSimples(
-                                String(sumarInafectasTotal())
+                              value={operacionesProductos.operacion_inafecta.toFixed(
+                                2
                               )}
                             />
                           </div>
                         </div>
                       </>
                     )}
-                    {findGravadasGratuitas.length > 0 && (
+                    {operacionesProductos.operacion_gratuita > 0 && (
                       <>
                         <div className="flex justify-end w-full h-auto items-center">
                           <div className="px-[5px] text-right block flex-[0_0_16%]">
@@ -1021,27 +1206,8 @@ const FacturaScreen = () => {
                               className="w-[175px] text-right border p-[4px_8px] text-textDisabled text-shadow-disabled cursor-not-allowed"
                               disabled
                               placeholder="0.00"
-                              value={decimalesSimples(
-                                String(sumarOpeGratuitasTotal())
-                              )}
-                            />
-                          </div>
-                        </div>
-                      </>
-                    )}
-                    {findExportaciones.length > 0 && (
-                      <>
-                        <div className="flex justify-end w-full h-auto items-center">
-                          <div className="px-[5px] text-right block flex-[0_0_16%]">
-                            Exportación
-                          </div>
-                          <div className="px-[5px]">
-                            <input
-                              className="w-[175px] text-right border p-[4px_8px] text-textDisabled text-shadow-disabled cursor-not-allowed"
-                              disabled
-                              placeholder="0.00"
-                              value={decimalesSimples(
-                                String(sumarExportacionTotal())
+                              value={operacionesProductos.operacion_gratuita.toFixed(
+                                2
                               )}
                             />
                           </div>
@@ -1058,7 +1224,7 @@ const FacturaScreen = () => {
                         className="w-[175px] text-right border p-[4px_8px] text-textDisabled text-shadow-disabled cursor-not-allowed"
                         disabled
                         placeholder="0.00"
-                        value={decimalesSimples(String(sumarIGVTotal()))}
+                        value={operacionesProductos.igv.toFixed(2)}
                       />
                     </div>
                   </div>
@@ -1071,7 +1237,7 @@ const FacturaScreen = () => {
                         className="w-[175px] text-right border p-[4px_8px] text-textDisabled text-shadow-disabled cursor-not-allowed"
                         disabled
                         placeholder="0.00"
-                        value={decimalesSimples(String(sumarImporteTotal()))}
+                        value={operacionesProductos.operacion_total.toFixed(2)}
                       />
                     </div>
                   </div>
@@ -1113,14 +1279,14 @@ const FacturaScreen = () => {
 
                 {/* CAJA IMPORTE EN LETRAS Y OBSERVACIONES */}
                 <div className="flex flex-col flex-1">
-                  {/* IMPORTE EN LETRAS */}
+                  {/* IMPORTE EN LETRAS  0.000118*/}
                   <div className="flex w-full border">
                     <span className="px-2 w-auto whitespace-nowrap">
                       IMPORTE EN LETRAS
                     </span>
                     <Divider orientation="vertical" />
                     <span className="px-2 bg-disabled w-full text-textDisabled text-shadow-disabled cursor-not-allowed">
-                      {numeroALetras(sumarImporteTotal(), "SOLES")}
+                      {numeroALetras(operacionesProductos.operacion_total)}
                     </span>
                   </div>
 
@@ -1169,15 +1335,38 @@ const FacturaScreen = () => {
                 </div>
 
                 {/* CAJA EMITIR FACTURA */}
-                <div className="w-full flex mb-4 mt-4">
-                  <div className="flex justify-end items-end w-full">
+                <div className="w-full flex mb-4 mt-4 gap-2">
+                  <div className="flex w-1/2">
                     <Button
+                      fullWidth
+                      disabled={loading}
+                      variant="contained"
+                      color="secondary"
+                      onClick={() => handleOpenConfirmDialog(true)}
+                    >
+                      {/* (e) =>
+                        handleSubmit((data, event) =>
+                          onSubmit(data, event, true)
+                        )(e) */}
+                      {isDraft && loading ? (
+                        <span>
+                          GUARDANDO BORRADOR...{" "}
+                          <CachedIcon className="animate-spin" />
+                        </span>
+                      ) : (
+                        "GUARDAR COMO BORRADOR"
+                      )}
+                    </Button>
+                  </div>
+                  <div className="flex w-1/2">
+                    <Button
+                      fullWidth
+                      disabled={loading}
                       variant="contained"
                       color="primary"
-                      disabled={!isDirty || !isValid || loading}
-                      onClick={(e) => handleSubmit(onSubmit)(e)}
+                      onClick={() => handleOpenConfirmDialog(false)}
                     >
-                      {loading ? (
+                      {!isDraft && loading ? (
                         <span>
                           Emitiendo factura...{" "}
                           <CachedIcon className="animate-spin" />

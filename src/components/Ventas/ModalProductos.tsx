@@ -3,8 +3,8 @@ import Dialog from "@mui/material/Dialog";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import Divider from "@mui/material/Divider";
-import { SelectSimple } from "../Select/SelectSimple";
-import { DialogContent, Grid, IconButton, Tooltip } from "@mui/material";
+import { IOption, SelectSimple } from "../Select/SelectSimple";
+import { DialogContent, Grid } from "@mui/material";
 import InputText from "../Material/Input/InputText";
 import { DialogActionsBeta } from "../Dialog/_DialogActions";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
@@ -15,14 +15,17 @@ import {
   UseFormWatch,
   UseFormGetValues,
   UseFormUnregister,
+  UseFormSetError,
 } from "react-hook-form";
-import { decimalesSimples } from "../../utils/letras_numeros";
 import { IInvoice } from "../../interface/invoice.interface";
 import { useTipoIgv } from "../../hooks/useTipoIgvs";
 import { SelectMiddle } from "../Select/SelectMiddle";
 import { useUnidad } from "../../hooks/useUnidad";
-import { useState } from "react";
-
+import { useCallback, useContext, useEffect, useState } from "react";
+import { SingleValue } from "react-select";
+import { ModalContext } from "../../context/modalContext";
+import ToolTipIconButton from "../Material/Tooltip/IconButton";
+import { fixed, round } from "../../utils/functions";
 interface Props {
   open: boolean;
   handleClose: () => void;
@@ -33,6 +36,9 @@ interface Props {
   getValues: UseFormGetValues<any>;
   actualizarProducto: (posicionTabla: number) => void;
   unregister: UseFormUnregister<IInvoice>;
+  errors: any;
+  setError: UseFormSetError<IInvoice>;
+  isNewItem: boolean;
 }
 
 const ModalProductos = ({
@@ -45,13 +51,22 @@ const ModalProductos = ({
   watch,
   getValues,
   unregister,
+  errors,
+  setError,
+  isNewItem,
 }: Props) => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
+  const DECIMAL = 6;
+  const TIPO_OPERACION = String(watch("producto.tipAfeIgv"));
 
   const { data: dataTipoIgvs, isLoading: isLoadingTipoIgvs } = useTipoIgv();
   const { data: dataUnidades, isLoading: isLoadingUnidades } = useUnidad();
-  const [operacion, setOperacion] = useState("GRAVADA_ONEROSA");
+
+  const [tipOperacion, setTipOperacion] = useState("");
+  const { dialogState } = useContext(ModalContext);
+  const [igvUnitario, setIgvUnitario] = useState(`0.${"0".repeat(DECIMAL)}`);
+  const [mtoPrecioUnitario, setMtoPrecioUnitario] = useState("");
 
   const tiposIgvs =
     dataTipoIgvs?.map((item) => {
@@ -79,14 +94,14 @@ const ModalProductos = ({
         label: item.categoria,
         options: [
           {
-            label: item.tipo_igv,
+            label: item.codigo + " - " + item.tipo_igv,
             value: item.codigo,
           },
         ],
       });
     } else {
       categoria.options.push({
-        label: item.tipo_igv,
+        label: item.codigo + " - " + item.tipo_igv,
         value: item.codigo,
       });
     }
@@ -94,201 +109,138 @@ const ModalProductos = ({
     return acumulador;
   }, []);
 
-  const convertDecimal = (importe: number, decimal: number) => {
-    return Number(importe).toFixed(decimal);
-  };
-
-  const tipoIgv = watch("producto.tipAfeIgv");
-
-  const nombreOperacion = () => {
-    switch (tipoIgv) {
-      case "10":
-        return "Ope. Gravada";
-      case "20":
-        return "Ope. Exonerada";
-      case "30":
-        return "Ope. Inafecta";
-      case "40":
-        return "Exportación";
-      default:
-        return "Ope. Gratuita";
-    }
-  };
-
-  const disabledByOpe =
-    tipoIgv === "20" ||
-    tipoIgv === "30" ||
-    tipoIgv === "40" ||
-    tipoIgv === "21" ||
-    tipoIgv === "31" ||
-    tipoIgv === "32" ||
-    tipoIgv === "33" ||
-    tipoIgv === "34" ||
-    tipoIgv === "35" ||
-    tipoIgv === "36" ||
-    tipoIgv === "37"
-      ? true
-      : false;
-
-  const isGravadasGratuitas =
-    tipoIgv === "11" ||
-    tipoIgv === "12" ||
-    tipoIgv === "13" ||
-    tipoIgv === "14" ||
-    tipoIgv === "15" ||
-    tipoIgv === "16" ||
-    tipoIgv === "17"
-      ? true
-      : false;
-
-  const isInafectosGratuitos =
-    tipoIgv === "21" ||
-    tipoIgv === "31" ||
-    tipoIgv === "32" ||
-    tipoIgv === "33" ||
-    tipoIgv === "34" ||
-    tipoIgv === "35" ||
-    tipoIgv === "36" ||
-    tipoIgv === "37"
-      ? true
-      : false;
-
-  //Seteamos el mtoValorUnitario obteniendo el mismo valor del mtoValorGratuito
-  const valorGratuitoToValorUnitario = () => {
-    const mtoValorGratuito = Number(watch("producto.mtoValorGratuito")) || 0;
-    setValue("producto.mtoValorUnitario", convertDecimal(mtoValorGratuito, 3));
-    setTimeout(() => {
-      unregister("producto.mtoValorGratuito");
-    }, 100);
-  };
-
-  const esperarSet = (
-    nombreSet: string,
-    valor: number,
-    cantDecimal: number
-  ) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        setValue<any>(
-          `producto.${nombreSet}`,
-          convertDecimal(valor || 0, cantDecimal)
-        );
-        resolve(watch<any>(`producto.${nombreSet}`));
-      }, 100);
-    });
-  };
-
-  const calculo = async (
-    tipAfectacion: string,
-    cantidad = Number(watch("producto.cantidad"))
-  ) => {
-    let mtoValorUnitario = Number(watch("producto.mtoValorUnitario")) || 0;
-    let mtoValorGratuito = Number(watch("producto.mtoValorGratuito"));
-
-    if (
-      tipAfectacion === "GRAVADA_ONEROSA" ||
-      tipAfectacion === "EXPORTACION" ||
-      tipAfectacion === "EXONERADA_INAFECTA_ONEROSA"
-    ) {
-      if (isNaN(mtoValorGratuito)) {
-        setValue(
-          "producto.mtoValorUnitario",
-          convertDecimal(mtoValorUnitario, 3)
-        );
+  const setTipoOperacion = useCallback(
+    (tipOpe = TIPO_OPERACION) => {
+      if (tipOpe === "10") {
+        setTipOperacion("Ope. Gravada");
+      } else if (tipOpe === "20") {
+        setIgvUnitario("Ope. Exonerada");
+        setTipOperacion("Ope. Exonerada");
+      } else if (tipOpe === "30") {
+        setIgvUnitario("Ope. Inafecta");
+        setTipOperacion("Ope. Inafecta");
+      } else if (tipOpe === "40") {
+        setIgvUnitario("Exportación");
+        setTipOperacion("Exportación");
       } else {
-        valorGratuitoToValorUnitario();
-        mtoValorUnitario = Number(watch("producto.mtoValorUnitario"));
+        setTipOperacion("Ope. Gratuita");
+        if (["21", "31", "32", "33", "34", "35", "36", "37"].includes(tipOpe)) {
+          setIgvUnitario("Ope. Gratuita");
+        }
       }
-    }
+    },
+    [TIPO_OPERACION]
+  );
 
-    if (
-      tipAfectacion === "GRAVADA_GRATUITA" ||
-      tipAfectacion === "INAFECTA_GRATUITA"
-    ) {
-      if (isNaN(mtoValorGratuito)) {
-        const mtoValorGratuitoAux = await esperarSet(
-          "mtoValorGratuito",
-          mtoValorUnitario,
-          3
-        );
-        mtoValorGratuito = Number(mtoValorGratuitoAux);
-      }
-      setValue("producto.mtoValorUnitario", convertDecimal(0, 3));
-    }
-
-    const mtoValorUnitarioOrGratuito =
-      tipAfectacion === "GRAVADA_ONEROSA" ||
-      tipAfectacion === "EXPORTACION" ||
-      tipAfectacion === "EXONERADA_INAFECTA_ONEROSA"
-        ? mtoValorUnitario
-        : mtoValorGratuito;
-
-    //Set IGV unitario
-    const igvUnitario =
-      tipAfectacion === "INAFECTA_GRATUITA" ||
-      tipAfectacion === "EXPORTACION" ||
-      tipAfectacion === "EXONERADA_INAFECTA_ONEROSA"
-        ? 0
-        : (mtoValorUnitarioOrGratuito * 18) / 100;
-    setValue("producto.igvUnitario", convertDecimal(igvUnitario, 2));
-
-    //Set Valor precio unitario. Si es gravada es con igv y preciounitario, si es gratuita el precio unitario sera 0
-    const mtoPrecioUnitario =
-      tipAfectacion === "GRAVADA_ONEROSA" ||
-      tipAfectacion === "EXPORTACION" ||
-      tipAfectacion === "EXONERADA_INAFECTA_ONEROSA"
-        ? mtoValorUnitarioOrGratuito + igvUnitario
-        : 0;
-    setValue(
-      "producto.mtoPrecioUnitario",
-      convertDecimal(mtoPrecioUnitario, 3)
-    );
-
-    //Calculo para gravadas gratuitas mtoPrecioUnitarioGratuito
-    if (tipAfectacion === "GRAVADA_GRATUITA") {
-      const mtoPrecioUnitarioGratuito =
-        mtoValorUnitarioOrGratuito + igvUnitario;
-
-      setValue(
-        "producto.mtoPrecioUnitarioGratuito",
-        convertDecimal(mtoPrecioUnitarioGratuito, 3)
-      );
-    }
-
-    //Set baseIgv y mtoValorVenta
-    //const cantidad = ;
-    const mtoBaseIgv = Number(mtoValorUnitarioOrGratuito) * cantidad;
-    const mtoValorVenta = Number(mtoValorUnitarioOrGratuito) * cantidad;
-    setValue("producto.mtoBaseIgv", convertDecimal(mtoBaseIgv, 2));
-    setValue("producto.mtoValorVenta", convertDecimal(mtoValorVenta, 2));
-
-    //Set igv
-    const igv =
-      tipAfectacion === "INAFECTA_GRATUITA" ||
-      tipAfectacion === "EXPORTACION" ||
-      tipAfectacion === "EXONERADA_INAFECTA_ONEROSA"
-        ? 0
-        : Number(igvUnitario) * cantidad;
-    setValue("producto.igv", convertDecimal(igv, 2));
-
-    //Set total impuestos
-    const totalImpuestos =
-      tipAfectacion === "INAFECTA_GRATUITA" ||
-      tipAfectacion === "EXPORTACION" ||
-      tipAfectacion === "EXONERADA_INAFECTA_ONEROSA"
-        ? 0
-        : igv + 0;
-    setValue("producto.totalImpuestos", convertDecimal(totalImpuestos, 2));
-
-    //Set total item
-    const mtoTotalItem =
-      tipAfectacion === "GRAVADA_ONEROSA" ||
-      tipAfectacion === "EXPORTACION" ||
-      tipAfectacion === "EXONERADA_INAFECTA_ONEROSA"
-        ? mtoValorVenta + totalImpuestos
-        : 0;
-    setValue("producto.mtoTotalItem", convertDecimal(mtoTotalItem, 2));
+  const limpiarByMtoValorUnitario = () => {
+    setValue("producto.mtoValorUnitario", "");
+    setMtoPrecioUnitario("");
+    setIgvUnitario(`0.${"0".repeat(DECIMAL)}`);
   };
+
+  //ope grava 10-18%
+  //ope gratuitas ["11", "12","13","14","15","16","17"]-18%
+  const porcentaje18 = ["10", "11", "12", "13", "14", "15", "16", "17"];
+
+  //inafecto one  30-0%
+  //exonerada one 20-0%
+  //exportacion 40-0%
+  //exonerada transferencia gratuita  21-0%
+  //inafectos gratuitas ["31","32","33","34","35","36","37"]-0%
+  const porcentaje0 = [
+    "20",
+    "30",
+    "40",
+    "21",
+    "31",
+    "32",
+    "33",
+    "34",
+    "35",
+    "36",
+    "37",
+  ];
+
+  useEffect(() => {
+    setTipoOperacion();
+  }, [setTipoOperacion]);
+
+  //console.log(watch("producto"));
+
+  const calculaOperaciones = useCallback(
+    (tipAfeIgvAux?: string, porcentajeAux?: number) => {
+      const porcentaje = porcentajeAux
+        ? porcentajeAux
+        : Number(getValues("producto.porcentajeIgv"));
+      const valorUnitario = Number(getValues("producto.mtoValorUnitario"));
+      const tipAfeIgv = tipAfeIgvAux
+        ? tipAfeIgvAux
+        : String(getValues("producto.tipAfeIgv"));
+
+      setValue("producto.mtoValorUnitario", fixed(valorUnitario, DECIMAL));
+      //gravada
+      if (tipAfeIgv === "10") {
+        const igvUnitario = (valorUnitario * porcentaje) / 100;
+        setIgvUnitario(fixed(round(igvUnitario, DECIMAL), DECIMAL));
+
+        const mtoPrecioUnitario = valorUnitario + igvUnitario;
+        setMtoPrecioUnitario(fixed(mtoPrecioUnitario, DECIMAL));
+      }
+      //exonerada
+      if (tipAfeIgv === "20") {
+        setIgvUnitario("Ope. Exonerada");
+        setMtoPrecioUnitario(
+          fixed(round(Number(valorUnitario), DECIMAL), DECIMAL)
+        );
+      }
+      //inafecta
+      if (tipAfeIgv === "30") {
+        setIgvUnitario("Ope. Inafecta");
+        setMtoPrecioUnitario(
+          fixed(round(Number(valorUnitario), DECIMAL), DECIMAL)
+        );
+      }
+      //exportacion
+      if (tipAfeIgv === "40") {
+        setIgvUnitario("Exportación");
+        setMtoPrecioUnitario(
+          fixed(round(Number(valorUnitario), DECIMAL), DECIMAL)
+        );
+      }
+      //gravadas gratuitas
+      if (
+        ["11", "12", "13", "14", "15", "16", "17"].includes(String(tipAfeIgv))
+      ) {
+        const igvUnitario = (valorUnitario * porcentaje) / 100;
+        setIgvUnitario(fixed(round(igvUnitario, DECIMAL), DECIMAL));
+
+        const mtoPrecioUnitario = valorUnitario + igvUnitario;
+        setMtoPrecioUnitario(fixed(mtoPrecioUnitario, DECIMAL));
+      }
+      //inafectas gratuitas
+      if (
+        ["21", "31", "32", "33", "34", "35", "36", "37"].includes(
+          String(tipAfeIgv)
+        )
+      ) {
+        setIgvUnitario("Ope. Gratuita");
+        setMtoPrecioUnitario(
+          fixed(round(Number(valorUnitario), DECIMAL), DECIMAL)
+        );
+      }
+    },
+    [getValues, setValue]
+  );
+
+  useEffect(() => {
+    if (getValues("producto.uuid")) {
+      calculaOperaciones();
+    }
+  }, [getValues, calculaOperaciones]);
+
+  const inputDisabled = porcentaje0.includes(
+    String(getValues("producto.tipAfeIgv"))
+  );
 
   return (
     <Dialog
@@ -316,90 +268,30 @@ const ModalProductos = ({
                   value={tiposIgvs.find(
                     ({ value }) => String(value) === String(field.value)
                   )}
-                  onChange={(e: any) => {
-                    const tipoAfeIgv = e.value;
-                    field.onChange(tipoAfeIgv);
+                  onChange={(e) => {
+                    const tipAfeIgv = String(
+                      (e as SingleValue<IOption>)?.value
+                    );
+                    field.onChange(tipAfeIgv);
 
-                    //Las ope gravadas y gravadas gratuitas tendran el igv 18%
-                    if (
-                      tipoAfeIgv === "10" ||
-                      tipoAfeIgv === "11" ||
-                      tipoAfeIgv === "12" ||
-                      tipoAfeIgv === "13" ||
-                      tipoAfeIgv === "14" ||
-                      tipoAfeIgv === "15" ||
-                      tipoAfeIgv === "16" ||
-                      tipoAfeIgv === "17"
-                    ) {
+                    setTipoOperacion(tipAfeIgv);
+
+                    //ope grava 10-18%
+                    //ope gratuitas ["11", "12","13","14","15","16","17"]-18%
+                    if (porcentaje18.includes(tipAfeIgv)) {
                       setValue("producto.porcentajeIgv", 18);
-
-                      //La ope gravada tendra el igv 18% con monto total
-                      if (tipoAfeIgv === "10") {
-                        unregister("producto.mtoPrecioUnitarioGratuito");
-                        setOperacion("GRAVADA_ONEROSA");
-                        calculo("GRAVADA_ONEROSA");
-                      }
-
-                      //Las gravadas gratuitas tendra igv 18% pero con importe total monto 0
-                      if (
-                        tipoAfeIgv === "11" ||
-                        tipoAfeIgv === "12" ||
-                        tipoAfeIgv === "13" ||
-                        tipoAfeIgv === "14" ||
-                        tipoAfeIgv === "15" ||
-                        tipoAfeIgv === "16" ||
-                        tipoAfeIgv === "17"
-                      ) {
-                        setOperacion("GRAVADA_GRATUITA");
-                        calculo("GRAVADA_GRATUITA");
-                      }
                     }
 
-                    //Las gratuitas inafectas, ope exonerada, exonerada gratuita, ope inafecta y exportacion seran 0% de igv
-                    if (
-                      tipoAfeIgv === "20" ||
-                      tipoAfeIgv === "21" ||
-                      tipoAfeIgv === "30" ||
-                      tipoAfeIgv === "31" ||
-                      tipoAfeIgv === "32" ||
-                      tipoAfeIgv === "33" ||
-                      tipoAfeIgv === "34" ||
-                      tipoAfeIgv === "35" ||
-                      tipoAfeIgv === "36" ||
-                      tipoAfeIgv === "37" ||
-                      tipoAfeIgv === "40"
-                    ) {
+                    //inafecto one  30-0%
+                    //exonerada one 20-0%
+                    //exportacion 40-0%
+                    //exonerada transferencia gratuita  21-0%
+                    //inafectos gratuitas ["31","32","33","34","35","36","37"]-0%
+                    if (porcentaje0.includes(tipAfeIgv)) {
                       setValue("producto.porcentajeIgv", 0);
-                      unregister("producto.mtoPrecioUnitarioGratuito");
-
-                      //ope exonerada(20) con igv 0% y ope inafecta(30) con igv 0%
-                      if (tipoAfeIgv === "20" || tipoAfeIgv === "30") {
-                        setOperacion("EXONERADA_INAFECTA_ONEROSA");
-                        calculo("EXONERADA_INAFECTA_ONEROSA");
-                      }
-
-                      //inafectas gratutitas (31-37), exonerado gratuita(21)
-                      if (
-                        tipoAfeIgv === "31" ||
-                        tipoAfeIgv === "32" ||
-                        tipoAfeIgv === "33" ||
-                        tipoAfeIgv === "34" ||
-                        tipoAfeIgv === "35" ||
-                        tipoAfeIgv === "36" ||
-                        tipoAfeIgv === "37" ||
-                        tipoAfeIgv === "21"
-                      ) {
-                        setOperacion("INAFECTA_GRATUITA");
-                        calculo("INAFECTA_GRATUITA");
-                      }
-
-                      //Exportación bienes y servicios (40)
-                      if (tipoAfeIgv === "40") {
-                        // Codigo Producto Sunat, requerido - Cliente: extranjeria o sin documentos.
-                        setOperacion("EXPORTACION");
-                        calculo("EXPORTACION");
-                      }
                     }
+
+                    calculaOperaciones(tipAfeIgv, 18);
                   }}
                 />
               );
@@ -417,17 +309,32 @@ const ModalProductos = ({
                     {...field}
                     variant="filled"
                     type="number"
+                    value={field.value === 0 ? "" : field.value}
+                    error={Boolean(errors.producto?.cantidad)}
+                    onBlur={(e) => {
+                      e.target.value = Number(e.target.value).toFixed();
+                    }}
                     onChange={(e) => {
-                      const cantidad = Number(e.target.value);
-                      if (cantidad < 1) return;
+                      if (!/^-?\d*\.?\d{0,10}$/.test(e.target.value)) {
+                        setError("producto.cantidad", {
+                          type: "pattern",
+                          message: "Cantidad inválida",
+                        });
+                        return;
+                      }
 
-                      field.onChange(cantidad);
+                      const value = Number(e.target.value);
 
-                      calculo(operacion, cantidad);
+                      if (value < 1) {
+                        field.onChange(Number(0.000001));
+                      } else {
+                        field.onChange(Number(value));
+                      }
                     }}
                   />
                 )}
               />
+              {errors.producto?.cantidad.message}
             </Grid>
             <Grid item xs={4}>
               <Controller
@@ -446,9 +353,6 @@ const ModalProductos = ({
                     value={unidades.find(
                       ({ value }) => String(value) === String(field.value)
                     )}
-                    onChange={(e: any) => {
-                      field.onChange(e.value);
-                    }}
                   />
                 )}
               />
@@ -487,132 +391,69 @@ const ModalProductos = ({
           {/* VALOR UNITARIO */}
           <Grid item container justifyContent={"end"}>
             <Grid item xs={6}>
-              {isGravadasGratuitas || isInafectosGratuitos ? (
-                <>
-                  <Controller
-                    control={control}
-                    name="producto.mtoValorGratuito"
-                    render={({ field }) => {
-                      return (
-                        <InputText
-                          {...field}
-                          autoComplete="off"
-                          variant="filled"
-                          type="number"
-                          placeholder="valor unitario"
-                          inputProps={{
-                            step: 0.001,
-                          }}
-                          onBlur={(e) => {
-                            const value = e.target.value;
-                            const formattedValue = parseFloat(value).toFixed(3);
-                            setValue(
-                              "producto.mtoValorGratuito",
-                              formattedValue
-                            );
-                          }}
-                          onChange={(e) => {
-                            const mtoValorGratuito = e.target.value;
-                            if (Number(mtoValorGratuito) < 0) return;
-
-                            field.onChange(mtoValorGratuito);
-
-                            calculo(
-                              operacion,
-                              Number(watch("producto.cantidad"))
-                            );
-                          }}
-                        />
-                      );
-                    }}
-                  />
-                </>
-              ) : (
-                <>
-                  <Controller
-                    control={control}
-                    name="producto.mtoValorUnitario"
-                    render={({ field }) => (
+              <Controller
+                control={control}
+                name="producto.mtoValorUnitario"
+                render={({ field }) => {
+                  return (
+                    <>
                       <InputText
                         {...field}
                         autoComplete="off"
                         variant="filled"
                         type="number"
+                        placeholder="valor unitario"
+                        value={field.value === "" ? "" : field.value}
+                        inputProps={{
+                          step: Math.pow(10, -DECIMAL),
+                          min: `0.${"0".repeat(DECIMAL)}`,
+                        }}
                         onBlur={(e) => {
-                          const value = e.target.value;
-                          const formattedValue = parseFloat(value).toFixed(3);
-                          setValue("producto.mtoValorUnitario", formattedValue);
+                          if (!e.target.value)
+                            return limpiarByMtoValorUnitario();
+                          field.onChange(
+                            fixed(Number(e.target.value), DECIMAL)
+                          );
                         }}
                         onChange={(e) => {
-                          const mtoValorUnitario = e.target.value;
-                          if (Number(mtoValorUnitario) < 0) return;
+                          if (!e.target.value)
+                            return limpiarByMtoValorUnitario();
 
-                          field.onChange(mtoValorUnitario);
+                          const tipoAfecIgv = String(
+                            getValues("producto.tipAfeIgv")
+                          );
 
-                          if (!isGravadasGratuitas || !isInafectosGratuitos) {
-                            const porcentajeIgv = Number(
-                              watch("producto.porcentajeIgv")
-                            );
+                          const value = e.target.value;
+                          field.onChange(value);
 
-                            //Set IGV unitario
-                            const igvUnitario =
-                              (Number(mtoValorUnitario) * porcentajeIgv) / 100;
-                            setValue(
-                              "producto.igvUnitario",
-                              igvUnitario.toFixed(2)
-                            );
+                          const mtoValorUnitario = round(
+                            Number(value),
+                            DECIMAL
+                          );
+                          const porcentaje = Number(
+                            getValues("producto.porcentajeIgv")
+                          );
 
-                            //Set Valor precio unitario
-                            const mtoPrecioUnitario =
-                              Number(mtoValorUnitario) + Number(igvUnitario);
-                            setValue(
-                              "producto.mtoPrecioUnitario",
-                              convertDecimal(mtoPrecioUnitario, 3)
-                            );
+                          //Set value igv unitario
+                          const igvUnitario =
+                            (mtoValorUnitario * porcentaje) / 100;
+                          setIgvUnitario(
+                            fixed(round(igvUnitario, DECIMAL), DECIMAL)
+                          );
+                          setTipoOperacion(tipoAfecIgv);
 
-                            //Set baseIgv y mtoValorVenta
-                            const cantidad = Number(watch("producto.cantidad"));
-                            const mtoBaseIgv =
-                              Number(mtoValorUnitario) * cantidad;
-                            const mtoValorVenta =
-                              Number(mtoValorUnitario) * cantidad;
-                            setValue(
-                              "producto.mtoBaseIgv",
-                              convertDecimal(mtoBaseIgv, 2)
-                            );
-                            setValue(
-                              "producto.mtoValorVenta",
-                              convertDecimal(mtoBaseIgv, 2)
-                            );
-
-                            //Set igv
-                            const igv = Number(igvUnitario) * cantidad;
-                            setValue("producto.igv", convertDecimal(igv, 2));
-
-                            //Set total impuestos
-                            const totalImpuestos = igv + 0;
-                            setValue(
-                              "producto.totalImpuestos",
-                              convertDecimal(totalImpuestos, 2)
-                            );
-
-                            //Set total item
-                            const mtoTotalItem = totalImpuestos + mtoValorVenta;
-                            setValue(
-                              "producto.mtoTotalItem",
-                              convertDecimal(mtoTotalItem, 2)
-                            );
-                          }
-                        }}
-                        placeholder="valor unitario"
-                        inputProps={{
-                          step: 0.001,
+                          //Set value Precio unitario
+                          const mtoPrecioUnitario =
+                            mtoValorUnitario + igvUnitario;
+                          setMtoPrecioUnitario(
+                            fixed(mtoPrecioUnitario, DECIMAL)
+                          );
                         }}
                       />
-                    )}
-                  />
-                </>
-              )}
+                    </>
+                  );
+                }}
+              />
             </Grid>
           </Grid>
           {/* IGV */}
@@ -638,20 +479,10 @@ const ModalProductos = ({
               <div className="flex flex-1">
                 <input
                   className="text-right flex-1 border-r border-t border-b p-[4px_8px] rounded-tr-[4px] rounded-br-[4px] outline-none cursor-not-allowed text-textDisabled text-shadow-disabled"
-                  placeholder="0.00"
                   disabled
                   type="text"
-                  value={
-                    isInafectosGratuitos
-                      ? "Ope. Gratuita"
-                      : tipoIgv === "40"
-                      ? "Exportación"
-                      : tipoIgv === "20"
-                      ? "Ope. Exonerada"
-                      : tipoIgv === "30"
-                      ? "Ope. Inafecta"
-                      : watch("producto.igvUnitario")
-                  }
+                  name="igvUnitario"
+                  value={igvUnitario}
                 />
               </div>
             </Grid>
@@ -659,184 +490,48 @@ const ModalProductos = ({
           {/* PRECIO UNITARIO INCLUYE IGV*/}
           <Grid item container justifyContent={"end"}>
             <Grid item xs={5}>
-              {isGravadasGratuitas ? (
-                <>
-                  <Controller
-                    control={control}
-                    name="producto.mtoPrecioUnitarioGratuito"
-                    render={({ field }) => (
-                      <InputText
-                        {...field}
-                        autoComplete="off"
-                        variant="filled"
-                        type="number"
-                        disabled={disabledByOpe}
-                        placeholder="precio unitario (incluye IGV)"
-                        inputProps={{
-                          step: 0.001,
-                        }}
-                        onBlur={(e) => {
-                          const value = e.target.value;
-                          const formattedValue = parseFloat(value).toFixed(3);
-                          setValue(
-                            "producto.mtoPrecioUnitarioGratuito",
-                            formattedValue
-                          );
-                        }}
-                        value={field.value}
-                        onChange={(e) => {
-                          const mtoPrecioUnitarioGratuito = e.target.value;
-                          if (Number(mtoPrecioUnitarioGratuito) < 0) return;
+              <input
+                autoComplete="off"
+                type="number"
+                placeholder="precio unitario (incluye IGV)"
+                value={mtoPrecioUnitario}
+                name="mtoPrecioUnitario"
+                className={`text-left flex-1 border p-[4px_8px] rounded-[4px] outline-none w-full ${
+                  inputDisabled
+                    ? "cursor-not-allowed text-textDisabled text-shadow-disabled"
+                    : "bg-[#FAFAFA]"
+                }`}
+                disabled={inputDisabled}
+                step={Math.pow(10, -DECIMAL)}
+                min={`0.${"0".repeat(DECIMAL)}`}
+                onBlur={(e) => {
+                  if (!e.target.value) return limpiarByMtoValorUnitario();
+                  const value = fixed(Number(e.target.value), DECIMAL);
+                  setMtoPrecioUnitario(value);
+                }}
+                onChange={(e) => {
+                  if (!e.target.value) return limpiarByMtoValorUnitario();
+                  const value = e.target.value;
+                  setMtoPrecioUnitario(value);
 
-                          field.onChange(mtoPrecioUnitarioGratuito);
+                  const mtoPrecioUnitario = round(Number(value), DECIMAL);
+                  const porcentaje = Number(
+                    getValues("producto.porcentajeIgv")
+                  );
 
-                          //Set Valor unitario mtoValorGratuito
-                          const mtoValorGratuito =
-                            Number(mtoPrecioUnitarioGratuito) /
-                            (1 + Number(watch("producto.porcentajeIgv")) / 100);
-                          setValue(
-                            "producto.mtoValorGratuito",
-                            mtoValorGratuito.toFixed(3)
-                          );
+                  //Set valor unitario
+                  const mtoValorUnitario =
+                    mtoPrecioUnitario / (1 + porcentaje / 100);
+                  setValue(
+                    "producto.mtoValorUnitario",
+                    fixed(round(mtoValorUnitario, DECIMAL), DECIMAL)
+                  );
 
-                          //Set IGV Unitario
-                          const igvUnitario =
-                            Number(mtoPrecioUnitarioGratuito) -
-                            Number(mtoValorGratuito);
-                          setValue(
-                            "producto.igvUnitario",
-                            igvUnitario.toFixed(2)
-                          );
-
-                          //Set baseIgv y mtoValorVenta
-                          const cantidad = Number(watch("producto.cantidad"));
-                          const mtoBaseIgv = mtoValorGratuito * cantidad;
-                          const mtoValorVenta = mtoValorGratuito * cantidad;
-                          setValue(
-                            "producto.mtoBaseIgv",
-                            convertDecimal(mtoBaseIgv, 2)
-                          );
-
-                          setValue(
-                            "producto.mtoValorVenta",
-                            convertDecimal(mtoValorVenta, 2)
-                          );
-
-                          //Set igv
-                          const igv = igvUnitario * cantidad;
-                          setValue("producto.igv", convertDecimal(igv, 2));
-
-                          //Set total impuestos
-                          const totalImpuestos = igv + 0;
-                          setValue(
-                            "producto.totalImpuestos",
-                            convertDecimal(totalImpuestos, 2)
-                          );
-
-                          //Set total item
-                          const mtoTotalItem = 0;
-                          setValue(
-                            "producto.mtoTotalItem",
-                            convertDecimal(mtoTotalItem, 2)
-                          );
-                        }}
-                      />
-                    )}
-                  />
-                </>
-              ) : (
-                <>
-                  <Controller
-                    control={control}
-                    name="producto.mtoPrecioUnitario"
-                    render={({ field }) => (
-                      <InputText
-                        {...field}
-                        autoComplete="off"
-                        variant="filled"
-                        type="number"
-                        disabled={disabledByOpe}
-                        placeholder="precio unitario (incluye IGV)"
-                        inputProps={{
-                          step: 0.001,
-                        }}
-                        value={
-                          isInafectosGratuitos
-                            ? convertDecimal(
-                                Number(watch("producto.mtoValorGratuito")),
-                                3
-                              )
-                            : field.value
-                        }
-                        onChange={(e) => {
-                          const mtoPrecioUnitario = e.target.value;
-                          if (Number(mtoPrecioUnitario) < 0) return;
-
-                          field.onChange(mtoPrecioUnitario);
-
-                          //Set Valor unitario
-                          const mtoValorUnitario =
-                            Number(mtoPrecioUnitario) /
-                            (1 + Number(watch("producto.porcentajeIgv")) / 100);
-                          setValue(
-                            "producto.mtoValorUnitario",
-                            mtoValorUnitario.toFixed(3)
-                          );
-
-                          //Set IGV Unitario
-                          const igvUnitario =
-                            Number(mtoPrecioUnitario) -
-                            Number(mtoValorUnitario);
-                          setValue(
-                            "producto.igvUnitario",
-                            igvUnitario.toFixed(2)
-                          );
-
-                          //Set baseIgv y mtoValorVenta
-                          const cantidad = Number(watch("producto.cantidad"));
-                          const mtoBaseIgv = mtoValorUnitario * cantidad;
-                          const mtoValorVenta = mtoValorUnitario * cantidad;
-                          setValue(
-                            "producto.mtoBaseIgv",
-                            convertDecimal(mtoBaseIgv, 2)
-                          );
-
-                          setValue(
-                            "producto.mtoValorVenta",
-                            convertDecimal(mtoValorVenta, 2)
-                          );
-
-                          //Set igv
-                          const igv = igvUnitario * cantidad;
-                          setValue("producto.igv", convertDecimal(igv, 2));
-
-                          //Set total impuestos
-                          const totalImpuestos = igv + 0;
-                          setValue(
-                            "producto.totalImpuestos",
-                            convertDecimal(totalImpuestos, 2)
-                          );
-
-                          //Set total item
-                          const mtoTotalItem = totalImpuestos + mtoValorVenta;
-                          setValue(
-                            "producto.mtoTotalItem",
-                            convertDecimal(mtoTotalItem, 2)
-                          );
-                        }}
-                        onBlur={(e) => {
-                          const value = e.target.value;
-                          const formattedValue = parseFloat(value).toFixed(3);
-                          setValue(
-                            "producto.mtoPrecioUnitario",
-                            formattedValue
-                          );
-                        }}
-                      />
-                    )}
-                  />
-                </>
-              )}
+                  //Set igv unitario
+                  const igvUnitario = mtoPrecioUnitario - mtoValorUnitario;
+                  setIgvUnitario(fixed(igvUnitario, DECIMAL));
+                }}
+              />
             </Grid>
             <Grid
               item
@@ -845,35 +540,29 @@ const ModalProductos = ({
               alignItems={"center"}
               display={"flex"}
             >
-              <Tooltip
-                title="Para los cálculos se usa el valor y no el precio (esta casilla es solo una referencia)"
-                sx={{ marginTop: "-4px" }}
-                placement="top"
-                arrow
-                slotProps={{
-                  popper: {
-                    modifiers: [
-                      {
-                        name: "offset",
-                        options: {
-                          offset: [0, -8],
-                        },
-                      },
-                    ],
-                  },
-                }}
+              <ToolTipIconButton
+                title={
+                  <span className="text-textDefault">
+                    Para los cálculos se usa el valor y no el precio (esta
+                    casilla es solo una referencia)
+                  </span>
+                }
               >
-                <IconButton>
-                  <HelpOutlineIcon />
-                </IconButton>
-              </Tooltip>
+                <HelpOutlineIcon />
+              </ToolTipIconButton>
             </Grid>
           </Grid>
           <Divider textAlign="left">Totales</Divider>
           {/* OPERACIONES */}
           <Grid item container>
             <Grid item xs={6} display="flex" justifyContent={"end"}>
-              <label className="px-4">{nombreOperacion()}</label>
+              <label
+                className={`px-4 ${
+                  TIPO_OPERACION != "10" ? "text-primary" : ""
+                }`}
+              >
+                {tipOperacion}
+              </label>
             </Grid>
             <Grid item xs={6}>
               <input
@@ -881,7 +570,12 @@ const ModalProductos = ({
                 placeholder="0.00"
                 disabled
                 type="text"
-                value={decimalesSimples(String(watch("producto.mtoBaseIgv")))}
+                value={fixed(
+                  round(
+                    Number(watch("producto.mtoValorUnitario")) *
+                      Number(watch("producto.cantidad"))
+                  )
+                )} //Siempre se calcula del mtoValorUnitario * cantidad
               />
             </Grid>
           </Grid>
@@ -895,9 +589,16 @@ const ModalProductos = ({
                 placeholder="0.00"
                 disabled
                 type="text"
-                value={decimalesSimples(
-                  String(watch("producto.totalImpuestos"))
-                )}
+                value={
+                  porcentaje18.includes(watch("producto.tipAfeIgv")) //Si el tipAfeIgv es 18% (gravada y gravada gratuita)
+                    ? fixed(
+                        round(
+                          Number(igvUnitario) *
+                            Number(watch("producto.cantidad"))
+                        )
+                      )
+                    : fixed(0) //Si son 0%
+                }
               />
             </Grid>
           </Grid>
@@ -913,7 +614,29 @@ const ModalProductos = ({
                 placeholder="0.00"
                 disabled
                 type="text"
-                value={decimalesSimples(String(watch("producto.mtoTotalItem")))}
+                value={
+                  watch("producto.tipAfeIgv") === "10" //Si es gravada onerosa
+                    ? fixed(
+                        round(
+                          Number(watch("producto.mtoValorUnitario")) *
+                            Number(watch("producto.cantidad"))
+                        ) +
+                          round(
+                            Number(igvUnitario) *
+                              Number(watch("producto.cantidad"))
+                          )
+                      )
+                    : ["20", "30", "40"].includes(watch("producto.tipAfeIgv")) //Si es exonerada, inafecta, exportacion oneraosa
+                    ? fixed(
+                        round(
+                          Number(watch("producto.mtoValorUnitario")) *
+                            (isNaN(watch("producto.cantidad"))
+                              ? 1
+                              : Number(watch("producto.cantidad")))
+                        )
+                      )
+                    : fixed(0) //Si es gratuitas
+                }
               />
             </Grid>
           </Grid>

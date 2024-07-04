@@ -11,9 +11,9 @@ const CPEScreen = () => {
     <>
       {dialogState.nameDialog === "" && <CPEList />}
 
-      {dialogState.nameDialog === DialogActionKind.SCREEN_FACTURA && (
+      {/* {dialogState.nameDialog === DialogActionKind.SCREEN_FACTURA && (
         <FacturaScreen />
-      )}
+      )} */}
     </>
   );
 };

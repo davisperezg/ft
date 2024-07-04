@@ -315,3 +315,10 @@ export const schemaFormLogin = yup.object({
   password: yup.string().required("Por favor ingresa tu contraseña."),
   checkbox: yup.boolean(),
 });
+
+export const schemaFormComuBaja = yup.object({
+  motivo: yup
+    .string()
+    .required("Por favor ingresa el motivo de la comunicación de baja.")
+    .min(10, "Ingrese mínimo 10 caracteres."),
+});

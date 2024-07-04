@@ -13,9 +13,23 @@ interface IQueryDataPagination {
   items: IInvoice[];
 }
 
+interface IQQueryComunicarBaja {
+  idInvoice: number;
+  motivo: string;
+}
+
 export const postInvoice = async (body: IInvoice) => {
   const { data } = await axios.post<IServer<IInvoice>>(
     `${BASE_API}/api/v1/invoices`,
+    body
+  );
+
+  return data;
+};
+
+export const comunicarBajaInvoice = async (body: IQQueryComunicarBaja) => {
+  const { data } = await axios.post<IServer<IQQueryComunicarBaja>>(
+    `${BASE_API}/api/v1/invoices/comunicar-baja`,
     body
   );
 

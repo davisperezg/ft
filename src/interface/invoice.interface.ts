@@ -4,8 +4,11 @@ import { IEmpresa } from "./empresa.interface";
 import { IEstablecimiento } from "./establecimiento.interface";
 import { IUserMysql } from "./user.interface";
 import { IMoneda } from "./moneda.interface";
+import { IFormaPagos } from "./forma_pagos.interface";
+import { IEntidad } from "./entidad.interface";
 
 export interface IInvoice {
+  id?: number;
   serie: string;
   correlativo?: string;
   numero: string;
@@ -13,13 +16,13 @@ export interface IInvoice {
   fecha_emision: Dayjs | Date | string;
   fecha_vencimiento?: Dayjs | null | Date;
   ruc: string;
-  cliente: string;
+  cliente: IEntidad | string;
   direccion: string;
   tipo_documento?: number; //boleta, factura, etc...
   tipo_entidad: string; //dni, ruc, pasaporte, ce
   tipo_operacion: string; //0101 venta interna
   moneda: IMoneda | string;
-  forma_pago: string;
+  forma_pago: IFormaPagos | string;
   observacion?: string;
   observaciones_invoice?: any[];
   observaciones_sunat?: any[] | string;
@@ -50,5 +53,6 @@ export interface IInvoice {
   xml?: string;
   xmlSigned?: string;
   cdr?: string;
-  status?:boolean
+  status?: boolean;
+  borrador?: boolean;
 }

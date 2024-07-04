@@ -4,6 +4,7 @@ import { styled } from "@mui/material/styles";
 const DemoPaper = styled(Paper)(({ theme }) => ({
   width: "100%",
   height: "auto",
+  boxShadow: "none",
   //paddingBottom: "30px",
   //   paddingBlock: "30px",
   //   paddingInline: "15px",
@@ -13,7 +14,7 @@ const DemoPaper = styled(Paper)(({ theme }) => ({
 const PaperRounded = (props: PaperProps) => {
   const { children } = props;
   return (
-    <DemoPaper {...props} square={false}>
+    <DemoPaper {...props} className="border" square={false}>
       {children}
     </DemoPaper>
   );
