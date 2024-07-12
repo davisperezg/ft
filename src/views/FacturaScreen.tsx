@@ -1,6 +1,5 @@
 import { ModalContext } from "../context/modalContext";
 import {
-  BaseSyntheticEvent,
   useCallback,
   useContext,
   useEffect,
@@ -19,7 +18,6 @@ import Button from "@mui/material/Button";
 import ButtonSimple from "../components/Material/Button/ButtonSimple";
 import Alert from "@mui/material/Alert";
 import {
-  SubmitHandler,
   useForm,
   Controller,
   useFieldArray,
@@ -44,7 +42,6 @@ import { numeroALetras } from "../utils/letras_numeros";
 import Backdrop from "@mui/material/Backdrop";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -110,7 +107,6 @@ const FacturaScreen = () => {
   const [isActiveModalProductos, setActiveModalProductos] = useState(false);
   const [isOpenDateEmision, setIsOpenDateEmision] = useState(false);
   const [isOpenDateVencimiento, setIsOpenDateVencimiento] = useState(false);
-  const [isNewItem, setNewItem] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [openBackdrop, setBackdrop] = useState(false);
@@ -167,11 +163,10 @@ const FacturaScreen = () => {
     control,
     register,
     handleSubmit,
-    formState: { errors, isDirty, isValid, dirtyFields, touchedFields },
+    formState: { errors },
     watch,
     getValues,
     setValue,
-    unregister,
     setError,
   } = methods;
 
@@ -227,7 +222,6 @@ const FacturaScreen = () => {
   const handleCloseProductos = () => {
     setActiveModalProductos(false);
     setValue("producto", INITIAL_PRODUCTO);
-    setNewItem(false);
   };
 
   const DECIMAL = 6;
@@ -344,7 +338,7 @@ const FacturaScreen = () => {
 
   const {
     data: dataEntidades,
-    error: errorEntidades,
+    //error: errorEntidades,
     isLoading: isLoadingEntidades,
   } = useEntidadesByEmpresa(Number(userGlobal.empresaActual.id));
 
@@ -432,14 +426,7 @@ const FacturaScreen = () => {
   const onSubmit = async (values: IInvoice, borrador: boolean) => {
     setLoading(true);
 
-    const {
-      fecha_emision,
-      fecha_vencimiento,
-      numeroConCeros,
-      producto,
-      observacion,
-      ...rest
-    } = values;
+    const { fecha_emision, fecha_vencimiento, ...rest } = values;
 
     const fechaEmision = (fecha_emision as Dayjs).toDate();
     //Actualizamos la hora de la fecha de emisison
@@ -705,10 +692,8 @@ const FacturaScreen = () => {
               agregarProducto={agregarProducto}
               actualizarProducto={actualizarProducto}
               getValues={getValues}
-              unregister={unregister}
               errors={errors}
               setError={setError}
-              isNewItem={isNewItem}
             />
           )}
           <form>
@@ -1110,7 +1095,6 @@ const FacturaScreen = () => {
                     <ButtonSimple
                       onClick={() => {
                         setActiveModalProductos(true);
-                        setNewItem(true);
                       }}
                       className="w-full !border !border-dashed !border-bordersAux !mt-1"
                     >
@@ -1128,7 +1112,6 @@ const FacturaScreen = () => {
                     <ButtonSimple
                       onClick={() => {
                         setActiveModalProductos(true);
-                        setNewItem(true);
                       }}
                       className="!border !border-dashed !border-bordersAux"
                     >

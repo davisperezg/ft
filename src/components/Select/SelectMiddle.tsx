@@ -13,7 +13,7 @@ export type IOption = {
 type SelectProps<
   Option,
   IsMulti extends boolean = false,
-  Group extends GroupBase<Option> = GroupBase<Option>
+  Group extends GroupBase<Option> = GroupBase<Option>,
 > = Props<Option, IsMulti, Group> & {
   error?: boolean;
   helperText?: string;
@@ -22,7 +22,7 @@ type SelectProps<
 export const SelectMiddle = forwardRef(
   <
     IsMulti extends boolean = false,
-    Group extends GroupBase<IOption> = GroupBase<IOption>
+    Group extends GroupBase<IOption> = GroupBase<IOption>,
   >(
     props: SelectProps<IOption, IsMulti, Group>,
     ref: any

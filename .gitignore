@@ -23,6 +23,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.eslintcache
 
 #Enviroment
 .env.production

@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getPersona } from "../api/ext";
 import { IError } from "../interface/error.interface";
 
@@ -16,8 +16,6 @@ export const useSunat = (tipDocumento: string, nroDocumento: string) => {
 };
 
 export const useReniec = (tipDocumento: string, nroDocumento: string) => {
-  const queryClient = useQueryClient();
-
   return useQuery<any, IError, any>({
     queryKey: [KEY, tipDocumento, nroDocumento],
     queryFn: () => getPersona(tipDocumento, nroDocumento),

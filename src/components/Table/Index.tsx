@@ -30,7 +30,7 @@ interface IComponentTableProps {
   loading: boolean;
   data: any[];
   columns: any[];
-  propsPagination: any;
+  propsPagination?: any;
   footerVisible?: boolean;
   getItemsRemoves?: (props: any) => void;
   getItemsRestores?: (props: any) => void;
@@ -106,8 +106,8 @@ const THeadItem = ({
       ? String(table.getState().columnSizingInfo.deltaOffset)[0] === "-"
         ? "negativo"
         : Number(String(table.getState().columnSizingInfo.deltaOffset)[0]) > 0
-        ? "positivo"
-        : "neutro"
+          ? "positivo"
+          : "neutro"
       : null;
 
   useEffect(() => {
@@ -617,8 +617,8 @@ const ComponentTable = ({
                               null
                                 ? "cursor-col-resize"
                                 : !row.original.status
-                                ? ""
-                                : "cursor-pointer"
+                                  ? ""
+                                  : "cursor-pointer"
                             }`}
                             {...{
                               key: cell.id,
@@ -760,8 +760,8 @@ const ComponentTable = ({
                   ? "text-borders"
                   : "text-[#9b9c9c] cursor-pointer"
                 : table.getState().pagination.pageIndex + 1 === 1
-                ? "text-borders"
-                : "text-[#9b9c9c] cursor-pointer"
+                  ? "text-borders"
+                  : "text-[#9b9c9c] cursor-pointer"
             }
             `}
               >
@@ -787,8 +787,8 @@ const ComponentTable = ({
                       ? "text-borders"
                       : "text-[#9b9c9c] cursor-pointer"
                     : table.getState().pagination.pageIndex + 1 === 1
-                    ? "text-borders "
-                    : "text-[#9b9c9c] cursor-pointer"
+                      ? "text-borders "
+                      : "text-[#9b9c9c] cursor-pointer"
                 }`}
               >
                 <i className="gg-play-button rotate-180"></i>
@@ -851,9 +851,9 @@ const ComponentTable = ({
                         ? "text-borders"
                         : "text-[#9b9c9c] cursor-pointer"
                       : table.getState().pagination.pageIndex + 1 ===
-                        table.getPageCount()
-                      ? "text-borders"
-                      : "text-[#9b9c9c] cursor-pointer"
+                          table.getPageCount()
+                        ? "text-borders"
+                        : "text-[#9b9c9c] cursor-pointer"
                   }`}
                   onClick={() => {
                     if (propsPagination) {
@@ -884,9 +884,9 @@ const ComponentTable = ({
                         ? "text-borders"
                         : "text-[#9b9c9c] cursor-pointer"
                       : table.getState().pagination.pageIndex + 1 ===
-                        table.getPageCount()
-                      ? "text-borders"
-                      : "text-[#9b9c9c] cursor-pointer"
+                          table.getPageCount()
+                        ? "text-borders"
+                        : "text-[#9b9c9c] cursor-pointer"
                   }`}
                   onClick={() => {
                     if (propsPagination) {

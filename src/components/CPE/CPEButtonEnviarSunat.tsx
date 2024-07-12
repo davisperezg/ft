@@ -1,7 +1,6 @@
 import { Row } from "@tanstack/react-table";
 import { IInvoice } from "../../interface/invoice.interface";
 import ToolTipIconButton from "../Material/Tooltip/IconButton";
-import { FcInfo } from "react-icons/fc";
 import { IoIosCloseCircle } from "react-icons/io";
 import { FaCheck } from "react-icons/fa";
 import SunatLogo from "../../assets/sunat.svg";
@@ -14,8 +13,7 @@ import { ModalContext } from "../../context/modalContext";
 import { IFormaPagos } from "../../interface/forma_pagos.interface";
 import { IMoneda } from "../../interface/moneda.interface";
 import { IEntidad } from "../../interface/entidad.interface";
-import { ITipoEntidades } from "../../interface/tipo_entidades.interface";
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 
 interface IProps {
   row: Row<IInvoice>;

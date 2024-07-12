@@ -1,6 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { useContext, useMemo, useState } from "react";
-import { ModalContext } from "../../context/modalContext";
+import { useMemo } from "react";
 import {
   useDeleteModule,
   useModules,
@@ -8,7 +7,6 @@ import {
 } from "../../hooks/useModuleS";
 import { IModulosSystem } from "../../interface/modulo_system.interface";
 import IndeterminateCheckbox from "../Input/IndeterminateCheckbox";
-import LoadingTotal from "../Loading/LoadingTotal";
 import ComponentTable from "../Table/Index";
 import ToastError from "../Toast/ToastError";
 

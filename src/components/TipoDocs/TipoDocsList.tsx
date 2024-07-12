@@ -5,9 +5,8 @@ import {
   useTipoDocs,
 } from "../../hooks/useTipoDocs";
 import { ITipoDoc } from "../../interface/tipodocs.interface";
-import { useMemo, useEffect } from "react";
+import { useMemo } from "react";
 import IndeterminateCheckbox from "../Input/IndeterminateCheckbox";
-import LoadingTotal from "../Loading/LoadingTotal";
 import ComponentTable from "../Table/Index";
 import { isError } from "../../utils/functions";
 import { toast } from "react-toastify";
@@ -19,9 +18,9 @@ interface Props {
 const TipoDocsList = ({ openEdit }: Props) => {
   const {
     data,
-    error: errorTipdocs,
+    //error: errorTipdocs,
     isLoading,
-    isError: isErrorTipdocs,
+    //isError: isErrorTipdocs,
   } = useTipoDocs();
 
   const { mutateAsync: mutateDisable } = useDisableTipDoc();

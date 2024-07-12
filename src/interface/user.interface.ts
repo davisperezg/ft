@@ -1,4 +1,4 @@
-import { IEmpresa, IEmpresaAsign } from "./empresa.interface";
+import { IEmpresaAsign } from "./empresa.interface";
 import { IRol } from "./rol.interface";
 
 type IRolWithoutCreator = Omit<IRol, "creator">;

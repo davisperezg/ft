@@ -693,8 +693,8 @@ const CPEList = () => {
                         type === "sunat.failed" || type === "error"
                           ? "text-primary"
                           : type === "sunat.success"
-                          ? "text-green-600"
-                          : "text-yellow-600"
+                            ? "text-green-600"
+                            : "text-yellow-600"
                       }
                     >
                       {log.time} - {log.message}

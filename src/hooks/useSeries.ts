@@ -38,15 +38,17 @@ export const usePostSerie = () => {
 
   return useMutation<IServer<ISeries>, IError, any>({
     mutationFn: (serie) => postNewSerie(serie),
-    onSuccess: ({ response }) => {
-      queryClient.setQueryData(
+    onSuccess: async ({ response }) => {
+      await queryClient.setQueryData(
         [KEY_SERIES],
         (prevSeries: ISeries[] | undefined) => {
           return prevSeries ? [...prevSeries, response] : [response];
         }
       );
 
-      queryClient.invalidateQueries([KEY_SERIES]);
+      await queryClient.invalidateQueries({
+        queryKey: [KEY_SERIES],
+      });
     },
   });
 };
@@ -56,8 +58,8 @@ export const useMigrateSerie = () => {
 
   return useMutation<IServer<ISeriesMigrate>, IError, any>({
     mutationFn: (serie) => postMigrateSerie(serie),
-    onSuccess: ({ response }) => {
-      queryClient.setQueryData(
+    onSuccess: async ({ response }) => {
+      await queryClient.setQueryData(
         [KEY_SERIES],
         (prevSeries: ISeriesMigrate[] | undefined) => {
           if (prevSeries) {
@@ -74,7 +76,9 @@ export const useMigrateSerie = () => {
         }
       );
 
-      queryClient.invalidateQueries([KEY_SERIES]);
+      await queryClient.invalidateQueries({
+        queryKey: [KEY_SERIES],
+      });
     },
   });
 };
@@ -84,9 +88,11 @@ export const useDisableSerie = () => {
 
   return useMutation<boolean, IError, { id: number }>({
     mutationFn: ({ id }) => disableSerie(id),
-    onSuccess: async (result, { id }) => {
+    onSuccess: async (result) => {
       if (result) {
-        await queryClient.invalidateQueries([KEY_SERIES]);
+        await queryClient.invalidateQueries({
+          queryKey: [KEY_SERIES],
+        });
       }
     },
   });
@@ -97,9 +103,11 @@ export const useEnableSerie = () => {
 
   return useMutation<boolean, IError, { id: number }>({
     mutationFn: ({ id }) => enableSerie(id),
-    onSuccess: async (result, { id }) => {
+    onSuccess: async (result) => {
       if (result) {
-        await queryClient.invalidateQueries([KEY_SERIES]);
+        await queryClient.invalidateQueries({
+          queryKey: [KEY_SERIES],
+        });
       }
     },
   });

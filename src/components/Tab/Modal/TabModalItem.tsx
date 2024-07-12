@@ -1,9 +1,5 @@
 import { memo } from "react";
 
-interface Props {
-  value: number;
-}
-
 const MemoizeComponent = memo(
   ({ props }: any) => {
     return (

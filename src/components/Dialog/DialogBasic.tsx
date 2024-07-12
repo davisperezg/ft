@@ -81,13 +81,13 @@ const DialogBasic = ({ children, width, height, handleClose }: Props) => {
         width: isStringMyWidth
           ? width + "px" //Aceptar ancho si es string
           : typeof width === "number" //condicional de number
-          ? width //Aceptar ancho si es number
-          : "630px", //ancho x defecto
+            ? width //Aceptar ancho si es number
+            : "630px", //ancho x defecto
         height: isStringMyHeight
           ? height + "px" //Aceptar altura si es string
           : typeof height === "number" //condicional de number
-          ? height //Aceptar altura si es number
-          : "440px", //altura x defecto
+            ? height //Aceptar altura si es number
+            : "440px", //altura x defecto
       }}
       className={`z-[12] overflow-hidden flex flex-col rounded-[10px] bg-white text-white fixed left-0 top-0 bottom-0 right-0 m-auto h-[${height}px]`}
     >

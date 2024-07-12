@@ -11,9 +11,9 @@ interface Props {
 const SeriesList = ({ openEdit }: Props) => {
   const {
     data,
-    error: errorSeries,
+    //error: errorSeries,
     isLoading,
-    isError: isErrorSeries,
+    //isError: isErrorSeries,
   } = useSeries();
 
   const columns = useMemo<ColumnDef<ISeries>[]>(

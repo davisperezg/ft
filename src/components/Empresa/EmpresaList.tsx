@@ -1,7 +1,6 @@
 import { IEmpresa } from "../../interface/empresa.interface";
 import IndeterminateCheckbox from "../Input/IndeterminateCheckbox";
-import { useMemo, useEffect } from "react";
-import LoadingTotal from "../Loading/LoadingTotal";
+import { useMemo } from "react";
 import ComponentTable from "../Table/Index";
 import { ColumnDef } from "@tanstack/react-table";
 import {
@@ -19,9 +18,9 @@ interface Props {
 const EmpresaList = ({ openEdit }: Props) => {
   const {
     data,
-    error: errorEmpresas,
+    //error: errorEmpresas,
     isLoading,
-    isError: isErrorEmpresas,
+    //isError: isErrorEmpresas,
   } = useEmpresas();
 
   const { mutateAsync: mutateDisable } = useDisableEmpresas();
@@ -85,9 +84,10 @@ const EmpresaList = ({ openEdit }: Props) => {
           );
         },
         cell: ({ getValue }) => {
+          const value = getValue() as any;
           return (
             <div className="p-[4px] pb-[4px] text-[12px] ">
-              {getValue().nombre_completo as any}
+              {value.nombre_completo}
             </div>
           );
         },

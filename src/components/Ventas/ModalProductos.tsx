@@ -14,16 +14,14 @@ import {
   UseFormSetValue,
   UseFormWatch,
   UseFormGetValues,
-  UseFormUnregister,
   UseFormSetError,
 } from "react-hook-form";
 import { IInvoice } from "../../interface/invoice.interface";
 import { useTipoIgv } from "../../hooks/useTipoIgvs";
 import { SelectMiddle } from "../Select/SelectMiddle";
 import { useUnidad } from "../../hooks/useUnidad";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SingleValue } from "react-select";
-import { ModalContext } from "../../context/modalContext";
 import ToolTipIconButton from "../Material/Tooltip/IconButton";
 import { fixed, round } from "../../utils/functions";
 interface Props {
@@ -35,10 +33,8 @@ interface Props {
   watch: UseFormWatch<IInvoice>;
   getValues: UseFormGetValues<any>;
   actualizarProducto: (posicionTabla: number) => void;
-  unregister: UseFormUnregister<IInvoice>;
   errors: any;
   setError: UseFormSetError<IInvoice>;
-  isNewItem: boolean;
 }
 
 const ModalProductos = ({
@@ -50,10 +46,8 @@ const ModalProductos = ({
   setValue,
   watch,
   getValues,
-  unregister,
   errors,
   setError,
-  isNewItem,
 }: Props) => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
@@ -64,7 +58,6 @@ const ModalProductos = ({
   const { data: dataUnidades, isLoading: isLoadingUnidades } = useUnidad();
 
   const [tipOperacion, setTipOperacion] = useState("");
-  const { dialogState } = useContext(ModalContext);
   const [igvUnitario, setIgvUnitario] = useState(`0.${"0".repeat(DECIMAL)}`);
   const [mtoPrecioUnitario, setMtoPrecioUnitario] = useState("");
 
@@ -627,15 +620,15 @@ const ModalProductos = ({
                           )
                       )
                     : ["20", "30", "40"].includes(watch("producto.tipAfeIgv")) //Si es exonerada, inafecta, exportacion oneraosa
-                    ? fixed(
-                        round(
-                          Number(watch("producto.mtoValorUnitario")) *
-                            (isNaN(watch("producto.cantidad"))
-                              ? 1
-                              : Number(watch("producto.cantidad")))
+                      ? fixed(
+                          round(
+                            Number(watch("producto.mtoValorUnitario")) *
+                              (isNaN(watch("producto.cantidad"))
+                                ? 1
+                                : Number(watch("producto.cantidad")))
+                          )
                         )
-                      )
-                    : fixed(0) //Si es gratuitas
+                      : fixed(0) //Si es gratuitas
                 }
               />
             </Grid>

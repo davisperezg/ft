@@ -104,9 +104,12 @@ export const useSocketInvoice = () => {
   }, [socket]);
 
   useEffect(() => {
-    const intervalo = setInterval(async () => {
-      updateToken();
-    }, 23 * 60 * 60 * 1000); //refresh cada 2min
+    const intervalo = setInterval(
+      async () => {
+        updateToken();
+      },
+      23 * 60 * 60 * 1000
+    ); //refresh cada 2min
 
     return () => {
       clearInterval(intervalo);

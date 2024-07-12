@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { startTransition, useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { whois } from "./api/auth";
 import Main from "./components/Main";
 import { ModalProvider } from "./context/modalContext";
@@ -13,15 +13,12 @@ import { TableProvider } from "./context/tableContext";
 function App() {
   const [sessionActive, setSession] = useState(false);
   const [isEnabled, setIsEnabled] = useState(false);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   const {
     data: result,
-    error,
+    //error,
     isLoading,
     refetch,
-    status,
-    fetchStatus,
   } = useQuery({
     queryKey: ["auth"],
     queryFn: async () => await whois(),
@@ -34,9 +31,12 @@ function App() {
 
   useEffect(() => {
     if (storage.getItem("access_token", "SESSION")) {
-      const interval = setInterval(() => {
-        setIsEnabled(true);
-      }, 60000 * 60 * 24); // habilitar el query después de 20 segundos
+      const interval = setInterval(
+        () => {
+          setIsEnabled(true);
+        },
+        60000 * 60 * 24
+      ); // habilitar el query después de 20 segundos
 
       return () => clearInterval(interval);
     }
@@ -44,25 +44,14 @@ function App() {
     if (storage.getItem("c_server", "LOCAL")) {
       storage.removeItem("c_server", "LOCAL");
     }
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, [storage]);
+  }, []);
 
   useLayoutEffect(() => {
     if (storage.getItem("access_token", "SESSION")) {
       setSession(true);
       refetch();
     }
-  }, [storage]);
-
-  const handleOnline = () => setIsOnline(true);
-  const handleOffline = () => setIsOnline(false);
+  }, [refetch]);
 
   if (window.location.pathname.toString().substring(1)) {
     return (

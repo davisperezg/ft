@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { storage } from "../../utils/storage";
 
 interface Props {
   setIsOpen: (val: boolean) => void;
@@ -8,11 +7,6 @@ interface Props {
 
 const DropdownHeader = ({ setIsOpen, isOpen }: Props) => {
   const container = useRef<HTMLDivElement>(null);
-
-  const closeApp = () => {
-    storage.clear("SESSION");
-    location.reload();
-  };
 
   // Allow for outside click
   useEffect(() => {

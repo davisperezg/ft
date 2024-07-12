@@ -4,8 +4,6 @@ import { ColumnDef } from "@tanstack/react-table";
 import { useDeleteRol, useRestoreRol, useRoles } from "../../hooks/useRoles";
 import { IRol } from "../../interface/rol.interface";
 import IndeterminateCheckbox from "../Input/IndeterminateCheckbox";
-import ToastError from "../Toast/ToastError";
-import LoadingTotal from "../Loading/LoadingTotal";
 import { toast } from "react-toastify";
 import { isError } from "../../utils/functions";
 
@@ -175,7 +173,7 @@ const RolList = ({ openEdit }: Props) => {
     if (isErrorRoles) {
       toast.error(errorRoles.response.data.message);
     }
-  }, [isErrorRoles, toast]);
+  }, [isErrorRoles, errorRoles?.response.data.message]);
 
   return (
     <>

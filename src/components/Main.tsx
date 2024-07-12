@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useContext, useEffect, useState } from "react";
 import { ModalContext } from "../context/modalContext";
 import { ITabItem } from "../interface/tab.interface";
@@ -12,7 +11,6 @@ import FacturaScreen from "../views/FacturaScreen";
 import PaperRounded from "./Material/Paper/PaperRounded";
 import { Divider, IconButton, Tooltip, Typography } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { WebsocketProvider } from "../context/socketContext";
 
 const initial_tab = {
   index: 0,
@@ -35,7 +33,7 @@ const Main = () => {
   } = useContext(ModalContext);
 
   const [nameComponentInit, setNameComponentInit] = useState<string>("");
-  const [nameMenuInit, setNameMenuInit] = useState<string>("");
+  //const [nameMenuInit, setNameMenuInit] = useState<string>("");
 
   //Controlamos los tabs que se encuentran en el top(TabItem)
   const handleToggle = (index: number) => {
@@ -43,7 +41,7 @@ const Main = () => {
     const findIndex = nroTab.find((a) => a.index === index);
     const { title } = findIndex!;
     if (title !== "Tab") {
-      const filter = menus.map((a, i) => {
+      const filter = menus.map((a) => {
         return {
           ...a,
           item: { ...a.item, active: a.item.name === title },
@@ -82,19 +80,9 @@ const Main = () => {
   };
 
   //Render components
-  const renderComponent = (props?: any) => {
-    const justNamesMods =
-      userGlobal?.rol?.modulos.map((a: any) => a.nombre) || [];
-
-    // if (clicked === 0) {
-    //   if (justNamesMods.includes(nameComponentInit)) {
-    //     return ComponentByName(nameMenuInit);
-    //   }
-    // } else {
+  const renderComponent = () => {
     const TabSelected = nroTab.find((a) => a.index === clicked);
-
     return TabSelected?.component;
-    //}
   };
 
   //Controlamos los tabs del Modulo que se encuentra en el NavLeft
@@ -104,11 +92,11 @@ const Main = () => {
     );
     if (clicked === 0) {
       //Si tiene menus el modulo usara el menu 0 x defecto de lo contrario usara un menu empty como vacio o no existe
-      setNameMenuInit(
-        findModuleSelectedNavLeft?.menus?.length! > 0
-          ? (findModuleSelectedNavLeft?.menus[0]?.nombre as string)
-          : "Empty"
-      );
+      // setNameMenuInit(
+      //   findModuleSelectedNavLeft?.menus?.length! > 0
+      //     ? (findModuleSelectedNavLeft?.menus[0]?.nombre as string)
+      //     : "Empty"
+      // );
       setNameComponentInit(name);
     } else {
       const res = nroTab.map((a) => {
@@ -130,7 +118,7 @@ const Main = () => {
     }
 
     //De todos los menus agregados busco donde selecciono y actualizo array
-    const filter = menus.map((a, i) => {
+    const filter = menus.map((a) => {
       return {
         ...a,
         item: { ...a.item, active: a.item.name === name },
@@ -174,7 +162,7 @@ const Main = () => {
     //Si no existe ningun tab agregado el Modulo de Navleft se movera donde este selecciona o marcado en rojo
     if (!filTabVal) {
       setClicked(0);
-      const filter = menus.map((a, i) => {
+      const filter = menus.map((a) => {
         return {
           ...a,
           item: { ...a.item, active: a.item.name === nameComponentInit },
@@ -185,7 +173,7 @@ const Main = () => {
     } else if (filTabVal.title !== "Tab") {
       setClicked(getPosition);
       const { title } = filTabVal;
-      const filter = menus.map((a, i) => {
+      const filter = menus.map((a) => {
         return {
           ...a,
           item: { ...a.item, active: a.item.name === title },
@@ -207,7 +195,7 @@ const Main = () => {
         },
       ]);
       setNameComponentInit(userGlobal.rol.modulos[0]?.nombre);
-      setNameMenuInit(userGlobal.rol.modulos[0].menus[0]?.nombre);
+      //setNameMenuInit(userGlobal.rol.modulos[0].menus[0]?.nombre);
       setModulesGlobal([
         {
           tab: 0,
@@ -283,7 +271,6 @@ const Main = () => {
               setNroTab={setNroTab}
               nroTab={nroTab}
               clicked={clicked}
-              setNameMenuInit={setNameMenuInit}
             />
             <div className="flex flex-[1_1_auto] relative">
               <div className="flex absolute h-full w-full top-0 left-0 flex-col">
@@ -318,7 +305,6 @@ const Main = () => {
                           active={clicked === tab.index}
                           onClose={() => removeTab(tab.index)}
                           entity={tab}
-                          size={nroTab}
                         />
                       ))}
                       {nroTab.length <= 3 ? (

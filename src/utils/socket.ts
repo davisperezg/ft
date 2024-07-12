@@ -3,8 +3,6 @@ import { BASE_URL_WS } from "./const";
 
 const URL = BASE_URL_WS;
 
-const token = localStorage.getItem("access_token");
-
 type SocketOption = Partial<ManagerOptions & SocketOptions>;
 
 const options: SocketOption = {

@@ -1,5 +1,4 @@
 import ContentEmpty from "../components/Content/ContentEmpty";
-import UserList from "../components/User/UserList";
 import ModulosScreen from "../views/ModulosScreen";
 import PermisosScreen from "../views/PermisosScreen";
 import RolesScreen from "../views/RolesScreen";

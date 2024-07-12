@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { getPersona } from "../../../api/ext";
 import { SelectSimple } from "../../Select/SelectSimple";

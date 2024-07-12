@@ -29,13 +29,15 @@ export const useDisableTipDoc = () => {
     mutationFn: ({ id }) => disableTipoDocs(id),
     onSuccess: (result, { id }) => {
       if (result) {
-        queryClient.setQueryData([KEY], (prevTipdocs: ITipoDoc[] | undefined) =>
-          prevTipdocs
-            ? prevTipdocs.map((tip) => ({
-                ...tip,
-                estado: tip.id === id ? false : tip.estado,
-              }))
-            : prevTipdocs
+        queryClient.setQueryData(
+          [KEY],
+          (prevTipdocs: ITipoDoc[] | undefined) =>
+            prevTipdocs
+              ? prevTipdocs.map((tip) => ({
+                  ...tip,
+                  estado: tip.id === id ? false : tip.estado,
+                }))
+              : prevTipdocs
         );
 
         queryClient.invalidateQueries([KEY]);

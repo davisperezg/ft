@@ -9,7 +9,6 @@ import { ToastContainer } from "react-toastify";
 import "./index.css";
 import "react-toastify/dist/ReactToastify.css";
 import {
-  StyledEngineProvider,
   ThemeProvider,
   createTheme,
   PaletteColorOptions,

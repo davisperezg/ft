@@ -1,7 +1,6 @@
 import { IPermisos } from "../../interface/permisos.interface";
 import { useMemo, useEffect } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import LoadingTotal from "../Loading/LoadingTotal";
 import ComponentTable from "../Table/Index";
 import {
   useActivateResources,
@@ -235,7 +234,7 @@ const ResourceList = ({ openEdit }: Props) => {
     if (isErrorResources) {
       toast.error(errorResources.response.data.message);
     }
-  }, [isErrorResources, toast]);
+  }, [isErrorResources, errorResources?.response.data.message]);
 
   return (
     <>

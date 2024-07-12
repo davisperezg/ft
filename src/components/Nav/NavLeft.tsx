@@ -9,12 +9,10 @@ interface Props {
   setNroTab: React.Dispatch<React.SetStateAction<any[]>>;
   nroTab: any[];
   clicked: number;
-  setNameMenuInit: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const NavLeft = (props: Props) => {
-  const { menus, handleTab, setNroTab, nroTab, clicked, setNameMenuInit } =
-    props;
+  const { menus, handleTab, setNroTab, nroTab, clicked } = props;
   const { userGlobal } = useContext(ModalContext);
 
   return (

@@ -3,7 +3,6 @@ import ComponentTable from "../Table/Index";
 import { ColumnDef } from "@tanstack/react-table";
 import { useDeleteUser, useRestoreUser, useUsers } from "../../hooks/useUsers";
 import { IUser } from "../../interface/user.interface";
-import LoadingTotal from "../Loading/LoadingTotal";
 import { CgClose, CgSync } from "react-icons/cg";
 import { toast } from "react-toastify";
 import { isError } from "../../utils/functions";
