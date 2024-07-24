@@ -1,6 +1,6 @@
-export const BASE_API = "http://192.168.18.28:3000";
+export const BASE_API = import.meta.env.VITE_API_URL;
 //import.meta.env.VITE_API_URL ??
-export const BASE_URL_WS = "http://192.168.18.28:3000/events";
+export const BASE_URL_WS = import.meta.env.VITE_API_WS_URL;
 //import.meta.env.VITE_API_WS_URL;
 export const MOD_PRINCIPAL = import.meta.env.VITE_MOD_PRINCIPAL;
 export const MENU_MODULOS = "Modulos";

@@ -49,6 +49,7 @@ const CPEList = () => {
   const [propsPagination, setPropsPagination] = useState<any>();
   const [logs, setLogs] = useState<ILog[]>([]);
   const [minimizar, setMinimizar] = useState<boolean>(false);
+  const DECIMAL = 6;
 
   const {
     data: dataPagination,
@@ -206,8 +207,6 @@ const CPEList = () => {
             row.original.mto_operaciones_exportacion
           );
           const mto_igv = Number(row.original.mto_igv);
-
-          const DECIMAL = 6;
 
           //SUMAR TODOS LOS MONTOS + EL IGV
           const total = fixed(
@@ -562,16 +561,26 @@ const CPEList = () => {
             };
           }
 
-          // Si ya existe un elemento con el mismo correlativo validamos su cambio de estado
           return {
             ...prevInvoices,
             items: prevInvoices.items.map((item: any) => {
+              // Si ya existe un elemento con el mismo correlativo y cambia de estado, actualizamos files y respuesta sunat
               if (
-                item.estado_operacion !== data.estado_operacion &&
-                item.correlativo === data.correlativo
+                item.correlativo === data.correlativo &&
+                (item.estado_operacion !== data.estado_operacion ||
+                  item.estado_operacion === data.estado_operacion)
               ) {
+                console.log(data);
                 return {
                   ...item,
+                  fecha_emision: data.fecha_emision,
+                  cliente: data.cliente,
+                  moneda: data.moneda,
+                  mto_operaciones_gravadas: data.mto_operaciones_gravadas,
+                  mto_operaciones_exoneradas: data.mto_operaciones_exoneradas,
+                  mto_operaciones_inafectas: data.mto_operaciones_inafectas,
+                  mto_operaciones_exportacion: data.mto_operaciones_exportacion,
+                  mto_igv: data.mto_igv,
                   respuesta_sunat_codigo: data.respuesta_sunat_codigo,
                   respuesta_sunat_descripcion: data.respuesta_sunat_descripcion,
                   observaciones_sunat: data.observaciones_sunat,
@@ -580,8 +589,9 @@ const CPEList = () => {
                   xml: data.xml,
                   cdr: data.cdr,
                 };
+              } else {
+                return item;
               }
-              return item;
             }),
           };
         });

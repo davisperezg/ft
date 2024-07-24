@@ -45,6 +45,8 @@ import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
+import { FaCheck } from "react-icons/fa";
+import { MdOutlineClose } from "react-icons/md";
 
 const INITIAL_PRODUCTO: IProducto = {
   tipAfeIgv: "10",
@@ -101,6 +103,35 @@ interface IProductTable {
   items: IProductsExtend[];
 }
 
+interface IInvoiceRegistered {
+  aceptada_sunat: number;
+  borrador: boolean;
+  cdr: string;
+  codigo_sunat: number;
+  correlativo_registrado: string;
+  correlativo_registradoConCeros: string;
+  documento: string;
+  enviada_sunat: number;
+  estado: string;
+  fileName: string;
+  invoice: IInvoice;
+  loading: boolean;
+  mensaje_sunat: string;
+  numero: string;
+  numeroConCeros: string;
+  otros_sunat: string;
+  pdfA4: string;
+  serie: string;
+  total: string;
+  xml: string;
+}
+
+const initialOptions = {
+  whatsapp: false,
+  correo: false,
+  correoPersonalizado: false,
+};
+
 const FacturaScreen = () => {
   const { userGlobal, setUserGlobal, dialogState } = useContext(ModalContext);
   const [isActiveModalObs, setActiveModalObs] = useState(false);
@@ -112,6 +143,10 @@ const FacturaScreen = () => {
   const [openBackdrop, setBackdrop] = useState(false);
   const [confirmDialog, setConfigDialog] = useState(false);
   const [isDraft, setDraft] = useState(false);
+  const [invoiceRegistered, setInvoiceRegistered] =
+    useState<IInvoiceRegistered | null>(null);
+  const [options, setOptions] = useState(initialOptions);
+  const [nroWsp, setNroWsp] = useState("");
 
   const handleCloseBackdrop = () => setBackdrop(false);
   const handleOpenBackdrop = (e: any) => {
@@ -466,6 +501,7 @@ const FacturaScreen = () => {
     (data: any) => {
       switch (data.estado) {
         case "success": {
+          setInvoiceRegistered(data);
           setSuccess(true);
           const serie = mySeries.find(
             (item: any) => item.serie === getValues("serie")
@@ -594,50 +630,234 @@ const FacturaScreen = () => {
               aria-describedby="alert-dialog-description-success"
             >
               <DialogTitle id="alert-dialog-title-success">
-                FACTURA ELECTRÓNICA
+                <Alert
+                  icon={false}
+                  severity="success"
+                  className="text-center flex justify-center"
+                >
+                  {invoiceRegistered?.borrador
+                    ? "Guardado. Los borradores no se envian a sunat."
+                    : "Generado."}
+                </Alert>
               </DialogTitle>
               <DialogContent>
-                <DialogContentText id="alert-dialog-description-success">
-                  FFF1-5
-                </DialogContentText>
-                <DialogContentText id="alert-dialog-description-success">
-                  TOTAL: S/118.0
-                </DialogContentText>
+                <h3 className="flex justify-center items-center text-[24px] mt-2">
+                  {invoiceRegistered?.documento}
+                </h3>
+                <h4 className="flex justify-center items-center text-[24px]">
+                  {invoiceRegistered?.serie}-
+                  {invoiceRegistered?.correlativo_registrado}
+                </h4>
+                <h4 className="flex justify-center items-center text-[24px]">
+                  TOTAL: {invoiceRegistered?.total}
+                </h4>
                 <div className="w-full border py-3 px-5 flex justify-center items-center mt-2">
-                  <Button variant="contained" color="primary">
+                  <Button
+                    component="a"
+                    target="_blank"
+                    href={invoiceRegistered?.pdfA4}
+                    rel="noopener noreferrer"
+                    variant="contained"
+                    color="primary"
+                  >
                     IMPRIMIR
                   </Button>
                 </div>
                 <div className="w-full border py-3 px-5 flex gap-2 justify-center items-center mt-2">
-                  <Button variant="contained" color="secondary">
+                  <Button
+                    component="a"
+                    target="_blank"
+                    href={invoiceRegistered?.pdfA4}
+                    rel="noopener noreferrer"
+                    variant="contained"
+                    color="secondary"
+                    className="hover:text-white"
+                  >
                     VER PDF
                   </Button>
-                  <Button variant="contained" color="success">
+                  <Button
+                    component="a"
+                    href={invoiceRegistered?.xml}
+                    variant="contained"
+                    color="success"
+                    className="hover:text-white"
+                  >
                     DESCARGAR XML
                   </Button>
-                  <Button variant="contained" color="primary">
+                  <Button
+                    component="a"
+                    href={invoiceRegistered?.cdr}
+                    variant="contained"
+                    color="primary"
+                    className="hover:text-white"
+                  >
                     DESCARGAR CDR
                   </Button>
                 </div>
-                <div className="w-full border py-3 px-5 gap-2 flex flex-col justify-center items-center mt-2">
-                  <a>Enviar al WhatsApp del cliente</a>
-                  <a>Enviar al correo del cliente</a>
-                  <a>Enviar a un correo personalizado</a>
-                  <a>Generar otra FACTURA</a>
-                  <a>Enviar otra BOLETA DE VENTA</a>
-                  <a>Ver comprobantes</a>
+                <div className="w-full border py-3 px-5 gap-2 flex flex-col justify-center items-center mt-2 cursor-pointer">
+                  <a
+                    onClick={() =>
+                      setOptions({
+                        ...initialOptions,
+                        whatsapp: true,
+                      })
+                    }
+                  >
+                    Enviar al WhatsApp del cliente
+                  </a>
+
+                  {options.whatsapp && (
+                    <div className="flex gap-2">
+                      <div className="flex justify-center items-center">
+                        <label>
+                          +51
+                          <input
+                            className="border outline-none px-2"
+                            type="text"
+                            placeholder="Ingrese celular"
+                            value={nroWsp}
+                            minLength={9}
+                            maxLength={9}
+                            onChange={(e) => setNroWsp(e.target.value)}
+                          />
+                        </label>
+                      </div>
+                      <div className="flex flex-col gap-1 text-[12px]">
+                        <a
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          href={`https://web.whatsapp.com/send?phone=51${nroWsp}&text=${encodeURI(`Estimado cliente, Se envía la ${invoiceRegistered?.documento} ${invoiceRegistered?.serie}-${invoiceRegistered?.correlativo_registrado}. Para ver click en el siguiente enlace: https://www.nubefact.com/cpe/bd70e07a-a834-4639-afd9-97277d3bd760.pdf`)}`}
+                          className="border px-2 text-textDefault hover:no-underline hover:bg-bordersAux hover:text-textDefault"
+                        >
+                          Enviar por WhatsApp Web
+                        </a>
+                        <a
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          href={`https://api.whatsapp.com/send?phone=51${nroWsp}&text=${encodeURI(`Estimado cliente, Se envía la ${invoiceRegistered?.documento} ${invoiceRegistered?.serie}-${invoiceRegistered?.correlativo_registrado}. Para ver click en el siguiente enlace: https://www.nubefact.com/cpe/bd70e07a-a834-4639-afd9-97277d3bd760.pdf`)}`}
+                          className="border px-2 text-textDefault hover:no-underline hover:bg-bordersAux hover:text-textDefault"
+                        >
+                          Enviar por WhatsApp App
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  <a
+                    onClick={() =>
+                      setOptions({
+                        ...initialOptions,
+                        correo: true,
+                      })
+                    }
+                  >
+                    Enviar al correo del cliente
+                  </a>
+                  {options.correo && (
+                    <div className="flex gap-2">
+                      <div className="flex justify-center items-center gap-2">
+                        <label>
+                          Correo: &nbsp;
+                          <input
+                            className="border outline-none px-2"
+                            type="email"
+                            placeholder="Ingrese correo"
+                            value="correop@gmail.com"
+                            disabled
+                            onChange={(e) => setNroWsp(e.target.value)}
+                          />
+                        </label>
+                        <button className="border px-2 hover:bg-bordersAux">
+                          Enviar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <a
+                    onClick={() =>
+                      setOptions({
+                        ...initialOptions,
+                        correoPersonalizado: true,
+                      })
+                    }
+                  >
+                    Enviar a un correo personalizado
+                  </a>
+                  {options.correoPersonalizado && (
+                    <div className="flex gap-2">
+                      <div className="flex justify-center items-center gap-2">
+                        <label>
+                          Correo: &nbsp;
+                          <input
+                            className="border outline-none px-2"
+                            type="email"
+                            placeholder="Ingrese correo"
+                            value=""
+                            onChange={(e) => setNroWsp(e.target.value)}
+                          />
+                        </label>
+                        <button className="border px-2 hover:bg-bordersAux">
+                          Enviar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <a onClick={() => setSuccess(false)}>Generar otra FACTURA</a>
+                  <a onClick={() => setSuccess(false)}>
+                    Enviar otra BOLETA DE VENTA
+                  </a>
+                  <a onClick={() => alert("ver cmoprobantes")}>
+                    Ver comprobantes
+                  </a>
                 </div>
                 <div className="w-full border py-3 px-5 flex justify-center items-center mt-2">
                   <Button variant="contained" color="primary" fullWidth>
                     ANULAR o comunicat de baja
                   </Button>
                 </div>
-                <div className="w-full border py-3 px-5 flex gap-2 mt-2">
-                  <span>
-                    Enviada a la Sunat?: Aceptada por la Sunat?: Código: 0
-                    Descripción: La Factura Electrónica FFF1-5 ha sido ACEPTADA
-                    CON OBSERVACIONES Otros:
-                  </span>
+                {invoiceRegistered?.borrador ? (
+                  <Alert
+                    icon={false}
+                    severity="error"
+                    className="text-center flex justify-center mt-2"
+                  >
+                    Guardado. Los borradores no se envian a sunat.
+                  </Alert>
+                ) : null}
+                <div
+                  className={`flex w-full border py-3 px-5 flex-col gap-2 mt-2 ${invoiceRegistered?.borrador ? "text-red-600" : "text-green-700"}`}
+                >
+                  <strong className="flex items-center">
+                    Enviada a la Sunat?:
+                    {invoiceRegistered?.enviada_sunat === 2 ? (
+                      <FaCheck />
+                    ) : (
+                      <MdOutlineClose />
+                    )}
+                  </strong>
+                  <strong className="flex items-center">
+                    Aceptada por la Sunat?:
+                    {invoiceRegistered?.aceptada_sunat === 0 ? (
+                      <FaCheck />
+                    ) : invoiceRegistered?.aceptada_sunat &&
+                      invoiceRegistered?.aceptada_sunat >= 2000 &&
+                      invoiceRegistered?.aceptada_sunat <= 3999 ? (
+                      <MdOutlineClose />
+                    ) : (
+                      invoiceRegistered?.aceptada_sunat
+                    )}
+                  </strong>
+                  <strong className="flex items-center">
+                    Código: {invoiceRegistered?.codigo_sunat}
+                  </strong>
+                  <strong className="flex items-center">
+                    Descripción: {invoiceRegistered?.mensaje_sunat}
+                  </strong>
+                  <strong className="flex items-center">
+                    Otros: {invoiceRegistered?.otros_sunat}
+                  </strong>
                 </div>
               </DialogContent>
             </Dialog>
