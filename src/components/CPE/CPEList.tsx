@@ -570,7 +570,6 @@ const CPEList = () => {
                 (item.estado_operacion !== data.estado_operacion ||
                   item.estado_operacion === data.estado_operacion)
               ) {
-                console.log(data);
                 return {
                   ...item,
                   fecha_emision: data.fecha_emision,
@@ -588,6 +587,7 @@ const CPEList = () => {
                   status: data.status,
                   xml: data.xml,
                   cdr: data.cdr,
+                  forma_pago: data.forma_pago,
                 };
               } else {
                 return item;

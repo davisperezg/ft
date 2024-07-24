@@ -47,6 +47,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import { FaCheck } from "react-icons/fa";
 import { MdOutlineClose } from "react-icons/md";
+import { DialogActionKind } from "../reducers/dialogReducer";
 
 const INITIAL_PRODUCTO: IProducto = {
   tipAfeIgv: "10",
@@ -133,7 +134,8 @@ const initialOptions = {
 };
 
 const FacturaScreen = () => {
-  const { userGlobal, setUserGlobal, dialogState } = useContext(ModalContext);
+  const { userGlobal, setUserGlobal, dialogState, dispatch } =
+    useContext(ModalContext);
   const [isActiveModalObs, setActiveModalObs] = useState(false);
   const [isActiveModalProductos, setActiveModalProductos] = useState(false);
   const [isOpenDateEmision, setIsOpenDateEmision] = useState(false);
@@ -203,6 +205,7 @@ const FacturaScreen = () => {
     getValues,
     setValue,
     setError,
+    reset,
   } = methods;
 
   const {
@@ -503,9 +506,20 @@ const FacturaScreen = () => {
         case "success": {
           setInvoiceRegistered(data);
           setSuccess(true);
-          const serie = mySeries.find(
-            (item: any) => item.serie === getValues("serie")
-          );
+
+          //Reiniciamos valores por defecto excepto la serie y correlativos
+          dispatch({
+            type: DialogActionKind.SCREEN_FACTURA,
+            payload: null,
+          });
+          reset();
+          setValue("serie", data.serie);
+          setValue("numero", data.numero);
+          setValue("numeroConCeros", data.numeroConCeros);
+
+          const serie = mySeries.find((item: any) => item.serie === data.serie);
+
+          //Mutamos el correlativo en la serie de la empresa globalmente
           const updateSerie = {
             ...empresa,
             establecimiento: {
@@ -518,7 +532,7 @@ const FacturaScreen = () => {
                       if (item.serie === serie.serie) {
                         return {
                           ...item,
-                          numero: String(Number(item.numero) + 1),
+                          numero: data.numero,
                           numeroConCeros: data.numeroConCeros,
                         };
                       }
@@ -536,6 +550,7 @@ const FacturaScreen = () => {
             },
           };
 
+          //Actualizamos la nueva mutacion del correlativo
           setUserGlobal({
             ...userGlobal,
             empresaActual: updateSerie,
@@ -839,14 +854,16 @@ const FacturaScreen = () => {
                   </strong>
                   <strong className="flex items-center">
                     Aceptada por la Sunat?:
-                    {invoiceRegistered?.aceptada_sunat === 0 ? (
+                    {invoiceRegistered?.aceptada_sunat === 0 ? ( //cpe aceptado
                       <FaCheck />
-                    ) : invoiceRegistered?.aceptada_sunat &&
+                    ) : !invoiceRegistered?.aceptada_sunat ? ( //borrador
+                      <MdOutlineClose />
+                    ) : invoiceRegistered?.aceptada_sunat && //errones generan rechazo de sunat comprobante invalido
                       invoiceRegistered?.aceptada_sunat >= 2000 &&
                       invoiceRegistered?.aceptada_sunat <= 3999 ? (
                       <MdOutlineClose />
                     ) : (
-                      invoiceRegistered?.aceptada_sunat
+                      invoiceRegistered?.aceptada_sunat //Errores de sunat 0100-999 se mostraran como exito y luego seran enviados hasta que sunat los acepte
                     )}
                   </strong>
                   <strong className="flex items-center">
