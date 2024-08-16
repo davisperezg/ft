@@ -300,7 +300,7 @@ const ShowOptions = (table: any) => {
         backgroundColor: "#fff",
         boxShadow: "0 1px 5px rgb(0 0 0 / 30%)",
         position: "absolute",
-        zIndex: 1,
+        zIndex: 11,
         float: "left",
         overflowX: "hidden",
         overflowY: "auto",
