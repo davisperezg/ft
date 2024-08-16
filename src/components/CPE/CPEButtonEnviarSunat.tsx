@@ -14,13 +14,21 @@ import { IFormaPagos } from "../../interface/forma_pagos.interface";
 import { IMoneda } from "../../interface/moneda.interface";
 import { IEntidad } from "../../interface/entidad.interface";
 import dayjs from "dayjs";
+import { IConfigEstablecimiento } from "../../interface/config_establecimiento.interface";
 
 interface IProps {
   row: Row<IInvoice>;
 }
 
 const CPEButtonEnviarSunat = ({ row }: IProps) => {
-  const { dispatch } = useContext(ModalContext);
+  const { dispatch, userGlobal } = useContext(ModalContext);
+
+  const configuracionesEstablecimiento = userGlobal.empresaActual
+    .establecimiento.configuraciones as IConfigEstablecimiento[];
+
+  const ENVIA_DIRECTO_SUNAT = configuracionesEstablecimiento.some(
+    (config) => config.enviar_inmediatamente_a_sunat
+  );
 
   const estadoOpe = Number(row.original.estado_operacion); //0-creado, 1-enviando, 2-aceptado, 3-rechazado
   const estadoAnul = Number(row.original.estado_anulacion); //null-no enviado, 1-enviado con ticket, 2-aceptado, 3-rechazado
@@ -66,6 +74,14 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
     tipo_operacion: row.original.tipo_operacion,
   };
 
+  const handleEnviaSunat = () => {
+    if (ENVIA_DIRECTO_SUNAT) {
+      alert("Enviando a sunat...");
+    } else {
+      alert("No puedes enviar");
+    }
+  };
+
   return (
     <div className="p-[4px] pb-[4px] text-[14px] text-center flex justify-center">
       {estadoOpe === 0 ? (
@@ -103,7 +119,12 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
               </a>
             </ToolTipIconButton>
           ) : (
-            <ToolTipIconButton title="Enviar a sunat">
+            <ToolTipIconButton
+              component={"button"}
+              title="Enviar a sunat"
+              onClick={handleEnviaSunat}
+              disabled={!ENVIA_DIRECTO_SUNAT}
+            >
               <img
                 src={SunatLogo}
                 alt="Sunat"

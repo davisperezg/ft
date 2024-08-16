@@ -25,6 +25,7 @@ import { TableContext } from "../../context/tableContext";
 import CPEButtonEnviarSunat from "./CPEButtonEnviarSunat";
 import dayjs from "dayjs";
 import { fixed } from "../../utils/functions";
+import { IConfigEstablecimiento } from "../../interface/config_establecimiento.interface";
 
 interface ILog {
   type: string;
@@ -50,6 +51,13 @@ const CPEList = () => {
   const [logs, setLogs] = useState<ILog[]>([]);
   const [minimizar, setMinimizar] = useState<boolean>(false);
   const DECIMAL = 6;
+
+  const configuracionesEstablecimiento = userGlobal.empresaActual
+    .establecimiento.configuraciones as IConfigEstablecimiento[];
+
+  const ENVIA_DIRECTO_SUNAT = configuracionesEstablecimiento.some(
+    (config) => config.enviar_inmediatamente_a_sunat
+  );
 
   const {
     data: dataPagination,
@@ -272,6 +280,7 @@ const CPEList = () => {
         minSize: 31,
       },
       {
+        id: "pdf",
         accessorKey: "pdf",
         header: () => {
           return (
@@ -323,6 +332,7 @@ const CPEList = () => {
         enableSorting: false,
       },
       {
+        id: "xml",
         accessorKey: "xml",
         header: () => {
           return (
@@ -337,7 +347,9 @@ const CPEList = () => {
 
           return (
             <div className="p-[4px] pb-[4px] text-[16px] text-center flex justify-center">
-              {status ? (
+              {!ENVIA_DIRECTO_SUNAT ? (
+                <>{"-"}</>
+              ) : status ? (
                 <ToolTipIconButton title="Descargar XML firmado">
                   <a href={xmlSigned}>
                     <BsFiletypeXml className="text-green-700 cursor-pointer" />
@@ -353,8 +365,11 @@ const CPEList = () => {
         minSize: 28,
         enableResizing: false,
         enableSorting: false,
+        visible: ENVIA_DIRECTO_SUNAT,
+        enableHiding: ENVIA_DIRECTO_SUNAT,
       },
       {
+        id: "cdr",
         accessorKey: "cdr",
         header: () => {
           return (
@@ -396,8 +411,11 @@ const CPEList = () => {
         minSize: 28,
         enableResizing: false,
         enableSorting: false,
+        visible: ENVIA_DIRECTO_SUNAT,
+        enableHiding: ENVIA_DIRECTO_SUNAT,
       },
       {
+        id: "sunat",
         accessorKey: "sunat",
         header: () => {
           return (
@@ -407,12 +425,18 @@ const CPEList = () => {
           );
         },
         cell: ({ row }) => {
-          return <CPEButtonEnviarSunat row={row} />;
+          return !ENVIA_DIRECTO_SUNAT ? (
+            <div className="text-center">{"-"}</div>
+          ) : (
+            <CPEButtonEnviarSunat row={row} />
+          );
         },
         size: 60,
         minSize: 28,
         enableResizing: false,
         enableSorting: false,
+        visible: ENVIA_DIRECTO_SUNAT,
+        enableHiding: ENVIA_DIRECTO_SUNAT,
       },
       {
         accessorKey: "acciones",
@@ -428,6 +452,7 @@ const CPEList = () => {
         minSize: 28,
         enableResizing: false,
         enableSorting: false,
+        enableHiding: false,
       },
       {
         accessorKey: "actions",
@@ -447,18 +472,19 @@ const CPEList = () => {
   }, [comunicatBaja]);
 
   const data = useMemo(() => {
-    if (
-      dataPagination &&
-      dataPagination?.statusCode === "success" &&
-      dataPagination?.items.length === 0
-    ) {
-      setPagination((old) => {
-        return {
-          ...old,
-          pageIndex: old.pageIndex - 1,
-        };
-      });
-    }
+    // if (
+    //   dataPagination &&
+    //   dataPagination?.statusCode === "success" &&
+    //   dataPagination?.items.length === 0
+    // ) {
+    //   console.log("entra cada");
+    //   setPagination((old) => {
+    //     return {
+    //       ...old,
+    //       pageIndex: old.pageIndex - 1,
+    //     };
+    //   });
+    // }
 
     if (dataPagination && dataPagination?.items?.length > 0) {
       setPropsPagination(dataPagination);
