@@ -420,23 +420,18 @@ const CPEList = () => {
         header: () => {
           return (
             <div className="p-[5px] text-[12px] select-none text-center">
-              Sunat
+              {ENVIA_DIRECTO_SUNAT ? "SUNAT" : ""}
             </div>
           );
         },
         cell: ({ row }) => {
-          return !ENVIA_DIRECTO_SUNAT ? (
-            <div className="text-center">{"-"}</div>
-          ) : (
-            <CPEButtonEnviarSunat row={row} />
-          );
+          return <CPEButtonEnviarSunat row={row} />;
         },
         size: 60,
         minSize: 28,
         enableResizing: false,
         enableSorting: false,
-        visible: ENVIA_DIRECTO_SUNAT,
-        enableHiding: ENVIA_DIRECTO_SUNAT,
+        enableHiding: false,
       },
       {
         accessorKey: "acciones",
@@ -469,7 +464,7 @@ const CPEList = () => {
         enableSorting: false,
       },
     ];
-  }, [comunicatBaja]);
+  }, [comunicatBaja, ENVIA_DIRECTO_SUNAT]);
 
   const data = useMemo(() => {
     // if (

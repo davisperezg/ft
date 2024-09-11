@@ -4,11 +4,13 @@ import { storage } from "../utils/storage";
 import { BASE_URL_WS } from "../utils/const";
 import { getRefresh } from "../api/auth";
 import { socketInvoices } from "../utils/socket";
+import { toast } from "react-toastify";
 
 export const useSocketInvoice = () => {
   const [reconnecting, setReconnecting] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [socket, setSocket] = useState<Socket | null>(null);
-  const storageEmpresa = storage.getItem("empresa", "SESSION");
+  const storageEmpresa = storage.getItem("empresaActual", "SESSION");
   const storageToken = storage.getItem("access_token", "SESSION");
 
   const updateToken = useCallback(async () => {
@@ -20,7 +22,9 @@ export const useSocketInvoice = () => {
     );
     if (resToken.status === 201) {
       const newToken = resToken.data.access_token;
-      const empresa = JSON.parse(String(storage.getItem("empresa", "SESSION")));
+      const empresa = JSON.parse(
+        String(storage.getItem("empresaActual", "SESSION"))
+      );
 
       const newSocket = io(`${BASE_URL_WS}/invoices`, {
         auth: {
@@ -38,7 +42,9 @@ export const useSocketInvoice = () => {
 
   useEffect(() => {
     if (storageEmpresa) {
-      const empresa = JSON.parse(String(storage.getItem("empresa", "SESSION")));
+      const empresa = JSON.parse(
+        String(storage.getItem("empresaActual", "SESSION"))
+      );
       const token = storage.getItem("access_token", "SESSION");
       socketInvoices.auth = {
         token: `Bearer ${token}`,
@@ -79,7 +85,13 @@ export const useSocketInvoice = () => {
 
       socket.on("error", (data: any) => {
         if (data.message === "jwt expired") {
+          setLoading(false);
           window.location.reload();
+        }
+
+        if (data.message === "Unauthorized access") {
+          setLoading(false);
+          toast.error(data.message);
         }
       });
 
@@ -97,7 +109,7 @@ export const useSocketInvoice = () => {
           socket.io.off("reconnect_attempt", handleReconnect);
           socket.io.off("reconnect", handleReconnectSuccess);
           socket.io.off("reconnect_failed", handleReconnectFailed);
-          socket.disconnect();
+          //socket.disconnect();
         }
       };
     }
@@ -122,5 +134,5 @@ export const useSocketInvoice = () => {
     }
   }, [storageToken, storageEmpresa]);
 
-  return { socket, reconnecting };
+  return { socket, reconnecting, loading };
 };

@@ -50,59 +50,46 @@ const Header = ({ result }: any) => {
     if (result?.data) {
       setUserGlobal(result?.data);
 
-      if (sessionStorage.getItem("empresa")) {
-        const empresa = JSON.parse(String(sessionStorage.getItem("empresa")));
+      if (sessionStorage.getItem("empresaActual")) {
+        console.log("ya existe");
+        const empresaActual = JSON.parse(
+          String(sessionStorage.getItem("empresaActual"))
+        );
 
         if (!selectedOption) {
           setSelectedOption(
-            `idEmpresa:${empresa?.id},idEstablecimiento:${empresa?.establecimiento?.id}`
+            `idEmpresa:${empresaActual?.id},idEstablecimiento:${empresaActual?.establecimiento?.id}`
           );
         }
 
         if (result?.data?.empresas?.length > 0) {
-          const empresaActual = result?.data?.empresas.find(
-            (a: any) => a.id === empresa.id
-          );
-
-          const { establecimientos, ...rest } = empresaActual;
-
-          const establecimientoActual = establecimientos.find(
-            (a: any) => a.id === empresa.establecimiento.id
-          );
+          const empresaActual = result?.data?.empresaActual;
 
           setUserGlobal({
             ...result?.data,
-            empresaActual:
-              { ...rest, establecimiento: establecimientoActual } ?? null,
+            empresaActual: empresaActual ?? null,
           });
 
           sessionStorage.setItem(
-            "empresa",
-            JSON.stringify(
-              { ...rest, establecimiento: establecimientoActual } ?? null
-            )
+            "empresaActual",
+            JSON.stringify(empresaActual ?? null)
           );
         }
       } else {
         if (result?.data?.empresas?.length > 0) {
-          const empresa = {
-            id: result?.data?.empresas[0].id,
-            logo: result?.data?.empresas[0].logo,
-            nombre_comercial: result?.data?.empresas[0].nombre_comercial,
-            ruc: result?.data?.empresas[0].ruc,
-            establecimiento: result?.data?.empresas[0].establecimientos[0],
-            estado: result?.data.empresas[0].estado,
-            modo: result?.data.empresas[0].modo,
-          };
-
+          const empresaActual = result?.data?.empresaActual;
+          console.log("empresaActual", result?.data?.empresaActual);
           setSelectedOption(
-            `idEmpresa:${empresa?.id},idEstablecimiento:${empresa?.establecimiento?.id}`
+            `idEmpresa:${empresaActual?.id},idEstablecimiento:${empresaActual?.establecimiento?.id}`
           );
           // setUserGlobal({
           //   ...result?.data,
           //   empresa,
           // });
-          sessionStorage.setItem("empresa", JSON.stringify(empresa));
+          sessionStorage.setItem(
+            "empresaActual",
+            JSON.stringify(empresaActual)
+          );
         }
       }
     }
@@ -135,27 +122,25 @@ const Header = ({ result }: any) => {
     const idEmpresa = valores.idEmpresa;
     const idEstablecimiento = valores.idEstablecimiento;
 
-    const getEmpresa = userGlobal?.empresas.find(
-      (empresa: any) => empresa.id === idEmpresa
+    const getEmpresa = userGlobal?.empresas?.find(
+      (empresa) => empresa.id === idEmpresa
     );
-    const getEstablecimiento = getEmpresa?.establecimientos.find(
-      (est: any) => est.id === idEstablecimiento
+
+    const getEstablecimiento = getEmpresa?.establecimientos?.find(
+      (est) => est.id === idEstablecimiento
     );
 
     const empresa = {
-      id: getEmpresa?.id,
-      logo: getEmpresa?.logo,
-      nombre_comercial: getEmpresa?.nombre_comercial,
-      ruc: getEmpresa?.ruc,
-      estado: getEmpresa?.estado,
+      ...getEmpresa,
       establecimiento: getEstablecimiento,
     };
+    console.log("cambiando empresa", empresa);
 
     if (empresa) {
       const cambiar = confirm("Estas seguro que quieres cambiar de sucursal?");
       if (cambiar) {
         setSelectedOption(selectedValue);
-        sessionStorage.setItem("empresa", JSON.stringify(empresa));
+        sessionStorage.setItem("empresaActual", JSON.stringify(empresa));
         location.reload();
       }
     }

@@ -25,7 +25,9 @@ export interface ISeriesMigrate {
 
 export interface ISeriesExtendida
   extends Pick<ISeries, "estado" | "id" | "serie"> {
-  aliasEstablecimiento: string;
+  numero?: string;
+  numeroConCeros?: string;
+  aliasEstablecimiento?: string;
 }
 
 export interface ITransferListOf {

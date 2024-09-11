@@ -23,6 +23,7 @@ import TipoDocsScreen from "../../views/TipoDocsScreen";
 import EmpresasScreen from "../../views/EmpresasScreen";
 import SeriesScreen from "../../views/SeriesScreen";
 import CPEScreen from "../../views/CPEScreen";
+import { ITipoDocsExtentido } from "../../interface/tipodocs.interface";
 
 interface Props {
   open: boolean;
@@ -49,6 +50,10 @@ const NavMenuItem = ({
     useContext(ModalContext);
 
   const { data: dataAccess } = useAccess(userGlobal?.id);
+
+  const documentos =
+    (userGlobal.empresaActual?.establecimiento
+      ?.documentos as ITipoDocsExtentido[]) ?? [];
 
   const loadMenuContext = (menu: string) => {
     const personalizedComponent = (Component: any) => {
@@ -283,38 +288,51 @@ const NavMenuItem = ({
 
           {menu.nombre === MENU_COMPROBANTES_ELECT && (
             <div className="p-[10px] text-center">
-              {dataAccess?.some((a) => a === "canCreate_facturas") && (
-                <button
-                  onClick={() =>
-                    dispatch({ type: DialogActionKind.SCREEN_FACTURA })
-                  }
-                  type="button"
-                  className="w-[180px] mb-[5px] border  min-h-[24px] text-secondary dark:text-white hover:bg-hover"
-                >
-                  Factura
-                </button>
-              )}
-              <button
-                onClick={() =>
-                  dispatch({ type: DialogActionKind.SCREEN_BOLETA })
+              {documentos.map((documento) => {
+                const DOCUMENTO = documento.nombre.toUpperCase();
+
+                // Mapeo de permisos a documentos específicos
+                const permisoPorDocumento: { [key: string]: string } = {
+                  FACTURA: "canCreate_facturas",
+                  BOLETA: "canCreate_boletas",
+                  // Add more documents and their permissions here if needed
+                };
+
+                // Obtener el permiso requerido para este documento
+                const permisoRequerido = permisoPorDocumento[DOCUMENTO];
+
+                // Si el permiso no está definido, no renderizar nada
+                if (!permisoRequerido) return null;
+
+                // Verificar si el usuario tiene el permiso requerido
+                const tienePermiso = dataAccess?.includes(permisoRequerido);
+
+                // Renderizar solo si tiene el permiso
+                if (tienePermiso) {
+                  const handleClick = () => {
+                    if (DOCUMENTO === "FACTURA") {
+                      dispatch({ type: DialogActionKind.SCREEN_FACTURA });
+                    } else if (DOCUMENTO === "BOLETA") {
+                      dispatch({ type: DialogActionKind.SCREEN_BOLETA });
+                    }
+                    // Agrega más acciones aquí si es necesario
+                  };
+
+                  return (
+                    <button
+                      key={documento.id}
+                      onClick={handleClick}
+                      type="button"
+                      disabled={!documento.estado} // Se desactiva cuando el documento es desactivado desde la empresa
+                      className={`w-[180px] mb-[5px] border min-h-[24px] text-secondary dark:text-white hover:bg-hover ${documento.estado ? "" : "bg-hover"}`}
+                    >
+                      {documento.nombre}
+                    </button>
+                  );
                 }
-                type="button"
-                className="w-[180px] mb-[5px] border  min-h-[24px] text-secondary dark:text-white hover:bg-hover"
-              >
-                Boleta
-              </button>
-              <button
-                type="button"
-                className="w-[180px] mb-[5px] border  min-h-[24px] text-secondary dark:text-white hover:bg-hover"
-              >
-                Nota de Credito
-              </button>
-              <button
-                type="button"
-                className="w-[180px] mb-[5px] border  min-h-[24px] text-secondary dark:text-white hover:bg-hover"
-              >
-                Nota de Debito
-              </button>
+
+                return null; // No renderiza si no tiene el permiso
+              })}
             </div>
           )}
         </fieldset>

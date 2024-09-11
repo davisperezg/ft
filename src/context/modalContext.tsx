@@ -5,6 +5,7 @@ import {
   initialValueDialog,
 } from "../reducers/dialogReducer";
 import { storage } from "../utils/storage";
+import { IAuthPayload } from "../interface/auth.interface";
 
 interface Prop {
   children: JSX.Element | JSX.Element[];
@@ -13,8 +14,8 @@ interface Prop {
 export const ModalContext = createContext<{
   dialogState: DialogState;
   dispatch: React.Dispatch<any>;
-  userGlobal: any;
-  setUserGlobal: React.Dispatch<React.SetStateAction<null>>;
+  userGlobal: IAuthPayload | null;
+  setUserGlobal: React.Dispatch<React.SetStateAction<IAuthPayload | null>>;
   modulesGlobal: any;
   setModulesGlobal: React.Dispatch<React.SetStateAction<any>>;
   clickedTab: number;
@@ -32,7 +33,7 @@ export const ModalContext = createContext<{
 
 export const ModalProvider = ({ children }: Prop) => {
   const [dialogState, dispatch] = useReducer(dialogReducer, initialValueDialog);
-  const [userGlobal, setUserGlobal] = useState(null);
+  const [userGlobal, setUserGlobal] = useState<IAuthPayload | null>(null);
   const [modulesGlobal, setModulesGlobal] = useState();
   const [clickedTab, setClickedGlobal] = useState<number>(0);
 

@@ -75,11 +75,8 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
   };
 
   const handleEnviaSunat = () => {
-    if (ENVIA_DIRECTO_SUNAT) {
-      alert("Enviando a sunat...");
-    } else {
-      alert("No puedes enviar");
-    }
+    if (!ENVIA_DIRECTO_SUNAT) return;
+    alert("Enviando a sunat...");
   };
 
   return (
@@ -118,12 +115,11 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
                 Borrador
               </a>
             </ToolTipIconButton>
-          ) : (
+          ) : ENVIA_DIRECTO_SUNAT ? (
             <ToolTipIconButton
               component={"button"}
               title="Enviar a sunat"
               onClick={handleEnviaSunat}
-              disabled={!ENVIA_DIRECTO_SUNAT}
             >
               <img
                 src={SunatLogo}
@@ -131,6 +127,13 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
                 className="w-6 h-6 cursor-pointer"
               />
             </ToolTipIconButton>
+          ) : (
+            <a
+              type="button"
+              className="bg-green-700 text-[10px] text-white px-[5px] py-[2px] rounded-full hover:text-white"
+            >
+              Generado
+            </a>
           )}
         </>
       ) : estadoOpe === 1 || estadoAnul === 1 ? (

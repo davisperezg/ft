@@ -18,7 +18,7 @@ export interface IInvoice {
   ruc: string;
   cliente: IEntidad | string;
   direccion: string;
-  tipo_documento?: number; //boleta, factura, etc...
+  tipo_documento?: string; //boleta, factura, etc...
   tipo_entidad: string; //dni, ruc, pasaporte, ce
   tipo_operacion: string; //0101 venta interna
   moneda: IMoneda | string;

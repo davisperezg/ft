@@ -48,6 +48,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import { FaCheck } from "react-icons/fa";
 import { MdOutlineClose } from "react-icons/md";
 import { DialogActionKind } from "../reducers/dialogReducer";
+import { IAuthEmpresa } from "../interface/auth.interface";
 
 const INITIAL_PRODUCTO: IProducto = {
   tipAfeIgv: "10",
@@ -134,6 +135,7 @@ const initialOptions = {
 };
 
 const FacturaScreen = () => {
+  const DECIMAL = 6;
   const { userGlobal, setUserGlobal, dialogState, dispatch } =
     useContext(ModalContext);
   const [isActiveModalObs, setActiveModalObs] = useState(false);
@@ -166,16 +168,17 @@ const FacturaScreen = () => {
     setDraft(draft);
   };
 
+  console.log(userGlobal?.empresaActual?.establecimiento?.documentos);
   //const [format, setFormat] = useState<string | undefined>("");
-  const empresa = JSON.parse(String(sessionStorage.getItem("empresa")));
 
-  const myDocument = empresa.establecimiento.documentos.find(
-    (doc: any) => String(doc.nombre).toUpperCase() === "FACTURA"
+  const CPE = userGlobal?.empresaActual?.establecimiento?.documentos?.find(
+    (doc) => String(doc.nombre).toUpperCase() === "FACTURA"
   );
 
-  const mySeries = useMemo(() => {
-    return myDocument?.series ?? [];
-  }, [myDocument]);
+  const CPE_SERIES = useMemo(
+    () => CPE?.series.filter((serie) => serie.estado) || [],
+    [CPE?.series]
+  );
 
   const methods = useForm<IInvoice>({
     defaultValues: {
@@ -188,9 +191,9 @@ const FacturaScreen = () => {
         }
       : {
           ...INITIAL_FACTURA,
-          serie: mySeries[0].serie,
-          numero: mySeries[0].numero,
-          numeroConCeros: mySeries[0].numeroConCeros,
+          serie: CPE_SERIES[0].serie,
+          numero: CPE_SERIES[0].numero,
+          numeroConCeros: CPE_SERIES[0].numeroConCeros,
           //fecha_emision: dayjs(new Date()),
         },
     mode: "onChange",
@@ -249,7 +252,7 @@ const FacturaScreen = () => {
   };
 
   const obtenerSerie = (serie: string) => {
-    const correlativo = mySeries.find((item: any) => item.serie === serie);
+    const correlativo = CPE_SERIES.find((item: any) => item.serie === serie);
     return correlativo;
   };
 
@@ -261,8 +264,6 @@ const FacturaScreen = () => {
     setActiveModalProductos(false);
     setValue("producto", INITIAL_PRODUCTO);
   };
-
-  const DECIMAL = 6;
 
   const operacionesProductos = fieldsProducts.reduce(
     (prev: IProductTable, curr) => {
@@ -378,7 +379,7 @@ const FacturaScreen = () => {
     data: dataEntidades,
     //error: errorEntidades,
     isLoading: isLoadingEntidades,
-  } = useEntidadesByEmpresa(Number(userGlobal.empresaActual.id));
+  } = useEntidadesByEmpresa(Number(userGlobal?.empresaActual?.id));
 
   const [isOpenSearch, setOpenSearch] = useState(false);
   const rucSelect = useRef<HTMLDivElement>(null);
@@ -478,13 +479,15 @@ const FacturaScreen = () => {
       ? (fecha_vencimiento as Dayjs).toDate()
       : null;
 
+    console.log(CPE);
+    console.log(CPE_SERIES);
     const data: IInvoice = {
       ...rest,
-      empresa: Number(userGlobal.empresaActual.id),
-      establecimiento: Number(userGlobal.empresaActual.establecimiento.id),
+      empresa: Number(userGlobal?.empresaActual?.id),
+      establecimiento: Number(userGlobal?.empresaActual?.establecimiento?.id),
       fecha_emision: fechaEmision,
       fecha_vencimiento: fechaVencimiento,
-      tipo_documento: myDocument.codigo,
+      tipo_documento: CPE?.codigo,
       borrador: borrador,
       // total_igv: decimalesSimples(String(sumarIGVTotal())),
       // total_pagar: decimalesSimples(String(sumarImporteTotal())),
@@ -517,36 +520,39 @@ const FacturaScreen = () => {
           setValue("numero", data.numero);
           setValue("numeroConCeros", data.numeroConCeros);
 
-          const serie = mySeries.find((item: any) => item.serie === data.serie);
+          const serie = CPE_SERIES.find((item) => item.serie === data.serie);
 
           //Mutamos el correlativo en la serie de la empresa globalmente
-          const updateSerie = {
-            ...empresa,
+          const updateSerie: IAuthEmpresa = {
+            ...userGlobal?.empresaActual,
             establecimiento: {
-              ...empresa.establecimiento,
-              documentos: empresa.establecimiento.documentos.map((doc: any) => {
-                if (doc.nombre === myDocument.nombre) {
-                  return {
-                    ...doc,
-                    series: doc.series.map((item: any) => {
-                      if (item.serie === serie.serie) {
-                        return {
-                          ...item,
-                          numero: data.numero,
-                          numeroConCeros: data.numeroConCeros,
-                        };
-                      }
+              ...userGlobal?.empresaActual?.establecimiento,
+              documentos:
+                userGlobal?.empresaActual?.establecimiento?.documentos?.map(
+                  (doc) => {
+                    if (doc.nombre === CPE?.nombre) {
                       return {
-                        ...item,
+                        ...doc,
+                        series: doc.series.map((item) => {
+                          if (item.serie === serie?.serie) {
+                            return {
+                              ...item,
+                              numero: data.numero,
+                              numeroConCeros: data.numeroConCeros,
+                            };
+                          }
+                          return {
+                            ...item,
+                          };
+                        }),
                       };
-                    }),
-                  };
-                } else {
-                  return {
-                    ...doc,
-                  };
-                }
-              }),
+                    } else {
+                      return {
+                        ...doc,
+                      };
+                    }
+                  }
+                ),
             },
           };
 
@@ -555,7 +561,7 @@ const FacturaScreen = () => {
             ...userGlobal,
             empresaActual: updateSerie,
           });
-          sessionStorage.setItem("empresa", JSON.stringify(updateSerie));
+          // sessionStorage.setItem("empresaActual", JSON.stringify(updateSerie));
           setLoading(data.loading);
           handleCloseBackdrop();
           break;
@@ -568,7 +574,15 @@ const FacturaScreen = () => {
         }
       }
     },
-    [empresa, getValues, myDocument.nombre, mySeries, setUserGlobal, userGlobal]
+    [
+      setUserGlobal,
+      userGlobal,
+      dispatch,
+      reset,
+      setValue,
+      CPE_SERIES,
+      CPE?.nombre,
+    ]
   );
 
   useEffect(() => {
@@ -581,6 +595,7 @@ const FacturaScreen = () => {
       });
 
       return () => {
+        socket.off("error");
         socket.off("server::getIdInvoice", handleIdInvoice);
         socket.off("exception");
       };
@@ -881,7 +896,7 @@ const FacturaScreen = () => {
           )
         )}
 
-        {userGlobal.empresaActual.modo === "DESARROLLO" && (
+        {userGlobal?.empresaActual?.modo === "DESARROLLO" && (
           <div className="px-3">
             {reconnecting && (
               <Alert severity="error">
@@ -1171,7 +1186,7 @@ const FacturaScreen = () => {
               </div>
               <div className="w-[30%] m-1 pt-4 pb-4 border border-dashed border-black flex flex-col justify-between items-center">
                 <div className="font-bold h-1/3 flex justify-center items-start">
-                  R.U.C. N° {userGlobal.empresaActual?.ruc}
+                  R.U.C. N° {userGlobal?.empresaActual?.ruc}
                 </div>
                 <div className="font-bold h-1/3 flex justify-center items-start">
                   FACTURA ELECTRÓNICA
@@ -1182,15 +1197,18 @@ const FacturaScreen = () => {
                       onChange: (e) => {
                         const value = e.target.value;
                         const serie = obtenerSerie(value);
-                        setValue("numero", serie.numero);
-                        setValue("numeroConCeros", serie.numeroConCeros);
+                        setValue("numero", String(serie?.numero));
+                        setValue(
+                          "numeroConCeros",
+                          String(serie?.numeroConCeros)
+                        );
                       },
                     })}
                     className="border w-5/12 h-full outline-none cursor-pointer"
                   >
-                    {mySeries.map((item: any) => {
+                    {CPE_SERIES.map((item) => {
                       return (
-                        <option key={item.id}>
+                        <option key={item.id} disabled={!item.estado}>
                           {String(item.serie).toUpperCase()}
                         </option>
                       );
