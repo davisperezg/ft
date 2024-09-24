@@ -49,10 +49,10 @@ const NavMenuItem = ({
   const { dispatch, setModulesGlobal, modulesGlobal, userGlobal } =
     useContext(ModalContext);
 
-  const { data: dataAccess } = useAccess(userGlobal?.id);
+  const { data: dataAccess } = useAccess(String(userGlobal?.id));
 
   const documentos =
-    (userGlobal.empresaActual?.establecimiento
+    (userGlobal?.empresaActual?.establecimiento
       ?.documentos as ITipoDocsExtentido[]) ?? [];
 
   const loadMenuContext = (menu: string) => {

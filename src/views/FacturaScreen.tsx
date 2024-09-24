@@ -168,7 +168,6 @@ const FacturaScreen = () => {
     setDraft(draft);
   };
 
-  console.log(userGlobal?.empresaActual?.establecimiento?.documentos);
   //const [format, setFormat] = useState<string | undefined>("");
 
   const CPE = userGlobal?.empresaActual?.establecimiento?.documentos?.find(
@@ -191,9 +190,9 @@ const FacturaScreen = () => {
         }
       : {
           ...INITIAL_FACTURA,
-          serie: CPE_SERIES[0].serie,
-          numero: CPE_SERIES[0].numero,
-          numeroConCeros: CPE_SERIES[0].numeroConCeros,
+          serie: CPE_SERIES?.[0]?.serie ?? "",
+          numero: CPE_SERIES?.[0]?.numero ?? "",
+          numeroConCeros: CPE_SERIES?.[0]?.numeroConCeros ?? "",
           //fecha_emision: dayjs(new Date()),
         },
     mode: "onChange",
@@ -1191,36 +1190,42 @@ const FacturaScreen = () => {
                 <div className="font-bold h-1/3 flex justify-center items-start">
                   FACTURA ELECTRÓNICA
                 </div>
-                <div className="h-1/3 flex items-center flex-row w-full justify-between pr-4 pl-4">
-                  <select
-                    {...register("serie", {
-                      onChange: (e) => {
-                        const value = e.target.value;
-                        const serie = obtenerSerie(value);
-                        setValue("numero", String(serie?.numero));
-                        setValue(
-                          "numeroConCeros",
-                          String(serie?.numeroConCeros)
+                {CPE_SERIES.length > 0 ? (
+                  <div className="h-1/3 flex items-center flex-row w-full justify-between pr-4 pl-4">
+                    <select
+                      {...register("serie", {
+                        onChange: (e) => {
+                          const value = e.target.value;
+                          const serie = obtenerSerie(value);
+                          setValue("numero", String(serie?.numero));
+                          setValue(
+                            "numeroConCeros",
+                            String(serie?.numeroConCeros)
+                          );
+                        },
+                      })}
+                      className="border w-5/12 h-full outline-none cursor-pointer"
+                    >
+                      {CPE_SERIES.map((item) => {
+                        return (
+                          <option key={item.id} disabled={!item.estado}>
+                            {String(item.serie).toUpperCase()}
+                          </option>
                         );
-                      },
-                    })}
-                    className="border w-5/12 h-full outline-none cursor-pointer"
-                  >
-                    {CPE_SERIES.map((item) => {
-                      return (
-                        <option key={item.id} disabled={!item.estado}>
-                          {String(item.serie).toUpperCase()}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <span className="w-2/12 flex justify-center items-center">
-                    -
-                  </span>
-                  <label className="w-5/12 border h-full flex justify-center items-center">
-                    {watch("numeroConCeros")}
-                  </label>
-                </div>
+                      })}
+                    </select>
+                    <span className="w-2/12 flex justify-center items-center">
+                      -
+                    </span>
+                    <label className="w-5/12 border h-full flex justify-center items-center">
+                      {watch("numeroConCeros")}
+                    </label>
+                  </div>
+                ) : (
+                  <div className="h-1/3 flex items-center flex-row w-full justify-center pr-4 pl-4 text-primary">
+                    No tienes series asignadas
+                  </div>
+                )}
               </div>
             </div>
             {/* FIN HEADER */}
@@ -1360,11 +1365,15 @@ const FacturaScreen = () => {
                 ) : (
                   <div className="flex justify-center items-center flex-col">
                     <MoveToInboxIcon
-                      onClick={() => setActiveModalProductos(true)}
+                      onClick={() => {
+                        if (CPE_SERIES.length === 0) return;
+                        setActiveModalProductos(true);
+                      }}
                       sx={{ width: 64, height: 84 }}
                       className="text-borders cursor-pointer"
                     />
                     <ButtonSimple
+                      disabled={CPE_SERIES.length === 0}
                       onClick={() => {
                         setActiveModalProductos(true);
                       }}
@@ -1563,6 +1572,7 @@ const FacturaScreen = () => {
                   {/* BOTON AGREGAR OBSERVACIONES */}
                   <div className="flex w-full flex-col mt-[4px]">
                     <ButtonSimple
+                      disabled={CPE_SERIES.length === 0}
                       onClick={() => setActiveModalObs(true)}
                       className="w-full !border !border-dashed !border-bordersAux"
                     >
@@ -1577,7 +1587,7 @@ const FacturaScreen = () => {
                   <div className="flex w-1/2">
                     <Button
                       fullWidth
-                      disabled={loading}
+                      disabled={loading || CPE_SERIES.length === 0}
                       variant="contained"
                       color="secondary"
                       onClick={() => handleOpenConfirmDialog(true)}
@@ -1599,7 +1609,7 @@ const FacturaScreen = () => {
                   <div className="flex w-1/2">
                     <Button
                       fullWidth
-                      disabled={loading}
+                      disabled={loading || CPE_SERIES.length === 0}
                       variant="contained"
                       color="primary"
                       onClick={() => handleOpenConfirmDialog(false)}
