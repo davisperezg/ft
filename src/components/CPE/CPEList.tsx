@@ -45,17 +45,17 @@ const CPEList = () => {
     pageSize: paginationSize,
   });
 
-  const empresa = userGlobal.empresaActual.id;
-  const establecimiento = userGlobal.empresaActual.establecimiento.id;
+  const empresa = userGlobal?.empresaActual?.id;
+  const establecimiento = userGlobal?.empresaActual?.establecimiento?.id;
   const [propsPagination, setPropsPagination] = useState<any>();
   const [logs, setLogs] = useState<ILog[]>([]);
   const [minimizar, setMinimizar] = useState<boolean>(false);
   const DECIMAL = 6;
 
-  const configuracionesEstablecimiento = userGlobal.empresaActual
-    .establecimiento.configuraciones as IConfigEstablecimiento[];
+  const configuracionesEstablecimiento = userGlobal?.empresaActual
+    ?.establecimiento?.configuraciones as IConfigEstablecimiento[];
 
-  const ENVIA_DIRECTO_SUNAT = configuracionesEstablecimiento.some(
+  const ENVIA_DIRECTO_SUNAT = configuracionesEstablecimiento?.some(
     (config) => config.enviar_inmediatamente_a_sunat
   );
 
@@ -68,8 +68,8 @@ const CPEList = () => {
     queryKey: ["invoices", pagination.pageIndex],
     queryFn: () =>
       listInvoices(
-        empresa,
-        establecimiento,
+        Number(empresa),
+        Number(establecimiento),
         pagination.pageIndex,
         paginationSize
       ),
@@ -495,8 +495,8 @@ const CPEList = () => {
         queryKey: ["invoices", pagination.pageIndex],
         queryFn: () =>
           listInvoices(
-            empresa,
-            establecimiento,
+            Number(empresa),
+            Number(establecimiento),
             pagination.pageIndex,
             pagination.pageSize
           ),
@@ -519,8 +519,8 @@ const CPEList = () => {
         queryKey: ["invoices", pagination.pageIndex + 1],
         queryFn: async () =>
           await listInvoices(
-            empresa,
-            establecimiento,
+            Number(empresa),
+            Number(establecimiento),
             pagination.pageIndex + 1,
             pagination.pageSize
           ),

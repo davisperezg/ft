@@ -17,7 +17,7 @@ interface IAuthTipoDocs extends Pick<ITipoDoc, "id" | "nombre" | "codigo"> {
   series: IAuthSeries[];
 }
 
-interface IAuthEstablecimiento
+export interface IAuthEstablecimiento
   extends Partial<
     Pick<IEstablecimiento, "id" | "codigo" | "denominacion" | "estado">
   > {

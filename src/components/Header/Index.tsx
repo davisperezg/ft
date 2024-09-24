@@ -3,12 +3,37 @@ import logo from "../../assets/logo_systemfact.png";
 import { ModalContext } from "../../context/modalContext";
 import { storage } from "../../utils/storage";
 import { DialogActionKind } from "../../reducers/dialogReducer";
+import {
+  IAuthEmpresa,
+  IAuthEmpresas,
+  IAuthEstablecimiento,
+  IAuthPayload,
+} from "../../interface/auth.interface";
 
-const Header = ({ result }: any) => {
-  const { setUserGlobal, userGlobal, dialogState } = useContext(ModalContext);
+interface IHeader {
+  result: IAuthPayload | undefined;
+}
+
+const Header = ({ result }: IHeader) => {
+  const { setUserGlobal, dialogState, userGlobal } = useContext(ModalContext);
   const [isDropdown, setDropdown] = useState(false);
   const labelRef = useRef<HTMLLabelElement>(null);
   const [selectedOption, setSelectedOption] = useState("");
+  //const [empresaActual, setEmpresaActual] = useState<IAuthEmpresa | null>(null);
+  //const [establecimientoActual, setEstablecimientoActual] =
+  useState<IAuthEstablecimiento | null>(null);
+  const [EMPRESAS_ASIGNADAS, setEmpresasAsignadas] = useState<IAuthEmpresas[]>(
+    []
+  );
+  const [EMPRESAS_INACTIVAS, setEmpresasInactivas] = useState<boolean | null>(
+    null
+  );
+  // const [ESTABLECIMIENTOS_ASIGNADOS, setEstablecimientosAsignadas] = useState<
+  //   IAuthEstablecimiento[]
+  // >([]);
+  const [ESTABLECIMIENTOS_INACTIVOS, setEstablecimientosInactivos] = useState<
+    boolean | null
+  >(null);
 
   const closeApp = () => {
     storage.clear("SESSION");
@@ -47,49 +72,106 @@ const Header = ({ result }: any) => {
   }, [isDropdown, setDropdown]);
 
   useEffect(() => {
-    if (result?.data) {
-      setUserGlobal(result?.data);
+    if (result) {
+      setUserGlobal(result);
 
-      if (sessionStorage.getItem("empresaActual")) {
-        console.log("ya existe");
-        const empresaActual = JSON.parse(
-          String(sessionStorage.getItem("empresaActual"))
+      const empresasAsignadas = result.empresas;
+      console.log("empresasAsignadas", empresasAsignadas);
+      if (empresasAsignadas && empresasAsignadas?.length > 0) {
+        setEmpresasAsignadas(empresasAsignadas);
+
+        const hayEmpresasInactivas = empresasAsignadas.every(
+          (emp) => !emp.estado
         );
+        setEmpresasInactivas(hayEmpresasInactivas);
 
-        if (!selectedOption) {
-          setSelectedOption(
-            `idEmpresa:${empresaActual?.id},idEstablecimiento:${empresaActual?.establecimiento?.id}`
+        const empresaStorage = sessionStorage.getItem("empresaActual");
+        console.log("empresaStorage", empresaStorage);
+
+        // Si ya existe una empresa seleccionada por defecto
+        if (empresaStorage) {
+          const empresaSeleccion = JSON.parse(
+            String(empresaStorage)
+          ) as IAuthEmpresa;
+
+          const { id, establecimiento } = empresaSeleccion;
+
+          if (!selectedOption) {
+            setSelectedOption(
+              `idEmpresa:${id},idEstablecimiento:${establecimiento?.id}`
+            );
+          }
+
+          const empresaData = empresasAsignadas?.find(
+            (emp) => emp.id === empresaSeleccion?.id
+          ) as IAuthEmpresas;
+
+          //setEmpresaActual(empresaData);
+
+          const establecimientosAsignadas =
+            empresaData?.establecimientos as IAuthEstablecimiento[];
+          //setEstablecimientosAsignadas(establecimientosAsignadas);
+
+          const hayEstablecimientosInactivas = establecimientosAsignadas?.every(
+            (emp) => !emp.estado
           );
-        }
+          setEstablecimientosInactivos(Boolean(hayEstablecimientosInactivas));
 
-        if (result?.data?.empresas?.length > 0) {
-          const empresaActual = result?.data?.empresaActual;
+          // Si un establecimiento esta desactivado tomara uno por defecto
+          const establecimientoSeleccionado = empresaSeleccion?.establecimiento;
+
+          if (!establecimientoSeleccionado) {
+            sessionStorage.removeItem("empresaActual");
+            return;
+          }
+
+          const establecimientoData = establecimientosAsignadas?.find(
+            (est) => est.id === establecimientoSeleccionado?.id
+          ) as IAuthEstablecimiento;
+          //setEstablecimientoActual(establecimientoData);
+
+          // Si todos los establecimientos estan desactivados
+          if (establecimientosAsignadas?.every((est) => !est.estado)) {
+            sessionStorage.removeItem("empresaActual");
+            return;
+          } else {
+            // Buscara otro establecimiendo con estado activo y lo tomara por defecto
+            if (!establecimientoData.estado) {
+              sessionStorage.removeItem("empresaActual");
+              window.location.reload();
+              return;
+            }
+          }
+          // Fin Si un establecimiento esta desactivado tomara uno por defecto
 
           setUserGlobal({
-            ...result?.data,
-            empresaActual: empresaActual ?? null,
+            ...result,
+            empresaActual: empresaSeleccion ?? null,
           });
 
           sessionStorage.setItem(
             "empresaActual",
-            JSON.stringify(empresaActual ?? null)
+            JSON.stringify(empresaSeleccion ?? null)
           );
-        }
-      } else {
-        if (result?.data?.empresas?.length > 0) {
-          const empresaActual = result?.data?.empresaActual;
-          console.log("empresaActual", result?.data?.empresaActual);
-          setSelectedOption(
-            `idEmpresa:${empresaActual?.id},idEstablecimiento:${empresaActual?.establecimiento?.id}`
-          );
-          // setUserGlobal({
-          //   ...result?.data,
-          //   empresa,
-          // });
-          sessionStorage.setItem(
-            "empresaActual",
-            JSON.stringify(empresaActual)
-          );
+        } else {
+          // Si no existe una empresa por defecto, se asignara una
+          console.log("result", result);
+          if (result.empresaActual) {
+            const empresaDefault = result.empresaActual as IAuthEmpresa;
+            //setEmpresaActual(empresaDefault);
+
+            setSelectedOption(
+              `idEmpresa:${empresaDefault?.id},idEstablecimiento:${empresaDefault?.establecimiento?.id}`
+            );
+
+            sessionStorage.setItem(
+              "empresaActual",
+              JSON.stringify(empresaDefault)
+            );
+          }
+          // else {
+          //   setEmpresaActual(null);
+          // }
         }
       }
     }
@@ -122,25 +204,26 @@ const Header = ({ result }: any) => {
     const idEmpresa = valores.idEmpresa;
     const idEstablecimiento = valores.idEstablecimiento;
 
-    const getEmpresa = userGlobal?.empresas?.find(
-      (empresa) => empresa.id === idEmpresa
+    const getEmpresa = EMPRESAS_ASIGNADAS?.find(
+      (empresa: any) => empresa.id === idEmpresa
     );
 
     const getEstablecimiento = getEmpresa?.establecimientos?.find(
-      (est) => est.id === idEstablecimiento
+      (est: any) => est.id === idEstablecimiento
     );
 
-    const empresa = {
-      ...getEmpresa,
-      establecimiento: getEstablecimiento,
-    };
-    console.log("cambiando empresa", empresa);
+    if (getEmpresa) {
+      const { establecimientos: _, ...rest } = getEmpresa;
 
-    if (empresa) {
+      const empresaNueva = {
+        ...rest,
+        establecimiento: getEstablecimiento,
+      };
+
       const cambiar = confirm("Estas seguro que quieres cambiar de sucursal?");
       if (cambiar) {
         setSelectedOption(selectedValue);
-        sessionStorage.setItem("empresaActual", JSON.stringify(empresa));
+        sessionStorage.setItem("empresaActual", JSON.stringify(empresaNueva));
         location.reload();
       }
     }
@@ -162,52 +245,72 @@ const Header = ({ result }: any) => {
             <img src={logo} width={130} height={50} />
           </h1>
           <div className="flex flex-row select-none">
-            {result?.data?.empresas?.length === 0 && (
+            {EMPRESAS_ASIGNADAS?.length === 0 ? (
+              (!userGlobal?.empresas && !userGlobal?.empresaActual) || (
+                <div className="mr-[20px]">
+                  <span className="text-primary font-medium">
+                    Usted no pertenece a ninguna empresa.
+                  </span>
+                </div>
+              )
+            ) : EMPRESAS_INACTIVAS ? (
               <div className="mr-[20px]">
                 <span className="text-primary font-medium">
-                  Usted no pertenece a ninguna empresa.
+                  Tus empresas estan inactivas.
                 </span>
               </div>
+            ) : (
+              ESTABLECIMIENTOS_INACTIVOS && (
+                <div className="mr-[20px]">
+                  <span className="text-primary font-medium">
+                    Tus establecimientos estan inactivos.
+                  </span>
+                </div>
+              )
             )}
-            {result?.data?.empresas?.length > 0 && (
-              <>
-                <div className="mr-[20px] w-[150px]">
-                  <select
-                    className="w-full cursor-pointer border outline-none"
-                    onChange={handleSelectChange}
-                    value={selectedOption}
-                  >
-                    {userGlobal?.empresas?.map((item: any) => {
-                      return (
-                        <optgroup
-                          key={item.ruc}
-                          label={`${item.nombre_comercial} - ${
-                            item.estado ? "Activo" : "Inactivo"
-                          }`}
-                        >
-                          {item.establecimientos.map((est: any) => {
-                            return (
-                              <option
-                                key={est.id}
-                                disabled={!est.estado || !item.estado}
-                                value={`idEmpresa:${item.id},idEstablecimiento:${est.id}`}
-                              >
-                                {`${est.codigo} - ${est.denominacion} -
+
+            {!EMPRESAS_ASIGNADAS ||
+              EMPRESAS_ASIGNADAS?.length === 0 ||
+              EMPRESAS_INACTIVAS ||
+              ESTABLECIMIENTOS_INACTIVOS || (
+                <>
+                  <div className="mr-[20px] w-[150px]">
+                    <select
+                      className="w-full cursor-pointer border outline-none"
+                      onChange={handleSelectChange}
+                      value={selectedOption}
+                    >
+                      {EMPRESAS_ASIGNADAS?.map((item) => {
+                        return (
+                          <optgroup
+                            key={item.ruc}
+                            label={`${item.nombre_comercial} - ${
+                              item.estado ? "Activo" : "Inactivo"
+                            }`}
+                          >
+                            {item.establecimientos?.map((est) => {
+                              return (
+                                <option
+                                  key={est.id}
+                                  disabled={!est.estado || !item.estado}
+                                  value={`idEmpresa:${item.id},idEstablecimiento:${est.id}`}
+                                >
+                                  {`${est.codigo} - ${est.denominacion} -
                                 ${
                                   item.estado && est.estado
                                     ? "Activo"
                                     : "Inactivo"
                                 }`}
-                              </option>
-                            );
-                          })}
-                        </optgroup>
-                      );
-                    })}
-                  </select>
-                </div>
-              </>
-            )}
+                                </option>
+                              );
+                            })}
+                          </optgroup>
+                        );
+                      })}
+                    </select>
+                  </div>
+                </>
+              )}
 
             <div>
               <label className="mr-[10px] dark:text-white font-bold">
@@ -220,7 +323,7 @@ const Header = ({ result }: any) => {
                 onClick={handleDropdown}
                 className="mr-[10px] dark:text-white font-bold cursor-pointer select-none"
               >
-                {result?.data.email_usuario}
+                {result?.email_usuario}
               </label>
             </div>
           </div>

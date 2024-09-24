@@ -63,8 +63,8 @@ const CPEAcctionList = memo(({ row, comunicatBaja }: CPEAcctionListProps) => {
   const { socket } = useSocketInvoice();
   const [notify, setNotify] = useState(initialNotify);
   const { userGlobal } = useContext(ModalContext);
-  const configuracionesEstablecimiento = userGlobal.empresaActual
-    .establecimiento.configuraciones as IConfigEstablecimiento[];
+  const configuracionesEstablecimiento = userGlobal?.empresaActual
+    ?.establecimiento?.configuraciones as IConfigEstablecimiento[];
 
   const ENVIA_DIRECTO_SUNAT = configuracionesEstablecimiento.some(
     (config) => config.enviar_inmediatamente_a_sunat

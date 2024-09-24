@@ -61,7 +61,7 @@ export function jwtInterceptor() {
             axios.defaults.headers.common["Authorization"] = "Bearer " + token;
             return axios(originalRequest);
           }
-        } catch (e) {
+        } catch (_) {
           //window.location.href = "/";
           storage.clear("SESSION");
           location.reload();

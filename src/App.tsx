@@ -9,6 +9,8 @@ import Header from "./components/Header/Index";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { DndProvider } from "react-dnd";
 import { TableProvider } from "./context/tableContext";
+import { IAuthPayload } from "./interface/auth.interface";
+import { IError } from "./interface/error.interface";
 
 function App() {
   const [sessionActive, setSession] = useState(false);
@@ -19,9 +21,12 @@ function App() {
     //error,
     isLoading,
     refetch,
-  } = useQuery({
+  } = useQuery<IAuthPayload, IError>({
     queryKey: ["auth"],
-    queryFn: async () => await whois(),
+    queryFn: async () => {
+      const response = await whois();
+      return response.data; // Assuming the desired data is in the `data` property of the Axios response
+    },
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchIntervalInBackground: true,
@@ -80,8 +85,7 @@ function App() {
     }
   } else {
     if (result) {
-      const { data } = result;
-      storage.setItem("user", JSON.stringify(data), "SESSION");
+      storage.setItem("user", JSON.stringify(result), "SESSION");
       window.history.replaceState({}, "", window.location.origin);
     }
   }
