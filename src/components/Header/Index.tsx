@@ -76,7 +76,7 @@ const Header = ({ result }: IHeader) => {
       setUserGlobal(result);
 
       const empresasAsignadas = result.empresas;
-      console.log("empresasAsignadas", empresasAsignadas);
+
       if (empresasAsignadas && empresasAsignadas?.length > 0) {
         setEmpresasAsignadas(empresasAsignadas);
 
@@ -86,7 +86,6 @@ const Header = ({ result }: IHeader) => {
         setEmpresasInactivas(hayEmpresasInactivas);
 
         const empresaStorage = sessionStorage.getItem("empresaActual");
-        console.log("empresaStorage", empresaStorage);
 
         // Si ya existe una empresa seleccionada por defecto
         if (empresaStorage) {
@@ -105,7 +104,6 @@ const Header = ({ result }: IHeader) => {
           const empresaData = empresasAsignadas?.find(
             (emp) => emp.id === empresaSeleccion?.id
           ) as IAuthEmpresas;
-
           //setEmpresaActual(empresaData);
 
           const establecimientosAsignadas =
@@ -146,16 +144,20 @@ const Header = ({ result }: IHeader) => {
 
           setUserGlobal({
             ...result,
-            empresaActual: empresaSeleccion ?? null,
+            empresaActual:
+              { ...empresaSeleccion, establecimiento: establecimientoData } ??
+              null,
           });
 
           sessionStorage.setItem(
             "empresaActual",
-            JSON.stringify(empresaSeleccion ?? null)
+            JSON.stringify(
+              { ...empresaSeleccion, establecimiento: establecimientoData } ??
+                null
+            )
           );
         } else {
           // Si no existe una empresa por defecto, se asignara una
-          console.log("result", result);
           if (result.empresaActual) {
             const empresaDefault = result.empresaActual as IAuthEmpresa;
             //setEmpresaActual(empresaDefault);
