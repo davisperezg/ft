@@ -25,6 +25,8 @@ import {
 import { TableContext } from "../../context/tableContext";
 import { useDrag, useDrop } from "react-dnd";
 import { ModalContext } from "../../context/modalContext";
+import { FaUndo } from "react-icons/fa";
+import { IoClose } from "react-icons/io5";
 
 interface IComponentTableProps {
   loading: boolean;
@@ -361,6 +363,8 @@ const ComponentTable = ({
   setPaginationState,
   openEdit,
 }: IComponentTableProps) => {
+  console.log("getItemsRemoves", getItemsRemoves);
+  console.log("getItemsRestores", getItemsRestores);
   const { paginationSize, setPaginationSize } = useContext(TableContext);
 
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
@@ -683,7 +687,7 @@ const ComponentTable = ({
                     }
                   }}
                 >
-                  x
+                  <IoClose />
                 </label>
               </div>
             )}
@@ -707,7 +711,7 @@ const ComponentTable = ({
                     }
                   }}
                 >
-                  <i className="gg-undo w-[11px] h-[11px]"></i>
+                  <FaUndo />
                 </label>
               </div>
             )}
