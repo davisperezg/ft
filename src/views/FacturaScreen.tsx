@@ -174,6 +174,9 @@ const FacturaScreen = () => {
     (doc) => String(doc.nombre).toUpperCase() === "FACTURA"
   );
 
+  const configuracionesEstablecimiento =
+    userGlobal?.empresaActual?.establecimiento?.configuraciones;
+
   const CPE_SERIES = useMemo(
     () => CPE?.series.filter((serie) => serie.estado) || [],
     [CPE?.series]
@@ -665,8 +668,14 @@ const FacturaScreen = () => {
                   className="text-center flex justify-center"
                 >
                   {invoiceRegistered?.borrador
-                    ? "Guardado. Los borradores no se envian a sunat."
-                    : "Generado."}
+                    ? "Guardado. Los borradores no se envian a SUNAT."
+                    : `${
+                        configuracionesEstablecimiento?.find(
+                          (config) => config.enviar_inmediatamente_a_sunat
+                        )
+                          ? "Generado con éxito."
+                          : "Generado con éxito. Segun configuraciones este documento no envia a SUNAT."
+                      }`}
                 </Alert>
               </DialogTitle>
               <DialogContent>
