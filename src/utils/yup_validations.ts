@@ -310,6 +310,15 @@ export const schemaFormEmpresa = yup
   })
   .required();
 
+export const schemaFormInvoice = yup
+  .object({
+    ruc: yup
+      .string()
+      .required("Ingrese RUC.")
+      .matches(/^(20|10)\d{9}$/, "El RUC debe ser válido."),
+  })
+  .required();
+
 export const schemaFormLogin = yup.object({
   username: yup.string().required("Por favor ingresa tu usuario."),
   password: yup.string().required("Por favor ingresa tu contraseña."),

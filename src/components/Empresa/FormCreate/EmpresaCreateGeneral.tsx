@@ -1,5 +1,5 @@
 import { Controller, useFormContext, useWatch } from "react-hook-form";
-import { getPersona } from "../../../api/ext";
+import { getRucSunat } from "../../../api/ext";
 import { SelectSimple } from "../../Select/SelectSimple";
 import {
   useDepartamentos,
@@ -117,7 +117,9 @@ const EmpresaCreateGeneral = () => {
   const obtenerDepartamento = async (departamento: string) => {
     const findDepartamento =
       listDepartamentos &&
-      listDepartamentos.find((dtp) => dtp.label === departamento);
+      listDepartamentos.find(
+        (dtp) => dtp.value === departamento.toUpperCase().trim()
+      );
 
     const queryDpto = findDepartamento
       ? findDepartamento
@@ -132,7 +134,10 @@ const EmpresaCreateGeneral = () => {
 
   const obtenerProvincia = async (provincia: string) => {
     const findProvincia =
-      listProvincias && listProvincias.find((dtp) => dtp.label === provincia);
+      listProvincias &&
+      listProvincias.find(
+        (dtp) => dtp.value === provincia.toUpperCase().trim()
+      );
 
     const queryPrv = findProvincia ? findProvincia : { value: "-", label: "-" };
 
@@ -145,7 +150,8 @@ const EmpresaCreateGeneral = () => {
 
   const obtenerDistrito = async (distrito: string) => {
     const findDistrito =
-      listDistritos && listDistritos.find((dtp) => dtp.label === distrito);
+      listDistritos &&
+      listDistritos.find((dtp) => dtp.value === distrito.toUpperCase().trim());
 
     const queryDsto = findDistrito ? findDistrito : { value: "-", label: "-" };
 
@@ -163,14 +169,47 @@ const EmpresaCreateGeneral = () => {
         toast.error("Ingrese RUC");
         return setLoadingRuc(false);
       }
-      const entidad = await getPersona("ruc", getValues("ruc"));
-      const { departamento, provincia, distrito, ubigeo } = entidad;
-      setValueModel("razon_social", entidad.razonSocial);
-      setValueModel("nombre_comercial", entidad.nombre);
-      setValueModel("domicilio_fiscal", entidad.direccion);
-      await obtenerDepartamento(departamento);
-      await obtenerProvincia(provincia);
-      await obtenerDistrito(distrito);
+      //const entidad = await getPersona("ruc", getValues("ruc"));
+      const entidad = await getRucSunat(getValues("ruc"));
+      if (!entidad.lista) {
+        toast.error(entidad.error);
+        setLoadingRuc(false);
+        setValueModel("razon_social", "");
+        setValueModel("nombre_comercial", "");
+        setValueModel("domicilio_fiscal", "");
+        setValueModel("departamento", { value: "-", label: "-" });
+        setValueModel("provincia", { value: "-", label: "-" });
+        setValueModel("distrito", { value: "-", label: "-" });
+        setValueModel("ubigeo", "");
+        setValueModel("urbanizacion", "");
+        return;
+      }
+
+      const {
+        apenomdenunciado,
+        desdepartamento,
+        desprovincia,
+        //desdistrito,
+        iddepartamento,
+        idprovincia,
+        iddistrito,
+        direstablecimiento,
+      } = entidad.lista[0];
+      const ubigeo = `${iddepartamento}${idprovincia}${iddistrito} `;
+      const departamento = String(desdepartamento).toUpperCase().trim();
+      const provincia = String(desprovincia).toUpperCase().trim();
+      //const distrito = String(desdistrito).toUpperCase().trim();
+      const direccion = String(direstablecimiento).toUpperCase().trim();
+      const razonSocial = String(apenomdenunciado).toUpperCase().trim();
+      setValueModel("razon_social", razonSocial);
+      setValueModel("nombre_comercial", razonSocial);
+      setValueModel(
+        "domicilio_fiscal",
+        `${direccion} ${provincia} ${departamento}`
+      );
+      await obtenerDepartamento(iddepartamento);
+      await obtenerProvincia(iddepartamento + idprovincia);
+      await obtenerDistrito(iddepartamento + idprovincia + iddistrito);
       setValueModel("ubigeo", ubigeo);
       setValueModel("urbanizacion", "-");
     } catch (e) {
@@ -238,6 +277,26 @@ const EmpresaCreateGeneral = () => {
                     error={!!errors.ruc}
                     helperText={errors.ruc?.message}
                     inputProps={{ maxLength: 11 }}
+                    onChange={(e) => {
+                      field.onChange(e);
+                      setValueModel("razon_social", "");
+                      setValueModel("nombre_comercial", "");
+                      setValueModel("domicilio_fiscal", "");
+                      setValueModel("departamento", {
+                        value: "-",
+                        label: "-",
+                      });
+                      setValueModel("provincia", {
+                        value: "-",
+                        label: "-",
+                      });
+                      setValueModel("distrito", {
+                        value: "-",
+                        label: "-",
+                      });
+                      setValueModel("ubigeo", "");
+                      setValueModel("urbanizacion", "");
+                    }}
                   />
                 )}
               />

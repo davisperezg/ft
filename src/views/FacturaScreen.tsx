@@ -30,7 +30,7 @@ import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
 import InputDate from "../components/Material/Input/InputDate";
 import { IProducto } from "../interface/producto.interface";
 import { IInvoice } from "../interface/invoice.interface";
-import { getPersona } from "../api/ext";
+import { getRucSunat } from "../api/ext";
 import { fixed, isError, round } from "../utils/functions";
 import { toast } from "react-toastify";
 import { useMonedas } from "../hooks/useMoneda";
@@ -49,6 +49,8 @@ import { FaCheck } from "react-icons/fa";
 import { MdOutlineClose } from "react-icons/md";
 import { DialogActionKind } from "../reducers/dialogReducer";
 import { IAuthEmpresa } from "../interface/auth.interface";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { schemaFormInvoice } from "../utils/yup_validations";
 
 const INITIAL_PRODUCTO: IProducto = {
   tipAfeIgv: "10",
@@ -198,6 +200,7 @@ const FacturaScreen = () => {
           numeroConCeros: CPE_SERIES?.[0]?.numeroConCeros ?? "",
           //fecha_emision: dayjs(new Date()),
         },
+    resolver: yupResolver(schemaFormInvoice),
     mode: "onChange",
   });
 
@@ -404,17 +407,27 @@ const FacturaScreen = () => {
   const consultarRuc = async () => {
     setOpenSearch(false);
     try {
-      const entidad = await getPersona("ruc", getValues("ruc"));
-      const { departamento, provincia, distrito, direccion } = entidad;
-      setValue("cliente", entidad.razonSocial);
-      if (distrito) {
-        setValue(
-          "direccion",
-          `${direccion} ${distrito} ${provincia} ${departamento}`
-        );
-      } else {
-        setValue("direccion", `${direccion}`);
+      const entidad = await getRucSunat(getValues("ruc"));
+      if (!entidad.lista) {
+        toast.error(entidad.error);
+        setValue("cliente", "");
+        setValue("direccion", "");
+        return;
       }
+
+      const {
+        apenomdenunciado,
+        desdepartamento,
+        desprovincia,
+        direstablecimiento,
+      } = entidad.lista[0];
+
+      const departamento = String(desdepartamento).toUpperCase().trim();
+      const provincia = String(desprovincia).toUpperCase().trim();
+      const direccion = String(direstablecimiento).toUpperCase().trim();
+      const razonSocial = String(apenomdenunciado).toUpperCase().trim();
+      setValue("cliente", razonSocial);
+      setValue("direccion", `${direccion} ${provincia} ${departamento}`);
     } catch (e) {
       if (isError(e)) {
         toast.error(e.response.data.message);
@@ -973,6 +986,8 @@ const FacturaScreen = () => {
                             hiddenLabel
                             variant="filled"
                             autoComplete="off"
+                            error={!!errors.ruc}
+                            helperText={errors.ruc?.message}
                             inputProps={{ maxLength: 11 }}
                             placeholder="Número de documento"
                             onChange={(e) => {
