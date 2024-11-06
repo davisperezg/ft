@@ -51,6 +51,7 @@ import { DialogActionKind } from "../reducers/dialogReducer";
 import { IAuthEmpresa } from "../interface/auth.interface";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { schemaFormInvoice } from "../utils/yup_validations";
+import { FaCloudUploadAlt } from "react-icons/fa";
 
 const INITIAL_PRODUCTO: IProducto = {
   tipAfeIgv: "10",
@@ -108,7 +109,7 @@ interface IProductTable {
 }
 
 interface IInvoiceRegistered {
-  aceptada_sunat: number;
+  aceptada_sunat: string;
   borrador: boolean;
   cdr: string;
   codigo_sunat: number;
@@ -677,7 +678,11 @@ const FacturaScreen = () => {
               <DialogTitle id="alert-dialog-title-success">
                 <Alert
                   icon={false}
-                  severity="success"
+                  severity={
+                    invoiceRegistered?.aceptada_sunat === "RECHAZADA"
+                      ? "error"
+                      : "success"
+                  }
                   className="text-center flex justify-center"
                 >
                   {invoiceRegistered?.borrador
@@ -686,7 +691,9 @@ const FacturaScreen = () => {
                         configuracionesEstablecimiento?.find(
                           (config) => config.enviar_inmediatamente_a_sunat
                         )
-                          ? "Generado con éxito."
+                          ? invoiceRegistered?.aceptada_sunat === "RECHAZADA"
+                            ? "Generado con rechazo."
+                            : "Generado con éxito."
                           : "Generado con éxito. Segun configuraciones este documento no envia a SUNAT."
                       }`}
                 </Alert>
@@ -702,158 +709,184 @@ const FacturaScreen = () => {
                 <h4 className="flex justify-center items-center text-[24px]">
                   TOTAL: {invoiceRegistered?.total}
                 </h4>
-                <div className="w-full border py-3 px-5 flex justify-center items-center mt-2">
-                  <Button
-                    component="a"
-                    target="_blank"
-                    href={invoiceRegistered?.pdfA4}
-                    rel="noopener noreferrer"
-                    variant="contained"
-                    color="primary"
-                  >
-                    IMPRIMIR
-                  </Button>
-                </div>
-                <div className="w-full border py-3 px-5 flex gap-2 justify-center items-center mt-2">
-                  <Button
-                    component="a"
-                    target="_blank"
-                    href={invoiceRegistered?.pdfA4}
-                    rel="noopener noreferrer"
-                    variant="contained"
-                    color="secondary"
-                    className="hover:text-white"
-                  >
-                    VER PDF
-                  </Button>
-                  <Button
-                    component="a"
-                    href={invoiceRegistered?.xml}
-                    variant="contained"
-                    color="success"
-                    className="hover:text-white"
-                  >
-                    DESCARGAR XML
-                  </Button>
-                  <Button
-                    component="a"
-                    href={invoiceRegistered?.cdr}
-                    variant="contained"
-                    color="primary"
-                    className="hover:text-white"
-                  >
-                    DESCARGAR CDR
-                  </Button>
-                </div>
+                {(!invoiceRegistered?.aceptada_sunat &&
+                  invoiceRegistered?.borrador) || (
+                  <div className="w-full border py-3 px-5 flex justify-center items-center mt-2">
+                    <Button
+                      component="a"
+                      target="_blank"
+                      href={invoiceRegistered?.pdfA4}
+                      rel="noopener noreferrer"
+                      variant="contained"
+                      color="primary"
+                    >
+                      IMPRIMIR
+                    </Button>
+                  </div>
+                )}
+
+                {(!invoiceRegistered?.aceptada_sunat &&
+                  invoiceRegistered?.borrador) || (
+                  <div className="w-full border py-3 px-5 flex gap-2 justify-center items-center mt-2">
+                    <Button
+                      component="a"
+                      target="_blank"
+                      href={invoiceRegistered?.pdfA4}
+                      rel="noopener noreferrer"
+                      variant="contained"
+                      color="secondary"
+                      className="hover:text-white"
+                    >
+                      VER PDF
+                    </Button>
+
+                    {/* https://greenter.dev/faq/#facturas */}
+                    {/* 0100 a 1999	Excepciones	Corregir y volver a enviar la factura */}
+                    {/* 2000 a 3999	Errores (Rechazo)	Emitir una nueva factura */}
+                    {/* >4000	Observaciones	Corregir en futuras facturas */}
+                    {invoiceRegistered?.aceptada_sunat === "EXCEPCION" ||
+                      !configuracionesEstablecimiento?.some(
+                        (config) => config.enviar_inmediatamente_a_sunat
+                      ) || (
+                        <>
+                          <Button
+                            component="a"
+                            href={invoiceRegistered?.xml}
+                            variant="contained"
+                            color="success"
+                            className="hover:text-white"
+                          >
+                            DESCARGAR XML
+                          </Button>
+                          <Button
+                            component="a"
+                            href={invoiceRegistered?.cdr}
+                            variant="contained"
+                            color="primary"
+                            className="hover:text-white"
+                          >
+                            DESCARGAR CDR
+                          </Button>
+                        </>
+                      )}
+                  </div>
+                )}
+
                 <div className="w-full border py-3 px-5 gap-2 flex flex-col justify-center items-center mt-2 cursor-pointer">
-                  <a
-                    onClick={() =>
-                      setOptions({
-                        ...initialOptions,
-                        whatsapp: true,
-                      })
-                    }
-                  >
-                    Enviar al WhatsApp del cliente
-                  </a>
-
-                  {options.whatsapp && (
-                    <div className="flex gap-2">
-                      <div className="flex justify-center items-center">
-                        <label>
-                          +51
-                          <input
-                            className="border outline-none px-2"
-                            type="text"
-                            placeholder="Ingrese celular"
-                            value={nroWsp}
-                            minLength={9}
-                            maxLength={9}
-                            onChange={(e) => setNroWsp(e.target.value)}
-                          />
-                        </label>
-                      </div>
-                      <div className="flex flex-col gap-1 text-[12px]">
+                  {invoiceRegistered?.aceptada_sunat === "RECHAZADA" ||
+                    (!invoiceRegistered?.aceptada_sunat &&
+                      invoiceRegistered?.borrador) || (
+                      <>
                         <a
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          href={`https://web.whatsapp.com/send?phone=51${nroWsp}&text=${encodeURI(`Estimado cliente, Se envía la ${invoiceRegistered?.documento} ${invoiceRegistered?.serie}-${invoiceRegistered?.correlativo_registrado}. Para ver click en el siguiente enlace: https://www.nubefact.com/cpe/bd70e07a-a834-4639-afd9-97277d3bd760.pdf`)}`}
-                          className="border px-2 text-textDefault hover:no-underline hover:bg-bordersAux hover:text-textDefault"
+                          onClick={() =>
+                            setOptions({
+                              ...initialOptions,
+                              whatsapp: true,
+                            })
+                          }
                         >
-                          Enviar por WhatsApp Web
+                          Enviar al WhatsApp del cliente
                         </a>
+
+                        {options.whatsapp && (
+                          <div className="flex gap-2">
+                            <div className="flex justify-center items-center">
+                              <label>
+                                +51
+                                <input
+                                  className="border outline-none px-2"
+                                  type="text"
+                                  placeholder="Ingrese celular"
+                                  value={nroWsp}
+                                  minLength={9}
+                                  maxLength={9}
+                                  onChange={(e) => setNroWsp(e.target.value)}
+                                />
+                              </label>
+                            </div>
+                            <div className="flex flex-col gap-1 text-[12px]">
+                              <a
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                href={`https://web.whatsapp.com/send?phone=51${nroWsp}&text=${encodeURI(`Estimado cliente, Se envía la ${invoiceRegistered?.documento} ${invoiceRegistered?.serie}-${invoiceRegistered?.correlativo_registrado}. Para ver click en el siguiente enlace: https://www.nubefact.com/cpe/bd70e07a-a834-4639-afd9-97277d3bd760.pdf`)}`}
+                                className="border px-2 text-textDefault hover:no-underline hover:bg-bordersAux hover:text-textDefault"
+                              >
+                                Enviar por WhatsApp Web
+                              </a>
+                              <a
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                href={`https://api.whatsapp.com/send?phone=51${nroWsp}&text=${encodeURI(`Estimado cliente, Se envía la ${invoiceRegistered?.documento} ${invoiceRegistered?.serie}-${invoiceRegistered?.correlativo_registrado}. Para ver click en el siguiente enlace: https://www.nubefact.com/cpe/bd70e07a-a834-4639-afd9-97277d3bd760.pdf`)}`}
+                                className="border px-2 text-textDefault hover:no-underline hover:bg-bordersAux hover:text-textDefault"
+                              >
+                                Enviar por WhatsApp App
+                              </a>
+                            </div>
+                          </div>
+                        )}
+
                         <a
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          href={`https://api.whatsapp.com/send?phone=51${nroWsp}&text=${encodeURI(`Estimado cliente, Se envía la ${invoiceRegistered?.documento} ${invoiceRegistered?.serie}-${invoiceRegistered?.correlativo_registrado}. Para ver click en el siguiente enlace: https://www.nubefact.com/cpe/bd70e07a-a834-4639-afd9-97277d3bd760.pdf`)}`}
-                          className="border px-2 text-textDefault hover:no-underline hover:bg-bordersAux hover:text-textDefault"
+                          onClick={() =>
+                            setOptions({
+                              ...initialOptions,
+                              correo: true,
+                            })
+                          }
                         >
-                          Enviar por WhatsApp App
+                          Enviar al correo del cliente
                         </a>
-                      </div>
-                    </div>
-                  )}
+                        {options.correo && (
+                          <div className="flex gap-2">
+                            <div className="flex justify-center items-center gap-2">
+                              <label>
+                                Correo: &nbsp;
+                                <input
+                                  className="border outline-none px-2"
+                                  type="email"
+                                  placeholder="Ingrese correo"
+                                  value="correop@gmail.com"
+                                  disabled
+                                  onChange={(e) => setNroWsp(e.target.value)}
+                                />
+                              </label>
+                              <button className="border px-2 hover:bg-bordersAux">
+                                Enviar
+                              </button>
+                            </div>
+                          </div>
+                        )}
 
-                  <a
-                    onClick={() =>
-                      setOptions({
-                        ...initialOptions,
-                        correo: true,
-                      })
-                    }
-                  >
-                    Enviar al correo del cliente
-                  </a>
-                  {options.correo && (
-                    <div className="flex gap-2">
-                      <div className="flex justify-center items-center gap-2">
-                        <label>
-                          Correo: &nbsp;
-                          <input
-                            className="border outline-none px-2"
-                            type="email"
-                            placeholder="Ingrese correo"
-                            value="correop@gmail.com"
-                            disabled
-                            onChange={(e) => setNroWsp(e.target.value)}
-                          />
-                        </label>
-                        <button className="border px-2 hover:bg-bordersAux">
-                          Enviar
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <a
-                    onClick={() =>
-                      setOptions({
-                        ...initialOptions,
-                        correoPersonalizado: true,
-                      })
-                    }
-                  >
-                    Enviar a un correo personalizado
-                  </a>
-                  {options.correoPersonalizado && (
-                    <div className="flex gap-2">
-                      <div className="flex justify-center items-center gap-2">
-                        <label>
-                          Correo: &nbsp;
-                          <input
-                            className="border outline-none px-2"
-                            type="email"
-                            placeholder="Ingrese correo"
-                            value=""
-                            onChange={(e) => setNroWsp(e.target.value)}
-                          />
-                        </label>
-                        <button className="border px-2 hover:bg-bordersAux">
-                          Enviar
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                        <a
+                          onClick={() =>
+                            setOptions({
+                              ...initialOptions,
+                              correoPersonalizado: true,
+                            })
+                          }
+                        >
+                          Enviar a un correo personalizado
+                        </a>
+                        {options.correoPersonalizado && (
+                          <div className="flex gap-2">
+                            <div className="flex justify-center items-center gap-2">
+                              <label>
+                                Correo: &nbsp;
+                                <input
+                                  className="border outline-none px-2"
+                                  type="email"
+                                  placeholder="Ingrese correo"
+                                  value=""
+                                  onChange={(e) => setNroWsp(e.target.value)}
+                                />
+                              </label>
+                              <button className="border px-2 hover:bg-bordersAux">
+                                Enviar
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
 
                   <a onClick={() => setSuccess(false)}>Generar otra FACTURA</a>
                   <a onClick={() => setSuccess(false)}>
@@ -863,11 +896,15 @@ const FacturaScreen = () => {
                     Ver comprobantes
                   </a>
                 </div>
-                <div className="w-full border py-3 px-5 flex justify-center items-center mt-2">
-                  <Button variant="contained" color="primary" fullWidth>
-                    ANULAR o comunicat de baja
-                  </Button>
-                </div>
+                {invoiceRegistered?.aceptada_sunat === "EXCEPCION" ||
+                  invoiceRegistered?.aceptada_sunat === "RECHAZADA" || (
+                    <div className="w-full border py-3 px-5 flex justify-center items-center mt-2">
+                      <Button variant="contained" color="primary" fullWidth>
+                        ANULAR o comunicar de baja
+                      </Button>
+                    </div>
+                  )}
+
                 {invoiceRegistered?.borrador ? (
                   <Alert
                     icon={false}
@@ -878,28 +915,32 @@ const FacturaScreen = () => {
                   </Alert>
                 ) : null}
                 <div
-                  className={`flex w-full border py-3 px-5 flex-col gap-2 mt-2 ${invoiceRegistered?.borrador ? "text-red-600" : "text-green-700"}`}
+                  className={`flex w-full border py-3 px-5 flex-col gap-2 mt-2 ${invoiceRegistered?.borrador || invoiceRegistered?.aceptada_sunat === "RECHAZADA" ? "text-red-600" : "text-green-700"}`}
                 >
                   <strong className="flex items-center">
-                    Enviada a la Sunat?:
+                    Enviada a la Sunat?:&nbsp;
                     {invoiceRegistered?.enviada_sunat === 2 ? (
+                      <FaCheck />
+                    ) : invoiceRegistered?.aceptada_sunat === "EXCEPCION" ? (
+                      <FaCloudUploadAlt />
+                    ) : invoiceRegistered?.aceptada_sunat === "RECHAZADA" ? (
                       <FaCheck />
                     ) : (
                       <MdOutlineClose />
                     )}
                   </strong>
                   <strong className="flex items-center">
-                    Aceptada por la Sunat?:
-                    {invoiceRegistered?.aceptada_sunat === 0 ? ( //cpe aceptado
+                    Aceptada por la Sunat?:&nbsp;
+                    {invoiceRegistered?.aceptada_sunat === "ACEPTADA" ? ( //cpe aceptado
                       <FaCheck />
                     ) : !invoiceRegistered?.aceptada_sunat ? ( //borrador
                       <MdOutlineClose />
-                    ) : invoiceRegistered?.aceptada_sunat && //errones generan rechazo de sunat comprobante invalido
-                      invoiceRegistered?.aceptada_sunat >= 2000 &&
-                      invoiceRegistered?.aceptada_sunat <= 3999 ? (
-                      <MdOutlineClose />
+                    ) : invoiceRegistered?.aceptada_sunat === "RECHAZADA" ? ( //errones generan rechazo de sunat comprobante invalido
+                      "RECHAZADA"
+                    ) : invoiceRegistered?.aceptada_sunat === "EXCEPCION" ? (
+                      `Tu Factura ${invoiceRegistered?.serie}-${invoiceRegistered?.correlativo_registradoConCeros} ha sido emitida e informada a SUNAT` //Errores de sunat 0100-999 se mostraran como exito y luego seran enviados hasta que sunat los acepte
                     ) : (
-                      invoiceRegistered?.aceptada_sunat //Errores de sunat 0100-999 se mostraran como exito y luego seran enviados hasta que sunat los acepte
+                      invoiceRegistered?.aceptada_sunat // Otros errores
                     )}
                   </strong>
                   <strong className="flex items-center">
