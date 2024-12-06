@@ -1,16 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useLayoutEffect, useState } from "react";
-import { whois } from "./api/auth";
-import Main from "./components/Main";
-import { ModalProvider } from "./context/modalContext";
-import { storage } from "./utils/storage";
-import LoginScreen from "./views/LoginScreen";
-import Header from "./components/Header/Index";
-import { HTML5Backend } from "react-dnd-html5-backend";
-import { DndProvider } from "react-dnd";
-import { TableProvider } from "./context/tableContext";
-import { IAuthPayload } from "./interface/auth.interface";
-import { IError } from "./interface/error.interface";
+import Main from "./layouts/Main";
+import { storage } from "./utils/storage.utils";
+import LoginScreen from "./features/Authentication/pages/LoginPage";
+import Header from "./layouts/Header";
+import { IError } from "./interfaces/common/error.interface";
+import { IAuthPayload } from "./interfaces/models/auth/auth.interface";
+import { whois } from "./features/Authentication/services/auth.service";
+import AppProviders from "./providers/AppProvider";
 
 function App() {
   const [sessionActive, setSession] = useState(false);
@@ -25,7 +22,7 @@ function App() {
     queryKey: ["auth"],
     queryFn: async () => {
       const response = await whois();
-      return response.data; // Assuming the desired data is in the `data` property of the Axios response
+      return response.data;
     },
     refetchOnMount: false,
     refetchOnWindowFocus: false,
@@ -93,14 +90,10 @@ function App() {
   return (
     <>
       {sessionActive ? (
-        <ModalProvider>
-          <TableProvider>
-            <DndProvider backend={HTML5Backend}>
-              <Header result={result} />
-              <Main />
-            </DndProvider>
-          </TableProvider>
-        </ModalProvider>
+        <AppProviders>
+          <Header result={result} />
+          <Main />
+        </AppProviders>
       ) : (
         <LoginScreen />
       )}

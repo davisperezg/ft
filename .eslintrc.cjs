@@ -1,16 +1,44 @@
+//https://claude.ai/chat/3b29dd25-39d4-4e17-bb94-ca28e8cf017c
 module.exports = {
   root: true,
   env: { browser: true, es2020: true },
   extends: [
+    "prettier",
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/stylistic-type-checked",
     "plugin:react-hooks/recommended",
+    "plugin:import/errors",
+    "plugin:import/typescript",
+    "plugin:@tanstack/query/recommended",
+    //"plugin:@typescript-eslint/recommended-requiring-type-checking",
+    //"plugin:@typescript-eslint/recommended-type-checked",
   ],
   ignorePatterns: ["dist", ".eslintrc.cjs"],
   parser: "@typescript-eslint/parser",
-  plugins: ["react-refresh"],
+  parserOptions: {
+    ecmaVersion: "latest",
+    sourceType: "module",
+    project: ["./tsconfig.json", "./tsconfig.node.json"],
+    tsconfigRootDir: __dirname,
+  },
+  plugins: [
+    "react-refresh",
+    "@typescript-eslint",
+    "eslint-plugin-react-compiler",
+  ],
   rules: {
+    // "@typescript-eslint/no-unsafe-assignment": "error",
+    // "@typescript-eslint/no-unsafe-call": "error",
+    // "@typescript-eslint/no-unsafe-member-access": "error",
+    // "@typescript-eslint/no-unsafe-return": "error",
+    // "@typescript-eslint/restrict-template-expressions": "error",
+    "react-compiler/react-compiler": "error",
+    "@tanstack/query/exhaustive-deps": "error",
+    "@tanstack/query/no-rest-destructuring": "warn",
+    "@tanstack/query/stable-query-client": "error",
+    "@tanstack/query/no-unstable-deps": "warn",
     "no-unused-vars": "off",
     // https://typescript-eslint.io/rules/no-unused-vars/
     "@typescript-eslint/no-unused-vars": [

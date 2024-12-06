@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  border-color: #e3e4e6;
+}
+
+/* Inter, system-ui, Avenir, Helvetica, Arial, sans-serif */
+:root {
+  font-family: "Roboto", "Arial", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-size: 14px !important;
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #172336;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  accent-color: #5a626f;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* #005eb8 - #003f7b*/
+a {
+  font-weight: 500;
+  color: #005eb8;
+  text-decoration: inherit;
+}
+
+a:hover {
+  color: #003f7b;
+  text-decoration: underline;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+.resizer {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  right: 0;
+  width: 2px;
+  background: rgba(0, 0, 0, 0.5);
+  cursor: col-resize;
+  user-select: none;
+  touch-action: none;
+}
+
+.no-resizer {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  right: 0;
+  width: 2px;
+  cursor: col-resize;
+  user-select: none;
+  touch-action: none;
+}
+
+.resizer.isResizing {
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .resizer {
+    opacity: 0;
+  }
+
+  *:hover > .resizer {
+    opacity: 1;
+  }
+}
+
+/* https://symbl.cc/en/search/?q=close */
+.icon-remove,
+.icon-arrow-top,
+.icon-arrow-bottom {
+  color: #172336;
+}
+
+.icon-arrow-top::after {
+  content: "\02F0";
+}
+
+.icon-arrow-bottom::after {
+  content: "\02F0";
+}
+
+.icon-remove::after {
+  content: "\1F5D9";
+}
+
+.Toastify__toast-theme--colored.Toastify__toast--success {
+  background-color: #327021 !important;
+}
+
+.Toastify__toast-theme--colored.Toastify__toast--error {
+  background-color: #cc0000 !important;
+}
+
+.Toastify__progress-bar-theme--colored.Toastify__progress-bar--info,
+.Toastify__progress-bar-theme--colored.Toastify__progress-bar--success,
+.Toastify__progress-bar-theme--colored.Toastify__progress-bar--warning,
+.Toastify__progress-bar-theme--colored.Toastify__progress-bar--error {
+  background-color: transparent !important;
+}
+
+.MuiGrid-root {
+  padding-top: 8px !important;
+}
+
+.MuiGrid-item {
+  padding-top: 4px !important;
+  font-size: 14px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #172336;
+    background-color: #ffffff;
+  }
+
+  button {
+    background-color: #f9f9f9;
+  }
+}

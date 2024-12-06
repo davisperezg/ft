@@ -14,7 +14,7 @@ import {
   ISeriesMigrate,
   ITransferListOf,
   ITransferListTo,
-} from "../../../interface/series.interface";
+} from "../../../interfaces/models/series/series.interface";
 
 interface Props {
   seriesOf: ITransferListOf;

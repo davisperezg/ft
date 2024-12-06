@@ -1,0 +1,5 @@
+export enum PageEnum {
+  INIT = "INIT",
+  SCREEN_FACTURA = "SCREEN_FACTURA",
+  SCREEN_BOLETA = "SCREEN_BOLETA",
+}

@@ -35,7 +35,7 @@ const ToolTipIconButton = (props: IExtendsProps) => {
       placement="top"
       arrow
       //followCursor
-      className="text-textDefault"
+      className="text-default"
       slotProps={{
         tooltip: {
           sx: {

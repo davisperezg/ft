@@ -16,7 +16,7 @@ const BpIcon = styled("span")(({ theme }) => ({
       ? "linear-gradient(180deg,hsla(0,0%,100%,.05),hsla(0,0%,100%,0))"
       : "linear-gradient(180deg,hsla(0,0%,100%,.8),hsla(0,0%,100%,0))",
   ".Mui-focusVisible &": {
-    outline: "2px auto rgba(19,124,189,.6)",
+    outline: "2px auto #478CFF", //rgba(19,124,189,.6)
     outlineOffset: 2,
   },
   "input:hover ~ &": {
@@ -32,7 +32,7 @@ const BpIcon = styled("span")(({ theme }) => ({
 }));
 
 const BpCheckedIcon = styled(BpIcon)({
-  backgroundColor: "#137cbd",
+  backgroundColor: "#478CFF", //#137cbd
   backgroundImage:
     "linear-gradient(180deg,hsla(0,0%,100%,.1),hsla(0,0%,100%,0))",
   "&:before": {
@@ -46,7 +46,7 @@ const BpCheckedIcon = styled(BpIcon)({
     content: '""',
   },
   "input:hover ~ &": {
-    backgroundColor: "#106ba3",
+    backgroundColor: "#2e66ff", //#106ba3
   },
 });
 

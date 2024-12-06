@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { getPersona } from "../api/ext";
-import { IError } from "../interface/error.interface";
+import { getPersona } from "../services/api/ext.service";
+import { IError } from "../interfaces/common/error.interface";
 
 const KEY = "ext_person";
 const KEY_EMPRESA = "ext_empresa";

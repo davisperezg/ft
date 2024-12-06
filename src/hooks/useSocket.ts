@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import io, { Socket } from "socket.io-client";
-import { storage } from "../utils/storage";
-import { BASE_URL_WS } from "../utils/const";
-import { getRefresh } from "../api/auth";
-import { socketInvoices } from "../utils/socket";
+import { storage } from "../utils/storage.utils";
 import { toast } from "react-toastify";
+import { BASE_URL_WS } from "../config/constants";
+import { getRefresh } from "../features/Authentication/services/auth.service";
+import { socketInvoices } from "../lib/socketsInstance";
 
 export const useSocketInvoice = () => {
   const [reconnecting, setReconnecting] = useState(false);
