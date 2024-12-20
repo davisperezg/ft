@@ -11,17 +11,19 @@ export const findComponentByMenu = async (nombreMenu: string) => {
 
   switch (nombreMenu) {
     case MENU_COMPROBANTES_ELECT:
-      return (await import(`../features/Comprobantes/pages/${menuDefault}Page`))
-        .default;
+      return (
+        await import(`../features/Comprobantes/pages/${menuDefault}Page.tsx`)
+      ).default;
 
     case MENU_USUARIOS:
-      return (await import(`../features/Users/pages/UserOverviewPage`)).default;
+      return (await import(`../features/Users/pages/UserOverviewPage.tsx`))
+        .default;
 
     case MENU_ROLES:
-      return (await import(`../features/Roles/pages/RolPage`)).default;
+      return (await import(`../features/Roles/pages/RolPage.tsx`)).default;
 
     case "DEFAULT":
-      return (await import(`../components/common/Contents/ContentEmpty`))
+      return (await import(`../components/common/Contents/ContentEmpty.tsx`))
         .default;
     // Agregar otros casos según los módulos disponibles
     default:

@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 
 //import million from "million/compiler";
 //million.vite({ auto: true }),
@@ -12,7 +12,9 @@ export default defineConfig(() => {
   return {
     plugins: [
       react({
-        plugins: [["babel-plugin-react-compiler", ReactCompilerConfig]],
+        babel: {
+          plugins: [["babel-plugin-react-compiler", ReactCompilerConfig]],
+        },
       }),
     ],
     // ...

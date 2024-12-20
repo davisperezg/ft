@@ -1,11 +1,10 @@
-import { HeaderGroup, Row } from "@tanstack/react-table";
+import { Row } from "@tanstack/react-table";
 import { Table, flexRender } from "@tanstack/react-table";
 import {
+  ReactNode,
   UIEvent,
   memo,
-  useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -18,11 +17,11 @@ import {
   MdKeyboardDoubleArrowLeft,
   MdKeyboardDoubleArrowRight,
 } from "react-icons/md";
-import { useDragAndDrop } from "@formkit/drag-and-drop/react";
-import { Header } from "@tanstack/react-table";
-import { dropOrSwap, state } from "@formkit/drag-and-drop";
+
 import { Cell } from "@tanstack/react-table";
-import { number } from "yup";
+import useSize from "../../../hooks/useSize";
+import { useReactTable } from "@tanstack/react-table";
+import { ExtendedColumnDef } from "@tanstack/react-table";
 
 interface Props<T extends object> {
   table: Table<T>;
@@ -32,128 +31,56 @@ interface PropsTBody<T extends object> {
   table: Table<T>;
 }
 
-interface PropsHead<T extends object> {
-  headerGroup: HeaderGroup<T>;
-  changeClicked: (index: number) => void;
-  table: Table<T>;
-  clicked: number;
-}
-
-interface PropsHeadItem<T extends object> {
-  header: Header<T, unknown>;
-  clicked: number;
-  changeClicked: (index: number) => void;
-  table: Table<T>;
-}
-
 interface PropsTableCell<T extends object> {
   cell: Cell<T, unknown>;
   row: Row<T>;
 }
 
-//https://tanstack.com/table/latest/docs/guide/column-ordering#reordering-columns
-function HeadItem<T extends object>({
-  header,
-  clicked,
-  changeClicked,
-  table,
-}: PropsHeadItem<T>) {
-  state.on("dragStarted", () => {
-    const value = state.activeState?.node.data.value as any;
-    table.setSorting([
-      {
-        id: value.id,
-        desc: true,
-      },
-    ]);
-  });
+const LiveRegionStyler = () => {
+  useEffect(() => {
+    const polite = document.querySelectorAll<HTMLDivElement>("#-live-region");
+    polite.forEach((item) => {
+      item.style.width = "0px";
+    });
 
-  return (
-    <th
-      {...{
-        key: header.id,
-        colSpan: header.colSpan,
-        className: `relative flex hover:!bg-selected cursor-pointer h-[28px] whitespace-nowrap overflow-hidden p-0 text-left font-[500]`,
-      }}
-    >
-      <div
-        {...{
-          className: `${
-            {
-              asc: `before:content-['▲'] before:text-center before:text-default before:text-[7px] ${
-                header.column.getIsSorted() ? "pl-[5px] flex items-center" : ""
-              }`,
-              desc: `before:content-['▼'] before:text-center before:text-default before:text-[7px] ${
-                header.column.getIsSorted() ? "pl-[5px] flex items-center" : ""
-              }`,
-            }[header.column.getIsSorted() as string] ?? ""
-          } overflow-hidden px-[5px] flex items-center ${clicked === header.index ? "" : "border-r"}`,
-          onClick: (e) => {
-            if (header.id !== "actions" && header.id !== "acciones") {
-              header.column.getToggleSortingHandler()?.(e);
-              changeClicked(header.index);
-              //console.log(table.options);
+    // Función para aplicar estilos
+    const applyStyles = (element: HTMLElement) => {
+      element.style.width = "0px";
+    };
+
+    // Configurar el MutationObserver
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+          mutation.addedNodes.forEach((node) => {
+            if (node instanceof HTMLElement && node.id === "-live-region") {
+              applyStyles(node);
             }
-          },
-          style: {
-            width: header.getSize(),
-            backgroundColor: clicked === header.index ? "#e2e2e2" : "#1723360A",
-          },
-        }}
-      >
-        {header.isPlaceholder
-          ? null
-          : flexRender(header.column.columnDef.header, header.getContext())}
-      </div>
-    </th>
-  );
-}
+          });
+        }
+      });
+    });
 
-function Head<T extends object>({
-  headerGroup,
-  changeClicked,
-  table,
-  clicked,
-}: PropsHead<T>) {
-  const [parent, items] = useDragAndDrop<
-    HTMLTableRowElement,
-    Header<T, unknown>
-  >(headerGroup.headers, {
-    onDragend: (dragContext) => {
-      table.setColumnOrder(dragContext.values.map((item: any) => item.id));
-    },
-    onDragstart: (dragContext) => {
-      const value = dragContext.draggedNode.data.value as any;
-      changeClicked(value.index);
-    },
-    plugins: [
-      dropOrSwap({
-        shouldSwap: () => false,
-      }),
-    ],
-  });
+    // Observar el cuerpo del documento
+    const targetNode = document.body;
+    observer.observe(targetNode, {
+      childList: true, // Observar cambios en los hijos directos
+      subtree: true, // Observar todos los descendientes
+    });
 
-  return (
-    <tr ref={parent} className="flex">
-      {items.map((header) => {
-        return (
-          <HeadItem
-            key={header.id}
-            header={header}
-            clicked={clicked}
-            changeClicked={changeClicked}
-            table={table}
-          />
-        );
-      })}
-    </tr>
-  );
-}
+    // Limpiar el observador al desmontar el componente
+    return () => observer.disconnect();
+  }, []);
 
+  return null; // Este componente no renderiza nada
+};
+
+//https://tanstack.com/table/latest/docs/guide/column-ordering#reordering-columns
 function TableCell<T extends object>({ cell, row }: PropsTableCell<T>) {
   return (
     <td
       {...{
+        id: cell.column.id,
         className: `overflow-hidden flex whitespace-nowrap  align-middle p-0`,
       }}
     >
@@ -169,7 +96,7 @@ function TableCell<T extends object>({ cell, row }: PropsTableCell<T>) {
           },
         }}
       >
-        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+        {flexRender(cell.column.columnDef.cell, cell.getContext()) as ReactNode}
       </div>
     </td>
   );
@@ -177,7 +104,7 @@ function TableCell<T extends object>({ cell, row }: PropsTableCell<T>) {
 
 function TableBody<T extends object>({ table }: PropsTBody<T>) {
   return (
-    <tbody>
+    <>
       {table.getRowModel().rows.map((row: Row<any>, i) => {
         return (
           <tr
@@ -192,33 +119,115 @@ function TableBody<T extends object>({ table }: PropsTBody<T>) {
             }`}
           >
             {row.getVisibleCells().map((cell) => {
-              return <MemoizedTableCell cell={cell} row={row} key={cell.id} />;
+              return (
+                <td
+                  key={cell.id}
+                  {...{
+                    id: cell.column.id,
+                    className: `overflow-hidden flex whitespace-nowrap  align-middle p-0`,
+                  }}
+                >
+                  <div
+                    {...{
+                      className: `flex items-center p-[4px] ${
+                        cell.id !== row.id + "_show_columns"
+                          ? "border-r border-solid border-b "
+                          : "border-none bg-white select-none"
+                      }`,
+                      style: {
+                        width: `calc(var(--col-${cell.column.id}-size) * 1px)`,
+                      },
+                    }}
+                  >
+                    {
+                      flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      ) as ReactNode
+                    }
+                  </div>
+                </td>
+              );
             })}
           </tr>
         );
       })}
-    </tbody>
+    </>
   );
 }
 
-export function DataTable2<T extends object>({ table }: Props<T>) {
-  const indexClicked = table.options.columns.findIndex(
+//https://github.com/TanStack/table/discussions/5558#discussioncomment-10095814
+export function DataTable2<T extends object>({ table: table2 }: Props<T>) {
+  const columns = useMemo(() => {
+    const indexColumn: ExtendedColumnDef<T> = {
+      id: "index",
+      header: () => <div className="text-center w-full">#</div>,
+      cell: ({ row }) => {
+        let result = 0;
+
+        // Obtener todas las filas ordenadas
+        const sortedRows = table2.getSortedRowModel().rows;
+
+        // Encontrar el índice de la fila actual en las filas ordenadas
+        const sortedIndex = sortedRows.findIndex(
+          (sortedRow) => sortedRow.id === row.id
+        );
+
+        // Calcular el índice final considerando la paginación
+        result =
+          table2.getState().pagination.pageIndex *
+            table2.getState().pagination.pageSize +
+          sortedIndex +
+          1;
+
+        return <div className="text-center w-full">{result}</div>;
+      },
+      size: 28,
+      minSize: 28,
+    };
+
+    return [indexColumn, ...table2.options.columns];
+  }, [
+    table2.options.columns,
+    table2.getSortedRowModel().rows,
+    table2.getState().pagination.pageIndex,
+    table2.getState().pagination.pageSize,
+  ]);
+
+  const table = useReactTable({
+    ...table2.options,
+    data: table2.options.data,
+    columns: columns,
+    state: {
+      ...table2.options.state,
+    },
+  });
+
+  const indexClicked = columns.findIndex(
     (item) => item.id !== "index" && item.id !== "select"
   );
   const [clicked, setClicked] = useState<number>(indexClicked);
   const [showOptions, setShowOptions] = useState(false);
-  const changeClicked = (index: number) => setClicked(index);
-
   const refHeader = useRef<HTMLDivElement>(null);
+  const refResizer = useRef<HTMLDivElement>(null);
   const refBody = useRef<HTMLDivElement>(null);
-  const refSizeHeader = useRef<HTMLDivElement>(null);
+  const refSizeHeader = useRef<HTMLTableElement>(null);
   const refShowColumns = useRef<HTMLDivElement>(null);
+  const [bodyHeight, setBodyHeight] = useState(0);
+  const windowsize = useSize();
+  const [resizing, setResizing] = useState(false);
+  const [resizerId, setResizerId] = useState("");
+
+  const changeClicked = (index: number) => {
+    setClicked(index);
+  };
 
   const handleScroll = (e: UIEvent<HTMLDivElement>) => {
-    if (typeof refHeader === "object") {
-      if (refHeader.current) {
-        refHeader.current.style.transform = `translateX(-${e.currentTarget.scrollLeft}px)`;
-      }
+    const scrollLeft = Number(e.currentTarget.scrollLeft) ?? 0;
+    if (refHeader.current && refResizer.current) {
+      // Actualizar el transform del header y del resizer
+      refHeader.current.style.transform = `translateX(-${scrollLeft}px)`;
+      refResizer.current.style.transform = `translateX(-${scrollLeft}px)`;
     }
   };
 
@@ -237,7 +246,9 @@ export function DataTable2<T extends object>({ table }: Props<T>) {
       const header = headers[i]!;
       colSizes[`--header-${header.id}-size`] = header.getSize();
       colSizes[`--col-${header.id}-size`] = header.getSize();
+      colSizes[`--resizer-${header.id}-size`] = header.getSize();
     }
+
     return colSizes;
   }, [table.getState().columnSizingInfo, table.getState().columnSizing]);
 
@@ -246,71 +257,68 @@ export function DataTable2<T extends object>({ table }: Props<T>) {
     .flatRows.map((a) => a.original) as any[];
 
   const withShowOpts = useMemo(() => {
-    if (refShowColumns.current && showOptions && refSizeHeader.current) {
-      const centerTotalSize = table.getCenterTotalSize();
-      const viewportWidth = window.innerWidth;
-      const showTable = refSizeHeader.current.getBoundingClientRect();
+    if (
+      refShowColumns.current &&
+      showOptions &&
+      refSizeHeader.current &&
+      refHeader.current
+    ) {
+      const widthViewport = window.innerWidth;
+      const widthShowOpt = refShowColumns.current.offsetWidth;
 
-      // Si no hay suficiente espacio a la derecha, posicionar a la izquierda
-      if (showTable.right > viewportWidth) {
+      const allTh = refSizeHeader.current.querySelectorAll("th");
+      const widthHeader = refHeader.current.clientWidth;
+      const widthTotalTh = Array.from(allTh)
+        .map((item) => item.getBoundingClientRect().width)
+        .reduce((acc, item) => acc + item, 0);
+
+      if (widthShowOpt > widthTotalTh) {
+        return {
+          left: widthTotalTh - 28,
+          right: "auto",
+        };
+      } else if (widthTotalTh > widthViewport) {
+        return {
+          left: "auto",
+          right: 0,
+        };
+      } else if (widthTotalTh < widthHeader) {
+        return {
+          left: widthTotalTh - widthShowOpt,
+          right: "auto",
+        };
+      } else {
         return {
           left: "auto",
           right: 0,
         };
       }
-
-      // Por defecto, mantener la posición actual
-      return {
-        left: centerTotalSize - 28,
-        right: "auto",
-      };
     }
 
     return {
-      left: 0,
-      right: 0,
+      left: "auto",
+      right: "auto",
     };
-  }, [refShowColumns.current, showOptions, refSizeHeader.current]);
-
-  const [heightTable, setHeightTable] = useState(0);
+  }, [
+    refShowColumns.current,
+    showOptions,
+    refSizeHeader.current,
+    refHeader.current,
+  ]);
 
   useEffect(() => {
-    const calculateHeight = () => {
-      if (refBody.current && refHeader.current) {
-        setHeightTable(
-          refBody.current.offsetHeight + refHeader.current.offsetHeight
-        );
-      } else {
-        setHeightTable(0);
-      }
-    };
-
-    // Calcular al montar
-    calculateHeight();
-
-    // Recalcular al cambiar el tamaño de la ventana
-    window.addEventListener("resize", calculateHeight);
-
-    return () => window.removeEventListener("resize", calculateHeight);
-  }, [refBody, refHeader]); // Dependencias
-
-  const [clickResizing, setClickResizing] = useState(false);
-  const [resizing, setResizing] = useState<{ [key: string]: number }>({});
-
-  useLayoutEffect(() => {
-    if (table) {
-      const headers = table.getAllLeafColumns();
-      const sizing: { [key: string]: number } = {};
-      for (let i = 0; i < headers.length; i++) {
-        const header = headers[i]!;
-        if (header.getCanResize()) {
-          sizing[header.id] =
-            Number(header.getStart()) + Number(header.getSize());
+    if (windowsize || resizing) {
+      const timer = setTimeout(() => {
+        if (refBody.current && refHeader.current) {
+          const clientHeightBody = refBody.current.clientHeight;
+          const clientHeightHead = refHeader.current.clientHeight;
+          setBodyHeight(clientHeightBody + clientHeightHead);
         }
-      }
-      setResizing(sizing);
+      }, 1500);
+
+      return () => clearTimeout(timer);
     }
-  }, [table]);
+  }, [windowsize, refBody.current?.offsetWidth, resizing]);
 
   return (
     <div
@@ -321,6 +329,7 @@ export function DataTable2<T extends object>({ table }: Props<T>) {
       }}
       className="flex flex-col flex-[1_1_auto] overflow-hidden border border-solid relative rounded-[4px]"
     >
+      <LiveRegionStyler />
       {table.options.enableLoading ? (
         <div className="flex h-full justify-center items-center">
           Por favor, espere, buscando...
@@ -383,141 +392,15 @@ export function DataTable2<T extends object>({ table }: Props<T>) {
           {/* FIN SELECTION SHOW COLUMN */}
 
           {/* RESIZING */}
-          {table.getHeaderGroups().map((headerGroup) => {
-            return (
-              <div
-                key={headerGroup.id}
-                className="top-[1px] flex-[0_0_auto] overflow-visible absolute z-[2]"
-              >
-                {headerGroup.headers.map((header) => {
-                  if (header.column.getCanResize()) {
-                    //hover:bg-primary absolute top-0 right-0 w-[5px] bg-none cursor-col-resize touch-none select-none
-                    return (
-                      <div
-                        id={header.id}
-                        key={header.id}
-                        className={` bg-primary absolute top-0 right-0 w-[5px] bg-none cursor-col-resize touch-none select-none`}
-                        {...{
-                          style: {
-                            zIndex: 2,
-                            height: 100,
-                            left: resizing[header.id],
-                            display: "block",
-                          },
-                          onMouseDown: (e) => {
-                            // Prevenir selección de texto
-                            e.preventDefault();
-
-                            // Usar la referencia del evento actual
-                            const resizer = e.currentTarget;
-                            const refTableHead = refHeader.current;
-                            const refTableBody = refBody.current;
-
-                            // Variables para el arrastre
-                            let isDragging = true;
-                            let newLeft = 0;
-                            let deltaX = 0;
-
-                            const startX = e.clientX;
-                            const currentLeft = parseInt(
-                              resizer.style.left || "0"
-                            );
-
-                            // Función de movimiento del ratón
-                            const onMouseMove = (moveEvent) => {
-                              if (!isDragging) return;
-
-                              // Calcular el nuevo left en tiempo real
-                              deltaX = moveEvent.clientX - startX;
-                              newLeft = currentLeft + deltaX;
-
-                              // Actualizar la posición left inmediatamente
-                              resizer.style.left = `${newLeft}px`;
-                            };
-
-                            // Función de soltar el ratón
-                            const onMouseUp = () => {
-                              // Detener el arrastre
-                              isDragging = false;
-
-                              // Obtener el nuevo ancho basado en el left final
-                              const newWidth =
-                                parseInt(resizer.style.left || "0") -
-                                Number(header.getStart());
-
-                              // Actualizar el width del table header
-                              refTableHead?.style.setProperty(
-                                `--header-${header?.id}-size`,
-                                `${newWidth}`,
-                                "important"
-                              );
-
-                              // Actualizar el width del table body
-                              refTableBody?.style.setProperty(
-                                `--col-${header?.id}-size`,
-                                `${newWidth}`,
-                                "important"
-                              );
-
-                              console.log(resizing, newLeft, deltaX);
-
-                              setResizing((old) => {
-                                const keys = Object.keys(old);
-                                const startIndex = keys.indexOf(header.id);
-
-                                const updatedObject = {
-                                  ...old,
-                                  ...Object.fromEntries(
-                                    keys
-                                      .slice(startIndex)
-                                      .map((key) => [key, old[key] + deltaX])
-                                  ),
-                                };
-
-                                return updatedObject;
-                              });
-
-                              // Remover listeners globales
-                              document.removeEventListener(
-                                "mousemove",
-                                onMouseMove
-                              );
-                              document.removeEventListener(
-                                "mouseup",
-                                onMouseUp
-                              );
-                            };
-
-                            // Añadir listeners globales de documento
-                            document.addEventListener("mousemove", onMouseMove);
-                            document.addEventListener("mouseup", onMouseUp);
-                          },
-                          //onMouseUp: header.getResizeHandler(),
-                          //onMouseDown: header.getResizeHandler(),
-                          //onTouchStart: header.getResizeHandler(),
-                        }}
-                      />
-                    );
-                  }
-                })}
-              </div>
-            );
-          })}
-          {/* RESIZING */}
-
-          {/* HEADER */}
-          <div ref={refHeader} className="flex flex-[0_0_auto] relative">
-            <div
-              ref={refSizeHeader}
-              className="float-left pr-[40px] text-default"
-            >
+          <div ref={refResizer} className="z-[2] flex flex-[0_0_auto] relative">
+            <div className="float-left pr-[40px] text-default">
               <table
+                className="table border-none"
                 {...{
                   style: {
                     width: table.getCenterTotalSize(),
                   },
                 }}
-                className="table border-none"
               >
                 <thead>
                   {table.getHeaderGroups().map((headerGroup) => {
@@ -527,80 +410,289 @@ export function DataTable2<T extends object>({ table }: Props<T>) {
                           <th
                             key={header.id}
                             colSpan={header.colSpan}
-                            {...{
-                              style: {
-                                backgroundColor:
-                                  clicked === header.index
-                                    ? "#e2e2e2"
-                                    : "#EDEDEF",
-                              },
-                              className: `relative flex hover:!bg-[#e2e2e2] cursor-pointer h-[28px] whitespace-nowrap overflow-hidden p-0 text-left font-[500]`,
-                            }}
+                            className="relative flex whitespace-nowrap p-0"
                           >
                             <div
                               {...{
                                 style: {
-                                  width: `calc(var(--header-${header?.id}-size) * 1px`,
-                                },
-                                className: `${
-                                  {
-                                    asc: `before:content-['▲'] before:text-center before:text-default before:text-[7px] ${
-                                      header.column.getIsSorted()
-                                        ? "pl-[5px] flex items-center"
-                                        : ""
-                                    }`,
-                                    desc: `before:content-['▼'] before:text-center before:text-default before:text-[7px] ${
-                                      header.column.getIsSorted()
-                                        ? "pl-[5px] flex items-center"
-                                        : ""
-                                    }`,
-                                  }[header.column.getIsSorted() as string] ?? ""
-                                } select-none overflow-hidden px-[5px] flex items-center ${clicked === header.index ? "" : "border-r"}`,
-                                onClick: (e) => {
-                                  if (
-                                    header.id !== "show_columns" &&
-                                    header.id !== "acciones"
-                                  ) {
-                                    header.column.getToggleSortingHandler()?.(
-                                      e
-                                    );
-                                    changeClicked(header.index);
-                                    //console.log(table.options);
-                                  } else if (header.id === "show_columns") {
-                                    setShowOptions(!showOptions);
-                                  } else {
-                                  }
-                                },
-                                onMouseOut: () => {
-                                  if (header.id === "show_columns") {
-                                    if (showOptions) {
-                                      document.onmouseover = function (e) {
-                                        if (
-                                          refShowColumns.current &&
-                                          refShowColumns.current.contains(
-                                            e.target as null
-                                          )
-                                        ) {
-                                          setShowOptions(true);
-                                        } else {
-                                          setShowOptions(false);
-                                          document.onmouseover = null;
-                                        }
-                                      };
-                                    }
-                                  }
+                                  width: `calc(var(--resizer-${header?.id}-size) * 1px`,
                                 },
                               }}
                             >
-                              {header.isPlaceholder
-                                ? null
-                                : flexRender(
-                                    header.column.columnDef.header,
-                                    header.getContext()
-                                  )}
+                              {header.column.getCanResize() && (
+                                <div
+                                  className={`${resizerId === header.id ? "isResizing" : "resizer"} absolute top-0 right-0 w-[5px] bg-none cursor-col-resize touch-none select-none`}
+                                  {...{
+                                    style: {
+                                      zIndex: 2,
+                                      height: bodyHeight,
+                                      display: "block",
+                                    },
+                                    onMouseDown: (e) => {
+                                      e.stopPropagation();
+                                      // Usar la referencia del evento actual
+                                      const refTableHead = refHeader.current;
+                                      const refTableBody = refBody.current;
+                                      const refTableResizer =
+                                        refResizer.current;
+                                      const resizer = e.currentTarget;
+                                      const getWidthCol =
+                                        refTableHead?.style.getPropertyValue(
+                                          `--header-${header?.id}-size`
+                                        );
+
+                                      const currenSize = getWidthCol
+                                        ? parseInt(getWidthCol)
+                                        : Number(header.getSize());
+
+                                      // Variables para el arrastre
+                                      let isDragging = true;
+                                      let deltaX = 0;
+                                      setResizing(true);
+                                      setResizerId(header.id);
+
+                                      const startX = e.clientX;
+                                      const currentLeft = currenSize;
+
+                                      // Función de movimiento del ratón
+                                      const onMouseMove = (moveEvent: any) => {
+                                        moveEvent.stopPropagation();
+                                        if (!isDragging) return;
+
+                                        // Calcular el nuevo left en tiempo real
+                                        deltaX = moveEvent.clientX - startX;
+                                        const newLeft = currentLeft + deltaX;
+                                        resizer.style.left = `${newLeft}px`;
+                                      };
+
+                                      // Función de soltar el ratón
+                                      const onMouseUp = () => {
+                                        // Detener el arrastre
+                                        isDragging = false;
+                                        setResizing(false);
+                                        setResizerId("");
+
+                                        refTableHead?.style.setProperty(
+                                          `--header-${header.id}-size`,
+                                          `${currenSize + deltaX}`,
+                                          "important"
+                                        );
+
+                                        // Actualizar el width del table body
+                                        refTableBody?.style.setProperty(
+                                          `--col-${header.id}-size`,
+                                          `${currenSize + deltaX}`,
+                                          "important"
+                                        );
+
+                                        refTableResizer?.style.setProperty(
+                                          `--resizer-${header.id}-size`,
+                                          `${currenSize + deltaX}`,
+                                          "important"
+                                        );
+
+                                        // Remover listeners globales
+                                        document.removeEventListener(
+                                          "mousemove",
+                                          onMouseMove
+                                        );
+                                        document.removeEventListener(
+                                          "mouseup",
+                                          onMouseUp
+                                        );
+                                      };
+
+                                      // Añadir listeners globales de documento
+                                      document.addEventListener(
+                                        "mousemove",
+                                        onMouseMove
+                                      );
+                                      document.addEventListener(
+                                        "mouseup",
+                                        onMouseUp
+                                      );
+                                    },
+                                  }}
+                                ></div>
+                              )}
                             </div>
                           </th>
                         ))}
+                      </tr>
+                    );
+                  })}
+                </thead>
+              </table>
+            </div>
+          </div>
+          {/* FIN RESIZING */}
+
+          {/* HEADER */}
+          <div ref={refHeader} className="z-[1] flex flex-[0_0_auto] relative">
+            <div className="float-left pr-[40px] text-default">
+              <table
+                ref={refSizeHeader}
+                className="table border-none"
+                {...{
+                  style: {
+                    width: table.getCenterTotalSize(),
+                  },
+                }}
+              >
+                <thead>
+                  {table.getHeaderGroups().map((headerGroup) => {
+                    return (
+                      <tr
+                        className="flex"
+                        key={headerGroup.id}
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                        }}
+                        onDrop={(event) => {
+                          // Prevenir el comportamiento por defecto del navegador
+                          event.preventDefault();
+                          const target = event.target as HTMLElement;
+
+                          if (
+                            target.closest("th")?.id === "show_columns" ||
+                            target.closest("th")?.id === "acciones" ||
+                            resizing
+                          )
+                            return;
+
+                          // Recuperar el ID de la columna que se está arrastrando
+                          const draggedColumnId =
+                            event.dataTransfer.getData("columnId");
+                          // Obtener todas las columnas de la tabla
+                          const currentColumns = table.getAllLeafColumns();
+
+                          // Encontrar el índice de la columna que se está arrastrando
+                          const draggedColumnIndex = currentColumns.findIndex(
+                            (column) => column.id === draggedColumnId
+                          );
+
+                          // Encontrar el índice de la columna donde se suelta (objetivo)
+                          const targetColumnIndex = currentColumns.findIndex(
+                            (column) => column.id === target.closest("th")?.id
+                          );
+
+                          // Verificar que ambos índices sean válidos
+                          if (
+                            draggedColumnIndex !== -1 &&
+                            targetColumnIndex !== -1
+                          ) {
+                            // Reordenar columnas
+                            const newColumnOrder = [...currentColumns];
+
+                            // Intercambiar las columnas
+                            [
+                              newColumnOrder[draggedColumnIndex],
+                              newColumnOrder[targetColumnIndex],
+                            ] = [
+                              newColumnOrder[targetColumnIndex],
+                              newColumnOrder[draggedColumnIndex],
+                            ];
+
+                            // Actualizar el orden de las columnas
+                            table.setColumnOrder(
+                              newColumnOrder.map((col) => col.id)
+                            );
+                          }
+                        }}
+                      >
+                        {headerGroup.headers.map((header) => {
+                          return (
+                            <th
+                              id={header.id}
+                              key={header.id}
+                              colSpan={header.colSpan}
+                              draggable={
+                                header.id !== "show_columns" &&
+                                header.id !== "acciones" &&
+                                !resizing
+                              }
+                              onDragStart={(event) => {
+                                event.dataTransfer.setData(
+                                  "columnId",
+                                  header.id
+                                );
+                              }}
+                              className="relative flex hover:!bg-[#e2e2e2] cursor-pointer h-[28px] whitespace-nowrap p-0 text-left font-[500]"
+                              {...{
+                                style: {
+                                  backgroundColor:
+                                    clicked === header.index
+                                      ? "#e2e2e2"
+                                      : "#EDEDEF",
+                                },
+                              }}
+                            >
+                              {/* `calc(var(--header-${header?.id}-size) * 1px` */}
+                              <div
+                                {...{
+                                  style: {
+                                    width: `calc(var(--header-${header?.id}-size) * 1px`,
+                                  },
+                                  className: `${
+                                    {
+                                      asc: `before:content-['▲'] before:text-center before:text-default before:text-[7px] ${
+                                        header.column.getIsSorted()
+                                          ? "pl-[5px] flex items-center"
+                                          : ""
+                                      }`,
+                                      desc: `before:content-['▼'] before:text-center before:text-default before:text-[7px] ${
+                                        header.column.getIsSorted()
+                                          ? "pl-[5px] flex items-center"
+                                          : ""
+                                      }`,
+                                    }[header.column.getIsSorted() as string] ??
+                                    ""
+                                  } select-none overflow-hidden px-[5px] flex items-center ${clicked === header.index ? "" : "border-r"}`,
+                                  onClick: (e) => {
+                                    if (
+                                      header.id !== "show_columns" &&
+                                      header.id !== "acciones"
+                                    ) {
+                                      header.column.getToggleSortingHandler()?.(
+                                        e
+                                      );
+                                      changeClicked(header.index);
+                                    } else if (header.id === "show_columns") {
+                                      setShowOptions(!showOptions);
+                                    } else {
+                                    }
+                                  },
+                                  onMouseOut: (_) => {
+                                    if (header.id === "show_columns") {
+                                      if (showOptions) {
+                                        document.onmouseover = function (e) {
+                                          if (
+                                            refShowColumns.current &&
+                                            refShowColumns.current.contains(
+                                              e.target as null
+                                            )
+                                          ) {
+                                            setShowOptions(true);
+                                          } else {
+                                            setShowOptions(false);
+                                            document.onmouseover = null;
+                                          }
+                                        };
+                                      }
+                                    }
+                                  },
+                                }}
+                              >
+                                {header.isPlaceholder
+                                  ? null
+                                  : (flexRender(
+                                      header.column.columnDef.header,
+                                      header.getContext()
+                                    ) as ReactNode)}
+                              </div>
+                            </th>
+                          );
+                        })}
                       </tr>
                     );
                   })}
@@ -612,8 +704,8 @@ export function DataTable2<T extends object>({ table }: Props<T>) {
 
           {/* BODY */}
           <div
-            onScroll={handleScroll}
             ref={refBody}
+            onScroll={handleScroll}
             className="flex-[1_1_auto] relative overflow-auto w-full select-text border-t-1  border-solid border-t border-b text-default"
           >
             <table
@@ -624,11 +716,29 @@ export function DataTable2<T extends object>({ table }: Props<T>) {
                 },
               }}
             >
-              {table.getState().columnSizingInfo.isResizingColumn ? (
-                <MemoizedTableBody table={table} />
-              ) : (
-                <TableBody table={table} />
-              )}
+              <tbody>
+                {table.getRowModel().rows.map((row: Row<any>, i) => {
+                  return (
+                    <tr
+                      key={row.id}
+                      style={{
+                        backgroundColor: i % 2 !== 0 ? "#f5f5f5" : "#fff",
+                      }}
+                      className={`flex ${
+                        !row.original.status
+                          ? " text-borders cursor-default"
+                          : "hover:!bg-bgDefaultAux"
+                      }`}
+                    >
+                      {row.getVisibleCells().map((cell) => {
+                        return (
+                          <TableCell cell={cell} row={row} key={cell.id} />
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
             </table>
           </div>
           {/* FIN BODY */}

@@ -56,7 +56,7 @@ const initialNotify = {
   mensaje: "",
 };
 
-const CPEAcctionList = memo(({ row, comunicatBaja }: CPEAcctionListProps) => {
+const CPEAcctionList = ({ row, comunicatBaja }: CPEAcctionListProps) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openMotivo, setOpenMotivo] = useState<boolean>(false);
   const open = Boolean(anchorEl);
@@ -329,6 +329,6 @@ const CPEAcctionList = memo(({ row, comunicatBaja }: CPEAcctionListProps) => {
       ) : null}
     </>
   );
-});
+};
 
 export default CPEAcctionList;

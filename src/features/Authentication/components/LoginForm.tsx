@@ -85,6 +85,7 @@ const LoginForm = () => {
                   <input
                     {...field}
                     id="label-username"
+                    autoComplete="username"
                     disabled={disabled}
                     type="text"
                     className={`autofill:shadow-[0_0_0_30px_white_inset] w-full p-1 rounded-sm border border-hover focus:outline-none pl-2 text-[14px] ${
@@ -129,30 +130,6 @@ const LoginForm = () => {
               />
             </div>
           </div>
-          {/* <div className="p-[0px_30px_8px_30px] flex flex-row w-full">
-                  <Controller
-                    name="checkbox"
-                    control={control}
-                    render={({ field }) => (
-                      <input
-                        {...field}
-                        value=""
-                        checked={field.value}
-                        id="label-checkbox"
-                        type="checkbox"
-                        className="p-1 rounded-sm border border-hover hover:border-borders focus:outline-none pl-2 cursor-pointer"
-                        placeholder="Contraseña"
-                      />
-                    )}
-                  />
-
-                  <label
-                    htmlFor="label-checkbox"
-                    className=" pl-2 font-[700] select-none cursor-pointer"
-                  >
-                    Recordar
-                  </label>
-                </div> */}
           <div className="p-[0px_30px_8px_30px] flex flex-row w-full">
             <a className="text-[12  px] text-default cursor-pointer select-none">
               Olvidaste tu contraseña?

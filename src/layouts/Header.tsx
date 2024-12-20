@@ -1,6 +1,5 @@
 import { ChangeEvent, useContext, useEffect, useRef, useState } from "react";
 import logo from "../assets/images/logo_systemfact.png";
-import { ModalContext } from "../store/context/dialogContext";
 import { storage } from "../utils/storage.utils";
 import { PageEnum } from "../types/enums/page.enum";
 import {
@@ -149,14 +148,14 @@ const Header = ({ result }: IHeader) => {
           setUserGlobal({
             ...result,
             empresaActual:
-              { ...empresaSeleccion, establecimiento: establecimientoData } ??
+              { ...empresaSeleccion, establecimiento: establecimientoData } ||
               null,
           });
 
           sessionStorage.setItem(
             "empresaActual",
             JSON.stringify(
-              { ...empresaSeleccion, establecimiento: establecimientoData } ??
+              { ...empresaSeleccion, establecimiento: establecimientoData } ||
                 null
             )
           );

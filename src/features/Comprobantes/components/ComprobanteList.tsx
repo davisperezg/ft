@@ -67,25 +67,25 @@ const CPEList = () => {
   const queryClient = useQueryClient();
   const userGlobal = useUserStore((state) => state.userGlobal);
   // const { socket, reconnecting } = useSocketInvoice();
-  //const pagination = usePaginationStore((state) => state.pagination);
+  const paginationStore = usePaginationStore((state) => state.pagination);
   const empresa = userGlobal?.empresaActual?.id;
   const establecimiento = userGlobal?.empresaActual?.establecimiento?.id;
   //const [page, setPage] = useState(0);
   const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
+    pageIndex: paginationStore.pageIndex,
+    pageSize: paginationStore.pageSize,
   });
 
   // const [logs, setLogs] = useState<ILog[]>([]);
   // const [minimizar, setMinimizar] = useState<boolean>(false);
   // const DECIMAL = 6;
 
-  // const configuracionesEstablecimiento = userGlobal?.empresaActual
-  //   ?.establecimiento?.configuraciones as IConfigEstablecimiento[];
+  const configuracionesEstablecimiento = userGlobal?.empresaActual
+    ?.establecimiento?.configuraciones as IConfigEstablecimiento[];
 
-  // const ENVIA_DIRECTO_SUNAT = configuracionesEstablecimiento?.some(
-  //   (config) => config.enviar_inmediatamente_a_sunat
-  // );
+  const ENVIA_DIRECTO_SUNAT = configuracionesEstablecimiento?.some(
+    (config) => config.enviar_inmediatamente_a_sunat
+  );
 
   // const { data, isPlaceholderData, isPending, isFetching } = useInvoices(
   //   Number(empresa),
@@ -131,32 +131,14 @@ const CPEList = () => {
   //   [socket]
   // );
 
+  /** Columnas dinamicas
+   * const columns = Object.keys(data[0]).map((key) => ({
+        accessorKey: key,
+        header: key.charAt(0).toUpperCase() + key.slice(1),
+      }));
+   */
   const columns = useMemo<ExtendedColumnDef<IInvoice>[]>(() => {
     return [
-      {
-        id: "index",
-        header: () => <div className="text-center w-full">#</div>,
-        cell: ({ row, table }) => {
-          let result = 0;
-          //console.log(row, table);
-          const sortedRows = table.getSortedRowModel().rows;
-          //console.log(sortedRows);
-          const findIndex = sortedRows.findIndex(
-            (item) => item.index === row.index
-          );
-
-          // Calcular el índice final considerando la paginación
-          result =
-            table.getState().pagination.pageIndex *
-              table.getState().pagination.pageSize +
-            findIndex +
-            1;
-
-          return <div className="text-center w-full">{result}</div>;
-        },
-        size: 28,
-        minSize: 28,
-      },
       {
         accessorKey: "fecha_registro",
         id: "fecha_registro",
@@ -228,7 +210,7 @@ const CPEList = () => {
       {
         accessorKey: "total",
         id: "total",
-        header: "Total",
+        header: () => <div className="text-center w-full">Total</div>,
         cell: ({ row }) => {
           //sumar todos los montos menos gratuitos ni igv_gratuitas
           const mto_operaciones_gravadas = Number(
@@ -279,10 +261,12 @@ const CPEList = () => {
       {
         accessorKey: "moneda",
         id: "moneda",
-        header: "Moneda",
+        header: () => <div className="text-center w-full">Moneda</div>,
         cell: ({ getValue }) => {
           return (
-            <div className="text-center">{(getValue() as any).abrstandar}</div>
+            <div className="text-center w-full">
+              {(getValue() as any).abrstandar}
+            </div>
           );
         },
         visible: false,
@@ -292,12 +276,12 @@ const CPEList = () => {
       {
         id: "pdf",
         accessorKey: "pdf",
-        header: "PDF",
+        header: () => <div className="text-center w-full">PDF</div>,
         cell: ({ row }) => {
           const pdfA4 = row.original.pdfA4;
           const status = row.original.status;
           return (
-            <div className="text-[16px] text-center flex justify-center">
+            <div className="text-[16px] text-center flex justify-center w-full">
               {status ? (
                 <ToolTipIconButton title="Descargar PDF formato A4">
                   <a target="_blank" rel="noopener noreferrer" href={pdfA4}>
@@ -338,24 +322,24 @@ const CPEList = () => {
       {
         id: "xml",
         accessorKey: "xml",
-        header: "XML",
+        header: () => <div className="text-center w-full">XML</div>,
         cell: ({ row }) => {
           const xmlSigned = row.original.xml;
           const status = row.original.status;
 
           return (
-            <div className="text-[16px] text-center flex justify-center">
-              {/* {!ENVIA_DIRECTO_SUNAT ? (
-                 <>{"-"}</>
-               ) : status ? (
-                 <ToolTipIconButton title="Descargar XML firmado">
-                   <a href={xmlSigned}>
-                     <BsFiletypeXml className="text-green-700 cursor-pointer" />
-                   </a>
-                 </ToolTipIconButton>
-               ) : (
-                 <BsFiletypeXml className="text-green-700r" />
-               )} */}
+            <div className="text-[16px] text-center flex justify-center w-full">
+              {!ENVIA_DIRECTO_SUNAT ? (
+                <>{"-"}</>
+              ) : status ? (
+                <ToolTipIconButton title="Descargar XML firmado">
+                  <a href={xmlSigned}>
+                    <BsFiletypeXml className="text-green-700 cursor-pointer" />
+                  </a>
+                </ToolTipIconButton>
+              ) : (
+                <BsFiletypeXml className="" />
+              )}
             </div>
           );
         },
@@ -363,20 +347,20 @@ const CPEList = () => {
         minSize: 28,
         enableResizing: false,
         enableSorting: false,
-        //  visible: ENVIA_DIRECTO_SUNAT,
-        //  enableHiding: ENVIA_DIRECTO_SUNAT,
+        visible: ENVIA_DIRECTO_SUNAT,
+        enableHiding: ENVIA_DIRECTO_SUNAT,
       },
       {
         id: "cdr",
         accessorKey: "cdr",
-        header: "CDR",
+        header: () => <div className="text-center w-full">CDR</div>,
         cell: ({ row }) => {
           const cdr = row.original.cdr;
           const estadoOpe = Number(row.original.estado_operacion); //0-creado, 1-enviando, 2-aceptado, 3-rechazado
           //const estadoAnul = Number(row.original.estado_anulacion); //null-no enviado, 1-enviado con ticket, 2-aceptado, 3-rechazado
 
           return (
-            <div className="text-[14px] text-center flex justify-center">
+            <div className="text-[14px] text-center w-full flex justify-center">
               {estadoOpe === 0 ? (
                 <>{"-"}</>
               ) : estadoOpe === 1 ? (
@@ -403,15 +387,19 @@ const CPEList = () => {
         minSize: 28,
         enableResizing: false,
         enableSorting: false,
-        //  visible: ENVIA_DIRECTO_SUNAT,
-        //  enableHiding: ENVIA_DIRECTO_SUNAT,
+        visible: ENVIA_DIRECTO_SUNAT,
+        enableHiding: ENVIA_DIRECTO_SUNAT,
       },
       {
         id: "sunat",
         accessorKey: "sunat",
         header: `{ENVIA_DIRECTO_SUNAT ? "SUNAT" : ""}`,
         cell: ({ row }) => {
-          return <CPEButtonEnviarSunat row={row} />;
+          return (
+            <div className="text-center w-full">
+              <CPEButtonEnviarSunat row={row} />
+            </div>
+          );
         },
         size: 60,
         minSize: 28,
@@ -423,8 +411,7 @@ const CPEList = () => {
         accessorKey: "acciones",
         header: "",
         cell: ({ row }) => {
-          // <CPEAcctionList row={row} />;
-          return "a";
+          return <CPEAcctionList row={row} />;
         },
         size: 28,
         minSize: 28,
@@ -442,7 +429,7 @@ const CPEList = () => {
         enableHiding: false,
       },
     ];
-  }, []);
+  }, [ENVIA_DIRECTO_SUNAT]);
 
   //comunicatBaja, ENVIA_DIRECTO_SUNAT
 
@@ -655,7 +642,7 @@ const CPEList = () => {
       columnVisibility,
       pagination,
     },
-    columnResizeMode: "onChange",
+    columnResizeMode: "onEnd",
     //onColumnOrderChange: setColumnOrder,
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,

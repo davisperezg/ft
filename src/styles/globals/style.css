@@ -51,32 +51,14 @@ h1 {
   line-height: 1.1;
 }
 
-.resizer {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  right: 0;
-  width: 2px;
-  background: rgba(0, 0, 0, 0.5);
-  cursor: col-resize;
-  user-select: none;
-  touch-action: none;
+.isResizing {
+  background: url("https://cms.wialon.us/frontend/static/line-2be8dace68122cde2b983e092f7d1d1e.gif")
+    repeat-y 2px;
 }
 
-.no-resizer {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  right: 0;
-  width: 2px;
-  cursor: col-resize;
-  user-select: none;
-  touch-action: none;
-}
-
-.resizer.isResizing {
-  background: rgba(0, 0, 0, 0.5);
-  opacity: 1;
+.resizer:hover {
+  background: url("https://cms.wialon.us/frontend/static/line-2be8dace68122cde2b983e092f7d1d1e.gif")
+    repeat-y 2px;
 }
 
 @media (hover: hover) {
