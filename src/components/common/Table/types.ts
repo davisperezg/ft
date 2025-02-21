@@ -25,10 +25,10 @@ export interface TableProps<T extends object> {
   columns: ExtendedColumnDef<T>[];
   isLoading?: boolean;
   onRowClick?: (row: T) => void;
-  manualPagination?: boolean;
-  propsPagination?: IPagination<T>;
   footerVisible?: boolean;
   getItemsRemoves?: (items: Row<T>[]) => void;
   getItemsRestores?: (items: Row<T>[]) => void;
   sortDescFirst?: boolean;
+  selects?: boolean;
+  manualSorting?: boolean;
 }

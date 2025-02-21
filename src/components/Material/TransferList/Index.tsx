@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import Grid from "@mui/material/Grid";
+import Grid from "@mui/material/Grid2";
 import List from "@mui/material/List";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
@@ -126,7 +126,7 @@ const TransferList = ({ seriesOf, isReset, control, setValue }: Props) => {
             <ListItem
               key={value.serie}
               role="listitem"
-              button
+              component={"button"}
               onClick={handleToggle(value)}
             >
               <ListItemIcon>
@@ -163,10 +163,10 @@ const TransferList = ({ seriesOf, isReset, control, setValue }: Props) => {
 
   return (
     <div className="flex justify-between items-center">
-      <Grid item xs={5} sx={{ padding: "0px !important" }}>
+      <Grid size={5} sx={{ padding: "0px !important" }}>
         {customList(seriesOf.nombre, left)}
       </Grid>
-      <Grid item xs={2}>
+      <Grid size={2}>
         <Grid container direction="column" alignItems="center">
           <Button
             sx={{ my: 0.5 }}
@@ -190,7 +190,7 @@ const TransferList = ({ seriesOf, isReset, control, setValue }: Props) => {
           </Button>
         </Grid>
       </Grid>
-      <Grid item xs={5} sx={{ padding: "0px !important" }}>
+      <Grid size={5} sx={{ padding: "0px !important" }}>
         {customList("Series para migrar", fields)}
       </Grid>
     </div>

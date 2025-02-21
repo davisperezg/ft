@@ -1,1 +1,3 @@
-export interface IConfigEmpresa {}
+export interface IConfigEmpresa {
+  imprimir: boolean;
+}

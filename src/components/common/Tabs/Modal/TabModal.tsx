@@ -1,4 +1,4 @@
-import { Children, cloneElement } from "react";
+import { Children, JSX, cloneElement } from "react";
 
 interface Prop {
   children: JSX.Element[] | JSX.Element;

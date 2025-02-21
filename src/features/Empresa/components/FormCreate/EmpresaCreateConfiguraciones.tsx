@@ -6,14 +6,14 @@ import InputCheckBox from "../../../../components/Material/Input/InputCheckBox";
 import { ChangeEvent, useRef } from "react";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import InputFile from "../../../../components/Material/Input/InputFile";
-import { IEmpresa } from "../../../../interfaces/models/empresa/empresa.interface";
+import { IFeatureEmpresaCreate } from "../../../../interfaces/features/empresa/empresa.interface";
 
 const EmpresaCreateConfiguraciones = () => {
   const {
     control,
     setValue: setValueModel,
     formState: { errors },
-  } = useFormContext<IEmpresa>();
+  } = useFormContext<IFeatureEmpresaCreate>();
 
   const refCert = useRef<HTMLInputElement | null>(null);
 
@@ -36,7 +36,7 @@ const EmpresaCreateConfiguraciones = () => {
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     field: any
   ) => {
-    const files = (e.target as HTMLInputElement).files as FileList;
+    const files = (e.target as HTMLInputElement).files! as FileList;
 
     if (files.length > 0) {
       if (files[0].type !== "application/x-pkcs12") {
@@ -360,7 +360,7 @@ const EmpresaCreateConfiguraciones = () => {
                   width: "100%",
                 }}
               >
-                {(valuesWatch.cert?.length || 0) > 0 ? (
+                {(valuesWatch.cert?.length ?? 0) > 0 ? (
                   <img
                     src={
                       "https://solcainformatica.es/wp-content/uploads/certificados-instalados-ordenador.png"

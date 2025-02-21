@@ -1,9 +1,9 @@
 import { PageEnum } from "../../types/enums/page.enum";
 
 export interface PageState {
-  open?: boolean;
-  namePage: string;
-  pageComplete?: boolean;
+  open: boolean;
+  namePage: PageEnum;
+  pageComplete: boolean;
   payload?: any;
 }
 

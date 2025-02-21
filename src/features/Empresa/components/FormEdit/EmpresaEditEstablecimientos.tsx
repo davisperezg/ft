@@ -13,7 +13,7 @@ import {
 import { useRef, useState, ChangeEvent, useCallback, useMemo } from "react";
 import InputText from "../../../../components/Material/Input/InputText";
 import InputFile from "../../../../components/Material/Input/InputFile";
-import { IEmpresa } from "../../../../interfaces/models/empresa/empresa.interface";
+import { IFeatureEmpresaUpdate } from "../../../../interfaces/features/empresa/empresa.interface";
 
 const EmpresaEditEstablecimientos = () => {
   const {
@@ -21,7 +21,7 @@ const EmpresaEditEstablecimientos = () => {
     setValue: setValueModel,
     getValues,
     formState: { errors },
-  } = useFormContext<IEmpresa>();
+  } = useFormContext<IFeatureEmpresaUpdate>();
 
   const valuesWatch = useWatch({
     control,
@@ -63,7 +63,7 @@ const EmpresaEditEstablecimientos = () => {
           value: item.id,
           label: item.departamento,
         }))
-        .concat({ value: "-", label: "-" }) || []
+        .concat({ value: "-", label: "-" }) ?? []
     );
   }, [dataDepartamentos]);
 
@@ -74,7 +74,7 @@ const EmpresaEditEstablecimientos = () => {
           value: item.id,
           label: item.provincia,
         }))
-        .concat({ value: "-", label: "-" }) || []
+        .concat({ value: "-", label: "-" }) ?? []
     );
   }, [dataProvincias]);
 
@@ -85,7 +85,7 @@ const EmpresaEditEstablecimientos = () => {
           value: item.id,
           label: item.distrito,
         }))
-        .concat({ value: "-", label: "-" }) || []
+        .concat({ value: "-", label: "-" }) ?? []
     );
   }, [dataDistritos]);
 
@@ -105,7 +105,7 @@ const EmpresaEditEstablecimientos = () => {
           );
 
           setValueModel(`establecimientos.${index}.provincia`, {
-            label: findLabelProvincia?.label || "-",
+            label: findLabelProvincia?.label ?? "-",
             value: findLabelProvincia ? `${event.value}01` : "-",
           });
 
@@ -117,7 +117,7 @@ const EmpresaEditEstablecimientos = () => {
             (item) => item.value === `${event.value}0101`
           );
           setValueModel(`establecimientos.${index}.distrito`, {
-            label: findLabelDistrito?.label || "-",
+            label: findLabelDistrito?.label ?? "-",
             value: findLabelDistrito ? `${event.value}0101` : "-",
           });
           setValueModel(
@@ -137,7 +137,7 @@ const EmpresaEditEstablecimientos = () => {
             (item) => item.value === `${event.value}01`
           );
           setValueModel(`establecimientos.${index}.distrito`, {
-            label: findLabel?.label || "-",
+            label: findLabel?.label ?? "-",
             value: findLabel ? `${event.value}01` : "-",
           });
           setValueModel(
@@ -162,7 +162,7 @@ const EmpresaEditEstablecimientos = () => {
     field: any,
     index: number
   ) => {
-    const files = (e.target as HTMLInputElement).files as FileList;
+    const files = (e.target as HTMLInputElement).files! as FileList;
 
     if (files.length > 0) {
       if (files[0].type !== "image/png") {
@@ -178,7 +178,7 @@ const EmpresaEditEstablecimientos = () => {
   const addEstablecimiento = () => {
     return append({
       codigo: "",
-      denominacion: getValues("razon_social"),
+      denominacion: getValues("nombre_comercial"),
       departamento: {
         label: "-",
         value: "-",
@@ -193,8 +193,10 @@ const EmpresaEditEstablecimientos = () => {
       },
       direccion: "",
       ubigeo: "",
-      status: true,
+      estado: true,
       new: true,
+      id: undefined,
+      logo: undefined,
     });
   };
 
@@ -503,7 +505,7 @@ const EmpresaEditEstablecimientos = () => {
                   </div>
                   <div className="w-2/3">
                     <Controller
-                      name={`establecimientos.${i}.status`}
+                      name={`establecimientos.${i}.estado`}
                       control={control}
                       render={({ field }) => (
                         <SelectSimple
@@ -515,11 +517,11 @@ const EmpresaEditEstablecimientos = () => {
                           value={optionsStatus.find(
                             ({ value }) =>
                               value ===
-                              valuesWatch.establecimientos?.[i]?.status
+                              valuesWatch.establecimientos?.[i]?.estado
                           )}
                           onChange={(e: any) => {
                             setValueModel(
-                              `establecimientos.${i}.status`,
+                              `establecimientos.${i}.estado`,
                               e.value,
                               {
                                 shouldDirty: true,

@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from "react";
+import { JSX, useEffect, useReducer } from "react";
 import { dialogReducer } from "../store/reducers/dialogReducer";
 import { INITIAL_VALUE_DIALOG } from "../config/constants";
 import { storage } from "../utils/storage.utils";
@@ -21,7 +21,7 @@ export const ModalProvider = ({ children }: Prop) => {
       const initialValue = JSON.parse(storage.getItem("user", "SESSION") ?? "");
       setUserGlobal(initialValue);
     }
-  }, []);
+  }, [setUserGlobal]);
 
   return (
     <ModalContext.Provider

@@ -4,22 +4,20 @@ import App from "./App";
 import { QueryClient } from "@tanstack/react-query";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { ToastContainer } from "react-toastify";
 import "./styles/globals/style.css";
-import "react-toastify/dist/ReactToastify.css";
 import {
   ThemeProvider,
   createTheme,
   PaletteColorOptions,
 } from "@mui/material/styles";
-
+import { Toaster } from "sonner";
 import "@fontsource/roboto/300.css";
 import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
 import { jwtInterceptor } from "./lib/axiosInstance";
 import { ColumnDef, RowData } from "@tanstack/react-table";
-import { ExtendedTableOptions } from "./components/common/Table/types";
+//import { ExtendedTableOptions } from "./components/common/Table/types";
 //import "@mui/lab/themeAugmentation";
 
 jwtInterceptor();
@@ -41,15 +39,18 @@ declare module "@tanstack/react-table" {
 declare module "@mui/material/styles" {
   interface Palette {
     borderAux: PaletteColorOptions;
+    primaryHover: PaletteColorOptions;
   }
   interface PaletteOptions {
     borderAux: PaletteColorOptions;
+    primaryHover: PaletteColorOptions;
   }
 }
 
 declare module "@mui/material/Button" {
   interface ButtonPropsColorOverrides {
     borderAux: true;
+    primaryHover: true;
   }
 }
 
@@ -58,7 +59,7 @@ const { palette } = createTheme();
 const theme = createTheme({
   palette: {
     primary: {
-      main: "#478CFF",
+      main: "#007BE8",
     },
     secondary: {
       main: "#5A626F",
@@ -66,6 +67,11 @@ const theme = createTheme({
     borderAux: palette.augmentColor({
       color: {
         main: "#E3E4E6",
+      },
+    }),
+    primaryHover: palette.augmentColor({
+      color: {
+        main: "#0069c5",
       },
     }),
   },
@@ -82,21 +88,24 @@ const queryClient = new QueryClient({
   },
 });
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+ReactDOM.createRoot(document.getElementById("root")! as HTMLElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       {/* <StyledEngineProvider injectFirst> */}
       <ThemeProvider theme={theme}>
         <App />
+        <Toaster
+          position="bottom-center"
+          expand={true}
+          richColors
+          duration={3000}
+          toastOptions={{
+            className: "px-[20px] py-[15px]",
+          }}
+        />
       </ThemeProvider>
       {/* </StyledEngineProvider> */}
 
-      <ToastContainer
-        autoClose={3000}
-        theme="colored"
-        pauseOnFocusLoss={false}
-        role="alert"
-      />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   </React.StrictMode>

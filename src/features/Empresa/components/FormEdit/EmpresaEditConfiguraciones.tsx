@@ -6,10 +6,11 @@ import InputText from "../../../../components/Material/Input/InputText";
 import { ChangeEvent, useRef } from "react";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import InputFile from "../../../../components/Material/Input/InputFile";
-import { IEmpresa } from "../../../../interfaces/models/empresa/empresa.interface";
+import { IFormEmpresaUpdate } from "../../../../interfaces/forms/empresa/empresa.interface";
+import { IDTOEmpresa } from "../../../../interfaces/models/empresa/empresa.interface";
 
 interface Props {
-  data: IEmpresa;
+  data: IDTOEmpresa;
 }
 
 const EmpresaEditConfiguraciones = ({ data }: Props) => {
@@ -17,7 +18,7 @@ const EmpresaEditConfiguraciones = ({ data }: Props) => {
     control,
     setValue: setValueModel,
     formState: { errors },
-  } = useFormContext<IEmpresa>();
+  } = useFormContext<IFormEmpresaUpdate>();
 
   const valuesWatch = useWatch({
     control,
@@ -76,7 +77,7 @@ const EmpresaEditConfiguraciones = ({ data }: Props) => {
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     field: any
   ) => {
-    const files = (e.target as HTMLInputElement).files as FileList;
+    const files = (e.target as HTMLInputElement).files! as FileList;
 
     if (files.length > 0) {
       if (files[0].type !== "application/x-pkcs12") {
@@ -195,7 +196,7 @@ const EmpresaEditConfiguraciones = ({ data }: Props) => {
                         disabled={valuesWatch.cert ? false : true}
                         error={!!errors.cert_password}
                         helperText={
-                          errors.cert_password?.message ||
+                          errors.cert_password?.message ??
                           (!valuesWatch.cert &&
                             "Agrega un certificado válido para ingresar la contraseña.")
                         }
@@ -380,7 +381,7 @@ const EmpresaEditConfiguraciones = ({ data }: Props) => {
                   width: "100%",
                 }}
               >
-                {(valuesWatch.cert?.length || 0) > 0 ? (
+                {(valuesWatch.cert?.length ?? 0) > 0 ? (
                   <img
                     src={
                       "https://solcainformatica.es/wp-content/uploads/certificados-instalados-ordenador.png"

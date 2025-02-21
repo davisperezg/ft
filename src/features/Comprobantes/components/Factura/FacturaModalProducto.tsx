@@ -28,20 +28,20 @@ import { useCallback, useEffect, useState } from "react";
 import { SingleValue } from "react-select";
 import ToolTipIconButton from "../../../../components/Material/Tooltip/IconButton";
 import { fixed, round } from "../../../../utils/functions.utils";
-import { IInvoice } from "../../../../interfaces/models/invoices/invoice.interface";
+import { IFeatureInvoice } from "../../../../interfaces/features/invoices/invoice.interface";
 
 interface Props {
   open: boolean;
   handleClose: () => void;
-  control: Control<IInvoice, any>;
+  control: Control<IFeatureInvoice, any>;
   agregarProducto: () => void;
-  setValue: UseFormSetValue<IInvoice>;
-  watch: UseFormWatch<IInvoice>;
+  setValue: UseFormSetValue<IFeatureInvoice>;
+  watch: UseFormWatch<IFeatureInvoice>;
   getValues: UseFormGetValues<any>;
   actualizarProducto: (posicionTabla: number) => void;
-  errors: FieldErrors<IInvoice>;
-  setError: UseFormSetError<IInvoice>;
-  trigger: UseFormTrigger<IInvoice>;
+  errors: FieldErrors<IFeatureInvoice>;
+  setError: UseFormSetError<IFeatureInvoice>;
+  trigger: UseFormTrigger<IFeatureInvoice>;
 }
 
 const ModalProductos = ({
@@ -76,7 +76,7 @@ const ModalProductos = ({
         label: item.tipo_igv,
         value: item.codigo,
       };
-    }) || [];
+    }) ?? [];
 
   const unidades =
     dataUnidades?.map((item) => {
@@ -84,7 +84,7 @@ const ModalProductos = ({
         label: item.unidad,
         value: item.codigo,
       };
-    }) || [];
+    }) ?? [];
 
   const tiposIgvsGroups = dataTipoIgvs?.reduce((acumulador: any[], item) => {
     const categoria = acumulador.find(
@@ -238,10 +238,6 @@ const ModalProductos = ({
     String(getValues("producto.tipAfeIgv"))
   );
 
-  console.log(watch("producto"));
-  console.log(errors);
-  console.log(mtoPrecioUnitario);
-
   return (
     <Dialog
       fullScreen={fullScreen}
@@ -353,6 +349,10 @@ const ModalProductos = ({
                     value={unidades.find(
                       ({ value }) => String(value) === String(field.value)
                     )}
+                    onChange={(e) => {
+                      const unidad = String((e as SingleValue<IOption>)?.value);
+                      field.onChange(unidad);
+                    }}
                   />
                 )}
               />
@@ -385,6 +385,7 @@ const ModalProductos = ({
                     placeholder="descripción detallada"
                     error={!!errors.producto?.descripcion}
                     helperText={errors.producto?.descripcion?.message}
+                    autoComplete="off"
                   />
                 )}
               />
@@ -512,7 +513,7 @@ const ModalProductos = ({
                 placeholder="precio unitario (incluye IGV)"
                 value={mtoPrecioUnitario}
                 name="mtoPrecioUnitario"
-                className={`text-left flex-1 ${errorPrecioUnitario ? "border border-[#d32f2f]" : "border"} p-[4px_8px] rounded-[4px] outline-none w-full ${
+                className={`text-left flex-1 ${errorPrecioUnitario ? "border border-danger" : "border"} p-[4px_8px] rounded-[4px] outline-none w-full ${
                   inputDisabled
                     ? "cursor-not-allowed text-textDisabled text-shadow-disabled"
                     : "bg-[#FAFAFA]"
@@ -564,7 +565,7 @@ const ModalProductos = ({
                 }}
               />
               {errorPrecioUnitario && (
-                <p className="text-[#d32f2f] text-[0.75rem]">
+                <p className="text-danger text-[0.75rem]">
                   {errorPrecioUnitario}
                 </p>
               )}
@@ -577,7 +578,7 @@ const ModalProductos = ({
               display={"flex"}
             >
               <ToolTipIconButton
-                title={
+                titleTooltip={
                   <span className="text-default">
                     Para los cálculos se usa el valor y no el precio (esta
                     casilla es solo una referencia)
@@ -694,12 +695,11 @@ const ModalProductos = ({
           color="primary"
           onClick={async () => {
             const validModal = await trigger("producto");
-            if (validModal && Boolean(mtoPrecioUnitario)) {
+            if (!mtoPrecioUnitario) setErrorPrecioUnitario("Campo obligatorio");
+            if (validModal) {
               return getValues("producto.uuid")
                 ? actualizarProducto(getValues("producto.posicionTabla"))
                 : agregarProducto();
-            } else {
-              setErrorPrecioUnitario("Campo obligatorio");
             }
           }}
         >

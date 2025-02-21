@@ -1,7 +1,8 @@
 import axios from "axios";
 import { IServer } from "../../../interfaces/common/server.interface";
 import { BASE_API } from "../../../config/constants";
-import { ITipoDoc } from "../../../interfaces/models/tipo-docs-cpe/tipodocs.interface";
+import { ITipoDoc } from "../../../interfaces/features/tipo-docs-cpe/tipo-docs.interface";
+import { IFormCPEType } from "../../../interfaces/forms/type-doc-cpe/type-doc-cpe.interface";
 
 export const getAllTipoDocs = async () => {
   const { data } = await axios.get<ITipoDoc[]>(`${BASE_API}/api/v1/tipodocs`);
@@ -37,7 +38,7 @@ export const enableDocumento = async (id: number) => {
   return data;
 };
 
-export const postTipoDocs = async (body: ITipoDoc) => {
+export const postTipoDocs = async (body: IFormCPEType) => {
   const { data } = await axios.post<IServer<ITipoDoc>>(
     `${BASE_API}/api/v1/tipodocs`,
     body

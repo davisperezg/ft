@@ -3,20 +3,16 @@ import {
   useEnableDocumento,
   useTipoDocs,
 } from "../../../TiposDocsCpes/hooks/useTipoDocs";
-import {
-  Controller,
-  useFieldArray,
-  useFormContext,
-  useWatch,
-} from "react-hook-form";
+import { useFieldArray, useFormContext } from "react-hook-form";
 import { Grid } from "@mui/material";
 import { SelectSimple } from "../../../../components/common/Selects/SelectSimple";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import RemoveIcon from "@mui/icons-material/Remove";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { isError } from "../../../../utils/functions.utils";
-import { IEmpresa } from "../../../../interfaces/models/empresa/empresa.interface";
+import { useEffect, useMemo, useState } from "react";
+import { IFeatureEmpresaUpdate } from "../../../../interfaces/features/empresa/empresa.interface";
 
 const EmpresaEditDocumentos = () => {
   const {
@@ -26,7 +22,9 @@ const EmpresaEditDocumentos = () => {
     isError: isErrorTipdocs,
   } = useTipoDocs();
 
-  const { control, setValue: setValueModel } = useFormContext<IEmpresa>();
+  const { control } = useFormContext<IFeatureEmpresaUpdate>();
+
+  const [typeDoc, setTypeDoc] = useState<number>(-1);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -38,22 +36,21 @@ const EmpresaEditDocumentos = () => {
 
   const { mutateAsync: mutateEnable } = useEnableDocumento();
 
-  const valuesWatch = useWatch({
-    control,
-  });
-
-  const listDocs =
-    dataTipdocs?.map((item) => ({
-      value: Number(item.id),
-      label: `${item.codigo} - ${item.nombre}`,
-      text: item.nombre,
-      disabled: !item.status,
-    })) || [];
+  const listDocs = useMemo(
+    () =>
+      dataTipdocs?.map((item) => ({
+        value: Number(item.id),
+        label: `${item.codigo} - ${item.nombre}`,
+        text: item.nombre,
+        disabled: !item.status,
+      })) ?? [],
+    [dataTipdocs]
+  );
 
   const appendDocumento = () => {
     const documento = listDocs
       .map((doc) => ({ ...doc, value: Number(doc.value) }))
-      .find((item) => item.value === valuesWatch.tip_documento);
+      .find((item) => item.value === typeDoc);
 
     //Si encuentra un documento agregamos
     if (documento) {
@@ -72,6 +69,7 @@ const EmpresaEditDocumentos = () => {
         id: documento.value,
         nombre: documento.text,
         new: true,
+        estado: undefined,
       });
     }
 
@@ -98,6 +96,12 @@ const EmpresaEditDocumentos = () => {
     }
   };
 
+  useEffect(() => {
+    if (listDocs.length > 0) {
+      setTypeDoc(listDocs[0].value);
+    }
+  }, [listDocs]);
+
   return (
     <>
       <Grid container spacing={2}>
@@ -109,29 +113,18 @@ const EmpresaEditDocumentos = () => {
           </Grid>
           <Grid item xs={4}>
             <div className="pt-[10px]">
-              <Controller
-                control={control}
-                name="tip_documento"
-                render={({ field }) => (
-                  <SelectSimple
-                    {...field}
-                    className="tipdocs-single"
-                    classNamePrefix="select"
-                    isSearchable={false}
-                    isLoading={isLoadingTipdocs}
-                    options={listDocs}
-                    placeholder="Seleccione documento"
-                    error={isErrorTipdocs}
-                    isOptionDisabled={(option) => Boolean(option.disabled)}
-                    helperText={errorTipdocs?.response.data.message}
-                    value={listDocs.find(
-                      ({ value }) => Number(value) === valuesWatch.tip_documento
-                    )}
-                    onChange={(e: any) =>
-                      setValueModel("tip_documento", e.value)
-                    }
-                  />
-                )}
+              <SelectSimple
+                className="tipdocs-single"
+                classNamePrefix="select"
+                isSearchable={false}
+                isLoading={isLoadingTipdocs}
+                options={listDocs}
+                placeholder="Seleccione documento"
+                error={isErrorTipdocs}
+                isOptionDisabled={(option) => Boolean(option.disabled)}
+                helperText={errorTipdocs?.response.data.message}
+                value={listDocs.find(({ value }) => Number(value) === typeDoc)}
+                onChange={(e: any) => setTypeDoc(e.value)}
               />
             </div>
           </Grid>
@@ -140,7 +133,7 @@ const EmpresaEditDocumentos = () => {
               <div className="pt-[2px] w-full flex justify-end">
                 <button
                   onClick={appendDocumento}
-                  className="flex items-center justify-center h-[20px] hover:bg-bgDefault text-center bg-default w-1/3"
+                  className="flex items-center justify-center h-[20px] hover:bg-bgDefault text-center w-1/3"
                   type="button"
                 >
                   Agregar
@@ -190,7 +183,7 @@ const EmpresaEditDocumentos = () => {
                         )}
                         {/* <button
                           type="button"
-                          className="w-full h-8 border border-primary text-danger"
+                          className="w-full h-8 border border-danger text-danger"
                           onClick={() => remove(index)}
                         >
                           Eliminar

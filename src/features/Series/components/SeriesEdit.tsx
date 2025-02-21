@@ -9,8 +9,6 @@ import {
   Controller,
   useFieldArray,
 } from "react-hook-form";
-import { useContext } from "react";
-import { ModalContext } from "../../../store/context/dialogContext";
 import { yupResolver } from "@hookform/resolvers/yup";
 import {
   IOption,
@@ -27,9 +25,8 @@ import { PropsValue, SingleValue } from "react-select";
 import InputText from "../../../components/Material/Input/InputText";
 import LoadingTotal from "../../../components/common/Loadings/LoadingTotal";
 import { DialogActionsBeta } from "../../../components/common/Dialogs/_DialogActions";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { isError } from "../../../utils/functions.utils";
-import { toastError } from "../../../components/common/Toast/ToastNotify";
 import CheckIcon from "@mui/icons-material/Check";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { useQueryClient } from "@tanstack/react-query";
@@ -37,17 +34,18 @@ import { ISeries } from "../../../interfaces/models/series/series.interface";
 import { schemaFormSeries } from "../validations/serie.schema";
 
 interface Props {
-  data: ISeries;
+  state: {
+    visible: boolean;
+    row: ISeries;
+  };
   closeEdit: () => void;
 }
 
-const SeriesEdit = ({ data, closeEdit }: Props) => {
-  const { dispatch, dialogState } = useContext(ModalContext);
+const SeriesEdit = ({ state, closeEdit }: Props) => {
   const queryClient = useQueryClient();
 
   const closeModal = () => {
     closeEdit();
-    dispatch({ type: "INIT" });
   };
 
   const {
@@ -55,11 +53,11 @@ const SeriesEdit = ({ data, closeEdit }: Props) => {
     isLoading: isLoadingSeries,
     error: errorSeries,
     isError: isErrorSeries,
-  } = useSerie(Number(data.id));
+  } = useSerie(Number(state.row.id));
 
   const methods = useForm<ISeries>({
     values: {
-      empresa: Number(data.id),
+      empresa: Number(state.row.id),
       establecimiento: 0,
       documento: {
         value: "",
@@ -86,7 +84,7 @@ const SeriesEdit = ({ data, closeEdit }: Props) => {
     isLoading: isLoadingDocumentos,
     error: errorDocumentos,
     isError: isErrorDocumentos,
-  } = useDocumentosByEmpresa(Number(data.id));
+  } = useDocumentosByEmpresa(Number(state.row.id));
 
   const { fields, append, update, remove } = useFieldArray({
     control,
@@ -101,16 +99,16 @@ const SeriesEdit = ({ data, closeEdit }: Props) => {
         item.denominacion
       }`,
       disabled: !item.estado,
-    })) || [];
+    })) ?? [];
 
   const listDocumentos =
     dataDocumentos?.map((item) => ({
       value: Number(item.id),
       label: item.nombre,
       disabled: !item.estado,
-    })) || [];
+    })) ?? [];
 
-  const { mutateAsync: mutateSerieAsync, isLoading: isLoadingSerie } =
+  const { mutateAsync: mutateSerieAsync, isPending: isLoadingSerie } =
     usePostSerie();
 
   const { mutateAsync: mutateDisable } = useDisableSerie();
@@ -150,7 +148,7 @@ const SeriesEdit = ({ data, closeEdit }: Props) => {
       closeModal();
     } catch (e) {
       if (isError(e)) {
-        toastError(e.response.data.message);
+        toast.error(e.response.data.message);
       }
     }
   };
@@ -220,20 +218,17 @@ const SeriesEdit = ({ data, closeEdit }: Props) => {
   };
 
   const validarSerieExixtenteXEstablecimiento = (inputSerie: string) => {
-    const establecimientos =
-      dataSeries && dataSeries.establecimientos
-        ? dataSeries.establecimientos.length
-        : 0;
+    const establecimientos = dataSeries?.establecimientos
+      ? dataSeries.establecimientos.length
+      : 0;
 
     let estado = false;
 
     for (let a = 0; a < establecimientos; a++) {
       const establecimiento = dataSeries?.establecimientos?.[a];
       if (establecimiento) {
-        for (let b = 0; b < establecimiento.documentos.length; b++) {
-          const est_documento = establecimiento.documentos[b];
-          for (let c = 0; c < est_documento.series.length; c++) {
-            const doc_serie = est_documento.series[c];
+        for (const est_documento of establecimiento.documentos) {
+          for (const doc_serie of est_documento.series) {
             if (
               doc_serie.serie === inputSerie &&
               getValues("establecimiento") !== establecimiento.id
@@ -326,8 +321,8 @@ const SeriesEdit = ({ data, closeEdit }: Props) => {
   //console.log(dataSeries);
 
   return (
-    <DialogBeta open={dialogState.open}>
-      <DialogTitleBeta>Editar {data.empresa}</DialogTitleBeta>
+    <DialogBeta open={state.visible}>
+      <DialogTitleBeta>Editar {state.row.empresa}</DialogTitleBeta>
       <IconButton
         aria-label="close"
         onClick={closeModal}
@@ -351,7 +346,7 @@ const SeriesEdit = ({ data, closeEdit }: Props) => {
               <Grid item xs={12}>
                 <h2>
                   <strong>Empresa: </strong>
-                  {data.empresa}
+                  {state.row.empresa}
                 </h2>
               </Grid>
               <Grid item xs={12}>
@@ -371,7 +366,7 @@ const SeriesEdit = ({ data, closeEdit }: Props) => {
                         placeholder="Seleccione establecimiento"
                         error={!!errors.establecimiento || isErrorSeries}
                         helperText={
-                          errors.establecimiento?.message ||
+                          errors.establecimiento?.message ??
                           errorSeries?.response.data.message
                         }
                         value={
@@ -429,7 +424,7 @@ const SeriesEdit = ({ data, closeEdit }: Props) => {
                         error={!!errors.documento || isErrorDocumentos}
                         isOptionDisabled={(option) => Boolean(option.disabled)}
                         helperText={
-                          errors.documento?.value?.message ||
+                          errors.documento?.value?.message ??
                           errorDocumentos?.response.data.message
                         }
                         value={
@@ -471,7 +466,7 @@ const SeriesEdit = ({ data, closeEdit }: Props) => {
                 <div className="pt-[2px] w-full flex justify-end">
                   <button
                     onClick={appendDocumento}
-                    className="flex items-center justify-center h-[20px] hover:bg-bgDefault text-center bg-default w-1/3"
+                    className="flex items-center justify-center h-[20px] hover:bg-bgDefault text-center w-1/3"
                     type="button"
                   >
                     Agregar
@@ -522,7 +517,7 @@ const SeriesEdit = ({ data, closeEdit }: Props) => {
                             ) : ser.new ? (
                               <button
                                 onClick={() => removeSerie(item, ser.serie)}
-                                className="w-full text-center border border-primary text-danger h-[30px]"
+                                className="w-full text-center border border-danger text-danger h-[30px]"
                                 type="button"
                               >
                                 Eliminar

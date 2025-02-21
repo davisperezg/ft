@@ -1,17 +1,11 @@
 import axios from "axios";
 import { IServer } from "../../../interfaces/common/server.interface";
 import { BASE_API } from "../../../config/constants";
-import { IInvoice } from "../../../interfaces/models/invoices/invoice.interface";
+import {
+  IInvoice,
+  IQueryInvoiceList,
+} from "../../../interfaces/models/invoices/invoice.interface";
 import { IPagination } from "../../../components/common/Table/types";
-
-interface IQueryDataPagination {
-  statusCode: string;
-  pageCount: number;
-  rowCount: number;
-  nextPage?: boolean;
-  prevPage?: boolean;
-  items: IInvoice[];
-}
 
 interface IQQueryComunicarBaja {
   idInvoice: number;
@@ -42,7 +36,7 @@ export const listInvoices = async (
   page: number,
   pageSize: number
 ) => {
-  const { data } = await axios.get<IPagination<IInvoice>>(
+  const { data } = await axios.get<IPagination<IQueryInvoiceList>>(
     `${BASE_API}/api/v1/invoices?empresa=${idEmpresa}&establecimiento=${idEstablecimiento}&page=${page}&limit=${pageSize}`
   );
 

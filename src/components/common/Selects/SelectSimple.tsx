@@ -3,12 +3,12 @@ import { forwardRef } from "react";
 //https://stackoverflow.com/questions/73678700/react-select-typescript-not-working-properly-when-i-substitute-select-with-a-com
 //https://codesandbox.io/s/react-typescript-forked-q3z9mv?file=/src/CustomSelect.tsx:1398-1405
 
-export type IOption = {
-  value: number | string;
+export interface IOption {
+  value: number | string | boolean;
   label: string;
   text?: string;
   disabled?: boolean;
-};
+}
 
 type SelectProps<
   Option,
@@ -42,7 +42,7 @@ export const SelectSimple = forwardRef(
                   } !min-h-[28px] !shadow-none !pl-1 !cursor-pointer min-w-[175px]`
                 : `!cursor-pointer !min-h-[28px] ${
                     props.error ? "!border-[#d32f2f]" : "!border-inherit"
-                  } !w-full !focus:outline-none !pl-1 !rounded-[4px] text-[14px] min-w-[175px]`,
+                  } !h-[31px] !w-full !focus:outline-none !pl-1 !rounded-[4px] text-[14px] min-w-[175px]`,
             valueContainer: () => "!p-0 !m-0",
             option: () => "!p-0 !m-0 !pl-1 !w-full !cursor-pointer",
             input: () => "!p-0 !m-0",

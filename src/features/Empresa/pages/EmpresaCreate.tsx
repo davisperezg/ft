@@ -1,9 +1,13 @@
-import { SubmitHandler, useForm, FormProvider } from "react-hook-form";
+import {
+  SubmitHandler,
+  useForm,
+  FormProvider,
+  Resolver,
+} from "react-hook-form";
 import { DialogBeta } from "../../../components/common/Dialogs/DialogBasic";
 import { useContext, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { isError } from "../../../utils/functions.utils";
-import { toastError } from "../../../components/common/Toast/ToastNotify";
 import { ModalContext } from "../../../store/context/dialogContext";
 import { usePostEmpresa } from "../hooks/useEmpresa";
 import Button from "@mui/material/Button";
@@ -21,14 +25,19 @@ import EmpresaCreateDocumentos from "../components/FormCreate/EmpresaCreateDocum
 import EmpresaCreateContactos from "../components/FormCreate/EmpresaCreateContactos";
 import EmpresaCreateGeneral from "../components/FormCreate/EmpresaCreateGeneral";
 import EmpresaCreateConfiguraciones from "../components/FormCreate/EmpresaCreateConfiguraciones";
-import { IEmpresa } from "../../../interfaces/models/empresa/empresa.interface";
 import { FORM_INITIAL_EMPRESA } from "../../../config/constants";
-import { schemaFormEmpresa } from "../validations/empresa.schema";
+import {
+  _schemaFormEmpresaCreate,
+  schemaFormEmpresaCreate,
+} from "../validations/empresa.schema";
+import { IFeatureEmpresaCreate } from "../../../interfaces/features/empresa/empresa.interface";
 
 const EmpresaCreate = () => {
-  const methods = useForm<IEmpresa>({
+  const methods = useForm<IFeatureEmpresaCreate>({
     defaultValues: FORM_INITIAL_EMPRESA,
-    resolver: yupResolver(schemaFormEmpresa),
+    resolver: yupResolver(
+      schemaFormEmpresaCreate
+    ) as Resolver<_schemaFormEmpresaCreate>,
     mode: "onTouched",
   });
 
@@ -48,7 +57,7 @@ const EmpresaCreate = () => {
     setValue(newValue);
   };
 
-  const onSubmit: SubmitHandler<IEmpresa> = async (values) => {
+  const onSubmit: SubmitHandler<IFeatureEmpresaCreate> = async (values) => {
     const formData = new FormData();
     try {
       if (values.logo && values.logo?.length > 0) {
@@ -65,7 +74,7 @@ const EmpresaCreate = () => {
       dispatch({ type: "INIT" });
     } catch (e) {
       if (isError(e)) {
-        toastError(e.response.data.message);
+        toast.error(e.response.data.message);
       }
     }
     // dispatch({ type: "INIT" });

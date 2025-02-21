@@ -18,7 +18,7 @@ const InputDate = forwardRef(
               width: "100%",
             },
             ".MuiInputBase-root": {
-              height: "28px",
+              height: "31px",
               outline: "none",
               //border: props.error ? "1px solid #d32f2f" : "none",
               border: "1px solid #e3e4e6",

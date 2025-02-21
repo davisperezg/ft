@@ -58,5 +58,6 @@ module.exports = {
       "warn",
       { allowConstantExport: true },
     ],
+    "@typescript-eslint/prefer-nullish-coalescing": "off",
   },
 };

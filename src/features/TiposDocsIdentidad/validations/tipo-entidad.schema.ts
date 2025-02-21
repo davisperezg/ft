@@ -1,6 +1,6 @@
 import * as yup from "yup";
 import { ITipoEntidades } from "../../../interfaces/models/tipo-docs-identidad/tipo_entidades.interface";
-import { Shape } from "../../../types/yup";
+import { Shape } from "../../../types/yup.types";
 
 export const schemaFormTipoEntidad = yup
   .object()

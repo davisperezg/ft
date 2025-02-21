@@ -21,7 +21,7 @@ export const numeroALetras = (num: number) => {
 };
 
 const Unidades = (num: number) => {
-  const aLetras: { [key: number]: string } = {
+  const aLetras: Record<number, string> = {
     1: "UNO",
     2: "DOS",
     3: "TRES",
@@ -40,9 +40,9 @@ const Decenas = (num: number) => {
   const decena = Math.floor(num / 10);
   const unidad = num - decena * 10;
 
-  const aLetras: { [key: number]: string } = {
+  const aLetras: Record<number, string> = {
     1: (() => {
-      const aLetra: { [key: number]: string } = {
+      const aLetra: Record<number, string> = {
         0: "DIEZ",
         1: "ONCE",
         2: "DOCE",
@@ -75,7 +75,7 @@ const Centenas = (num: number) => {
   const centenas = Math.floor(num / 100);
   const decenas = num - centenas * 100;
 
-  const aLetras: { [key: number]: string } = {
+  const aLetras: Record<number, string> = {
     1: decenas > 0 ? "CIENTO " + Decenas(decenas) : "CIEN",
     2: "DOSCIENTOS " + Decenas(decenas),
     3: "TRESCIENTOS " + Decenas(decenas),

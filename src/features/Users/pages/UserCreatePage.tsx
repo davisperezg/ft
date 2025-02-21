@@ -3,10 +3,9 @@ import { ModalContext } from "../../../store/context/dialogContext";
 import { DialogBeta } from "../../../components/common/Dialogs/DialogBasic";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import { usePostUser } from "../hooks/useUsers";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import TabModalPanel from "../../../components/Material/Tab/TabModalPanel";
 import { isError } from "../../../utils/functions.utils";
-import { toastError } from "../../../components/common/Toast/ToastNotify";
 import { DialogTitleBeta } from "../../../components/common/Dialogs/_DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
@@ -23,8 +22,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { IUserWithPassword } from "../../../interfaces/models/user/user.interface";
 import { schemaFormUser } from "../validations/user.schema";
 import { FORM_INITIAL_USER } from "../../../config/constants";
-import { IEmpresaAsign } from "../../../interfaces/models/empresa/empresa.interface";
 import { useUserStore } from "../../../store/zustand/user-zustand";
+import { IFeatureEmpresaAsign } from "../../../interfaces/features/empresa/empresa.interface";
 
 const UserCreate = () => {
   const { dispatch, dialogState } = useContext(ModalContext);
@@ -64,7 +63,7 @@ const UserCreate = () => {
 
   const onSubmit: SubmitHandler<IUserWithPassword> = async (values) => {
     try {
-      let empresasAsign: IEmpresaAsign[] = [];
+      let empresasAsign: IFeatureEmpresaAsign[] = [];
 
       if (values.empresasAsign && values.empresasAsign.length > 0) {
         empresasAsign = values.empresasAsign
@@ -78,7 +77,7 @@ const UserCreate = () => {
               };
             }
           })
-          .filter(Boolean) as IEmpresaAsign[];
+          .filter(Boolean) as IFeatureEmpresaAsign[];
       }
 
       const res = await mutateAsync({
@@ -89,7 +88,7 @@ const UserCreate = () => {
       dispatch({ type: "INIT" });
     } catch (e) {
       if (isError(e)) {
-        toastError(e.response.data.message);
+        toast.error(e.response.data.message);
       }
     }
   };

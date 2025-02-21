@@ -2,7 +2,6 @@ import { useContext } from "react";
 import { ModalContext } from "../../../store/context/dialogContext";
 import { useAccess } from "../../../features/Permisos/hooks/useResources";
 import {
-  MENU_ALTAS,
   MENU_COMPROBANTES_ELECT,
   MENU_EMPRESAS,
   MENU_MODULOS,
@@ -10,15 +9,16 @@ import {
   MENU_ROLES,
   MENU_SERIES,
   MENU_USUARIOS,
+  MENU_TIPO_DOCUMENTOS,
 } from "../../../config/constants";
 import { DialogEnum } from "../../../types/enums/dialog.enum";
 import { PageEnum } from "../../../types/enums/page.enum";
-import { ITipoDocsExtentido } from "../../../interfaces/models/tipo-docs-cpe/tipodocs.interface";
+import { ITipoDocsExtentido } from "../../../interfaces/features/tipo-docs-cpe/tipo-docs.interface";
 import { IFeatureMenu } from "../../../interfaces/features/recurso/menu.interface";
 import { IFeatureModule } from "../../../interfaces/features/modulo/modulo.interface";
-import { PageContext } from "../../../store/context/pageContext";
 import { useTabStore } from "../../../store/zustand/tabs-zustand";
 import { useUserStore } from "../../../store/zustand/user-zustand";
+import { usePageStore } from "../../../store/zustand/page-zustand";
 
 interface Props {
   menu: IFeatureMenu;
@@ -29,7 +29,7 @@ interface Props {
 const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
   const { dispatch } = useContext(ModalContext);
   const userGlobal = useUserStore((state) => state.userGlobal);
-  const { dispatch: dispatchPage } = useContext(PageContext);
+  const setPage = usePageStore((state) => state.setPage);
   const { data: dataAccess } = useAccess(String(userGlobal?.id));
   const tabs = useTabStore((state) => state.tabs);
   const setTabs = useTabStore((state) => state.setTabs);
@@ -161,7 +161,7 @@ const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
               </div>
             )}
 
-            {menu.nombre === MENU_ALTAS && (
+            {menu.nombre === MENU_TIPO_DOCUMENTOS && (
               <div className="p-[10px] text-center">
                 {dataAccess?.some((a) => a === "canCreate_users") && (
                   <button
@@ -223,8 +223,13 @@ const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
                 {documentos.map((documento) => {
                   const DOCUMENTO = documento.nombre.toUpperCase();
 
+                  // Definimos los tipos de permisos disponibles
+                  type PermissionType =
+                    | "canCreate_facturas"
+                    | "canCreate_boletas";
+
                   // Mapeo de permisos a documentos específicos
-                  const permisoPorDocumento: { [key: string]: string } = {
+                  const permisoPorDocumento: Record<string, PermissionType> = {
                     FACTURA: "canCreate_facturas",
                     BOLETA: "canCreate_boletas",
                     // Add more documents and their permissions here if needed
@@ -243,9 +248,17 @@ const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
                   if (tienePermiso) {
                     const handleClick = () => {
                       if (DOCUMENTO === "FACTURA") {
-                        dispatchPage({ type: PageEnum.SCREEN_FACTURA });
+                        setPage({
+                          open: true,
+                          namePage: PageEnum.SCREEN_FACTURA,
+                          pageComplete: true,
+                        });
                       } else if (DOCUMENTO === "BOLETA") {
-                        dispatchPage({ type: PageEnum.SCREEN_BOLETA });
+                        setPage({
+                          open: true,
+                          namePage: PageEnum.SCREEN_BOLETA,
+                          pageComplete: true,
+                        });
                       }
                       // Agrega más acciones aquí si es necesario
                     };

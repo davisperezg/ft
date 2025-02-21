@@ -1,17 +1,17 @@
 import { useMemo, useEffect } from "react";
-import ComponentTable from "../../../components/common/Table/Index";
 import { ColumnDef } from "@tanstack/react-table";
-import { useDeleteRol, useRestoreRol, useRoles } from "../hooks/useRoles";
-import IndeterminateCheckbox from "../../../components/common/Inputs/IndeterminateCheckbox";
-import { toast } from "react-toastify";
-import { isError } from "../../../utils/functions.utils";
+import { useRoles } from "../hooks/useRoles";
+import { toast } from "sonner";
 import { IRol } from "../../../interfaces/models/rol/rol.interface";
+import { DataTable } from "../../../components/common/Table/DataTable";
 
 interface Props {
-  openEdit: (value: boolean, row: IRol) => void;
+  onRowClick: (row: IRol) => void;
+  getItemsRemoves: (items: any[]) => void;
+  getItemsRestores: (items: any[]) => void;
 }
 
-const RolList = ({ openEdit }: Props) => {
+const RolList = ({ onRowClick, getItemsRemoves, getItemsRestores }: Props) => {
   const {
     data,
     error: errorRoles,
@@ -19,64 +19,16 @@ const RolList = ({ openEdit }: Props) => {
     isError: isErrorRoles,
   } = useRoles();
 
-  const { mutateAsync: mutateDelete } = useDeleteRol();
-
-  const { mutateAsync: mutateRestore } = useRestoreRol();
-
   const columns = useMemo<ColumnDef<IRol>[]>(
     () => [
-      {
-        id: "select",
-        header: ({ table }) => (
-          <div className="pl-[7px] pt-[5px]">
-            <IndeterminateCheckbox
-              {...{
-                checked: table.getIsAllRowsSelected(),
-                indeterminate: table.getIsSomeRowsSelected(),
-                onChange: table.getToggleAllRowsSelectedHandler(),
-              }}
-            />
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="pl-[7px] pt-[5px]">
-            <IndeterminateCheckbox
-              {...{
-                checked: row.getIsSelected(),
-                disabled: !row.getCanSelect(),
-                indeterminate: row.getIsSomeSelected(),
-                onChange: row.getToggleSelectedHandler(),
-              }}
-            />
-          </div>
-        ),
-        size: 28,
-        minSize: 28,
-      },
-      {
-        accessorKey: "index",
-        id: "index",
-        header: () => {
-          return <div className="p-[5px]  select-none text-center">#</div>;
-        },
-        cell: ({ getValue }) => {
-          return (
-            <div className="p-[4px] pb-[4px]   text-center">
-              {getValue() as any}
-            </div>
-          );
-        },
-        size: 28,
-        minSize: 28,
-      },
       {
         accessorKey: "name",
         id: "name",
         header: () => {
-          return <div className="p-[5px]  select-none">Nombre</div>;
+          return <div className="w-full select-none">Nombre</div>;
         },
         cell: ({ getValue }) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue() as any}</div>;
+          return <div className="w-full">{getValue() as any}</div>;
         },
         size: 100,
         minSize: 31,
@@ -85,73 +37,28 @@ const RolList = ({ openEdit }: Props) => {
         accessorKey: "description",
         id: "description",
         header: () => {
-          return <div className="p-[5px]  select-none">Descripción</div>;
+          return <div className="w-full select-none">Descripción</div>;
         },
         cell: ({ getValue }) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue() as any}</div>;
+          return <div className="w-full">{getValue() as any}</div>;
         },
         size: 100,
         minSize: 31,
       },
       {
-        accessorKey: "actions",
+        accessorKey: "show_columns",
         header: () => {
-          return <div className="p-[5px]  select-none text-center">...</div>;
+          return <div className="select-none text-center w-full">...</div>;
         },
         size: 28,
         minSize: 28,
         enableResizing: false,
         enableSorting: false,
+        enableHiding: false,
       },
     ],
     []
   );
-
-  const getItemsRemoves = async (items: any) => {
-    const eliminar = confirm(
-      `Esta seguro que desea eliminar ${items.length} items ?`
-    );
-
-    if (eliminar) {
-      for (let index = 0; index < items.length; index++) {
-        const element = items[index];
-        try {
-          await mutateDelete({ id: element.original._id });
-        } catch (e) {
-          if (isError(e)) {
-            toast.error(e.response.data.message);
-          }
-        }
-      }
-    }
-  };
-
-  const getItemsRestores = async (items: any) => {
-    const restaurar = confirm(
-      `Esta seguro que desea restaurar ${items.length} items ?`
-    );
-
-    if (restaurar) {
-      for (let index = 0; index < items.length; index++) {
-        const element = items[index];
-        try {
-          await mutateRestore({ id: element.original._id });
-        } catch (e) {
-          if (isError(e)) {
-            toast.error(e.response.data.message);
-          }
-        }
-      }
-    }
-  };
-
-  const loadData = useMemo(() => {
-    if (data) {
-      return data;
-    }
-
-    return [];
-  }, [data]);
 
   useEffect(() => {
     if (isErrorRoles) {
@@ -161,13 +68,14 @@ const RolList = ({ openEdit }: Props) => {
 
   return (
     <>
-      <ComponentTable
-        loading={isLoading}
-        data={loadData}
+      <DataTable<IRol>
+        isLoading={isLoading}
+        data={data || []}
         columns={columns}
         getItemsRemoves={getItemsRemoves}
         getItemsRestores={getItemsRestores}
-        openEdit={openEdit}
+        onRowClick={onRowClick}
+        selects
       />
     </>
   );

@@ -41,7 +41,9 @@ export const usePostRol = () => {
         prevRoles ? [...prevRoles, response] : [response]
       );
 
-      queryClient.invalidateQueries([KEY]);
+      queryClient.invalidateQueries({
+        queryKey: [KEY],
+      });
     },
   });
 };
@@ -65,7 +67,9 @@ export const useEditRol = () => {
         return prevRoles;
       });
 
-      queryClient.invalidateQueries([KEY]);
+      queryClient.invalidateQueries({
+        queryKey: [KEY],
+      });
     },
   });
 };
@@ -86,7 +90,9 @@ export const useDeleteRol = () => {
             : prevRoles
         );
 
-        queryClient.invalidateQueries([KEY]);
+        queryClient.invalidateQueries({
+          queryKey: [KEY],
+        });
       }
     },
   });
@@ -108,7 +114,9 @@ export const useRestoreRol = () => {
             : prevRoles;
         });
 
-        queryClient.invalidateQueries([KEY]);
+        queryClient.invalidateQueries({
+          queryKey: [KEY],
+        });
       }
     },
   });

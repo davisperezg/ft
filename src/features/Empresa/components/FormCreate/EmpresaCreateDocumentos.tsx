@@ -7,7 +7,7 @@ import {
 import { useTipoDocs } from "../../../TiposDocsCpes/hooks/useTipoDocs";
 import { Grid } from "@mui/material";
 import { SelectSimple } from "../../../../components/common/Selects/SelectSimple";
-import { IEmpresa } from "../../../../interfaces/models/empresa/empresa.interface";
+import { IFeatureEmpresaCreate } from "../../../../interfaces/features/empresa/empresa.interface";
 
 const EmpresaCreateDocumentos = () => {
   const {
@@ -17,7 +17,8 @@ const EmpresaCreateDocumentos = () => {
     isError: isErrorTipdocs,
   } = useTipoDocs();
 
-  const { control, setValue: setValueModel } = useFormContext<IEmpresa>();
+  const { control, setValue: setValueModel } =
+    useFormContext<IFeatureEmpresaCreate>();
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -34,7 +35,7 @@ const EmpresaCreateDocumentos = () => {
       value: Number(item.id),
       label: `${item.codigo} - ${item.nombre}`,
       disabled: !item.status,
-    })) || [];
+    })) ?? [];
 
   const appendDocumento = () => {
     const documento = listDocs
@@ -99,7 +100,7 @@ const EmpresaCreateDocumentos = () => {
               <div className="pt-[2px] w-full flex justify-end">
                 <button
                   onClick={appendDocumento}
-                  className="flex items-center justify-center h-[20px] hover:bg-bgDefault text-center bg-default w-1/3"
+                  className="flex items-center justify-center h-[20px] hover:bg-bgDefault text-center w-1/3"
                   type="button"
                 >
                   Agregar

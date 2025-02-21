@@ -10,7 +10,8 @@ import {
   postTipoDocs,
 } from "../services/tipodocs";
 import { IServer } from "../../../interfaces/common/server.interface";
-import { ITipoDoc } from "../../../interfaces/models/tipo-docs-cpe/tipodocs.interface";
+import { ITipoDoc } from "../../../interfaces/features/tipo-docs-cpe/tipo-docs.interface";
+import { IFormCPEType } from "../../../interfaces/forms/type-doc-cpe/type-doc-cpe.interface";
 
 const KEY = "tipodocs";
 const KEY_GET_EMPRESA = "get_empresa";
@@ -40,7 +41,9 @@ export const useDisableTipDoc = () => {
               : prevTipdocs
         );
 
-        queryClient.invalidateQueries([KEY]);
+        queryClient.invalidateQueries({
+          queryKey: [KEY],
+        });
       }
     },
   });
@@ -65,7 +68,9 @@ export const useEnableTipDoc = () => {
           }
         );
 
-        queryClient.invalidateQueries([KEY]);
+        queryClient.invalidateQueries({
+          queryKey: [KEY],
+        });
       }
     },
   });
@@ -78,7 +83,9 @@ export const useDisableDocumento = () => {
     mutationFn: ({ id }) => disableDocumento(id),
     onSuccess: (result) => {
       if (result) {
-        queryClient.invalidateQueries([KEY_GET_EMPRESA]);
+        queryClient.invalidateQueries({
+          queryKey: [KEY_GET_EMPRESA],
+        });
       }
     },
   });
@@ -91,7 +98,9 @@ export const useEnableDocumento = () => {
     mutationFn: ({ id }) => enableDocumento(id),
     onSuccess: (result) => {
       if (result) {
-        queryClient.invalidateQueries([KEY_GET_EMPRESA]);
+        queryClient.invalidateQueries({
+          queryKey: [KEY_GET_EMPRESA],
+        });
       }
     },
   });
@@ -100,14 +109,16 @@ export const useEnableDocumento = () => {
 export const usePostTipDoc = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<IServer<ITipoDoc>, IError, ITipoDoc>({
+  return useMutation<IServer<IFormCPEType>, IError, IFormCPEType>({
     mutationFn: (tip) => postTipoDocs(tip),
     onSuccess: ({ response }) => {
       queryClient.setQueryData([KEY], (prevTipdocs: ITipoDoc[] | undefined) =>
         prevTipdocs ? [...prevTipdocs, response] : [response]
       );
 
-      queryClient.invalidateQueries([KEY]);
+      queryClient.invalidateQueries({
+        queryKey: [KEY],
+      });
     },
   });
 };
@@ -135,7 +146,9 @@ export const useEditTipDoc = () => {
           }
         );
 
-        queryClient.invalidateQueries([KEY]);
+        queryClient.invalidateQueries({
+          queryKey: [KEY],
+        });
       },
     }
   );

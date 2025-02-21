@@ -1,4 +1,4 @@
-import { ChangeEvent, useContext, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import logo from "../assets/images/logo_systemfact.png";
 import { storage } from "../utils/storage.utils";
 import { PageEnum } from "../types/enums/page.enum";
@@ -9,14 +9,14 @@ import {
   IAuthPayload,
 } from "../interfaces/models/auth/auth.interface";
 import { useUserStore } from "../store/zustand/user-zustand";
-import { PageContext } from "../store/context/pageContext";
+import { usePageStore } from "../store/zustand/page-zustand";
 
 interface IHeader {
   result: IAuthPayload | undefined;
 }
 
 const Header = ({ result }: IHeader) => {
-  const { dialogState } = useContext(PageContext);
+  const page = usePageStore((state) => state.page);
   const setUserGlobal = useUserStore((state) => state.setUserGlobal);
   const userGlobal = useUserStore((state) => state.userGlobal);
   const [isDropdown, setDropdown] = useState(false);
@@ -104,13 +104,13 @@ const Header = ({ result }: IHeader) => {
             );
           }
 
-          const empresaData = empresasAsignadas?.find(
-            (emp) => emp.id === empresaSeleccion?.id
-          ) as IAuthEmpresas;
+          const empresaData = empresasAsignadas.find(
+            (emp) => emp.id === empresaSeleccion.id
+          )!;
           //setEmpresaActual(empresaData);
 
           const establecimientosAsignadas =
-            empresaData?.establecimientos as IAuthEstablecimiento[];
+            (empresaData.establecimientos! as IAuthEstablecimiento[]) ?? [];
           //setEstablecimientosAsignadas(establecimientosAsignadas);
 
           const hayEstablecimientosInactivas = establecimientosAsignadas?.every(
@@ -126,9 +126,9 @@ const Header = ({ result }: IHeader) => {
             return;
           }
 
-          const establecimientoData = establecimientosAsignadas?.find(
-            (est) => est.id === establecimientoSeleccionado?.id
-          ) as IAuthEstablecimiento;
+          const establecimientoData = establecimientosAsignadas.find(
+            (est) => est.id === establecimientoSeleccionado.id
+          )!;
           //setEstablecimientoActual(establecimientoData);
 
           // Si todos los establecimientos estan desactivados
@@ -147,17 +147,18 @@ const Header = ({ result }: IHeader) => {
 
           setUserGlobal({
             ...result,
-            empresaActual:
-              { ...empresaSeleccion, establecimiento: establecimientoData } ||
-              null,
+            empresaActual: {
+              ...empresaSeleccion,
+              establecimiento: establecimientoData,
+            },
           });
 
           sessionStorage.setItem(
             "empresaActual",
-            JSON.stringify(
-              { ...empresaSeleccion, establecimiento: establecimientoData } ||
-                null
-            )
+            JSON.stringify({
+              ...empresaSeleccion,
+              establecimiento: establecimientoData,
+            })
           );
         } else {
           // Si no existe una empresa por defecto, se asignara una
@@ -234,13 +235,14 @@ const Header = ({ result }: IHeader) => {
     }
   };
 
+  const hasInactives = EMPRESAS_INACTIVAS ?? ESTABLECIMIENTOS_INACTIVOS;
+
   return (
     <>
       {/* absolute */}
       <header
         className={`bg-white w-full flex h-[60px] p-[10px] dark:bg-gray-700 ${
-          dialogState.pageComplete &&
-          dialogState.namePage === PageEnum.SCREEN_FACTURA
+          page.pageComplete && page.namePage === PageEnum.SCREEN_FACTURA
             ? "shadow-lg z-[1] fixed"
             : "relative"
         }`}
@@ -276,8 +278,7 @@ const Header = ({ result }: IHeader) => {
 
             {!EMPRESAS_ASIGNADAS ||
               EMPRESAS_ASIGNADAS?.length === 0 ||
-              EMPRESAS_INACTIVAS ||
-              ESTABLECIMIENTOS_INACTIVOS || (
+              hasInactives || (
                 <>
                   <div className="mr-[20px] w-[150px]">
                     <select

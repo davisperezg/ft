@@ -1,17 +1,18 @@
-import { useEffect, useMemo, useCallback } from "react";
-import ComponentTable from "../../../components/common/Table/Index";
+import { useEffect, useMemo } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { useDeleteUser, useRestoreUser, useUsers } from "../hooks/useUsers";
+import { useUsers } from "../hooks/useUsers";
 import { CgClose, CgSync } from "react-icons/cg";
-import { toast } from "react-toastify";
-import { isError } from "../../../utils/functions.utils";
+import { toast } from "sonner";
 import { IUser } from "../../../interfaces/models/user/user.interface";
+import { DataTable } from "../../../components/common/Table/DataTable";
 
 interface Props {
-  openEdit: (value: boolean, row: IUser) => void;
+  onRowClick: (row: IUser) => void;
+  getItemsRemoves: (items: any) => void;
+  getItemsRestores: (items: any) => void;
 }
 
-const UserList = ({ openEdit }: Props) => {
+const UserList = ({ onRowClick, getItemsRemoves, getItemsRestores }: Props) => {
   const {
     data,
     error: errorUsers,
@@ -19,75 +20,17 @@ const UserList = ({ openEdit }: Props) => {
     isError: isErrorUsers,
   } = useUsers();
 
-  const { mutateAsync: mutateDelete } = useDeleteUser();
-
-  const { mutateAsync: mutateRestore } = useRestoreUser();
-
-  const getItemsRemoves = useCallback(
-    async (item: any) => {
-      const eliminar = confirm(
-        `Esta seguro que desea eliminar ${item.username} items ?`
-      );
-
-      try {
-        if (eliminar) {
-          await mutateDelete({ id: item._id });
-        }
-      } catch (e) {
-        if (isError(e)) {
-          toast.error(e.response.data.message);
-        }
-      }
-    },
-    [mutateDelete]
-  );
-
-  const getItemsRestores = useCallback(
-    async (item: any) => {
-      const restaurar = confirm(
-        `Esta seguro que desea restaurar ${item.username} items ?`
-      );
-
-      try {
-        if (restaurar) {
-          await mutateRestore({ id: item._id });
-        }
-      } catch (e) {
-        if (isError(e)) {
-          toast.error(e.response.data.message);
-        }
-      }
-    },
-    [mutateRestore]
-  );
-
   const columns = useMemo<ColumnDef<IUser>[]>(
     () => [
-      {
-        accessorKey: "index",
-        id: "index",
-        header: () => {
-          return <div className="p-[5px]  select-none text-center">#</div>;
-        },
-        cell: ({ getValue }) => {
-          return (
-            <div className="p-[4px] pb-[4px]   text-center">
-              {getValue() as any}
-            </div>
-          );
-        },
-        size: 28,
-        minSize: 28,
-      },
       {
         accessorKey: "fullname",
         id: "fullname",
         header: () => {
-          return <div className="p-[5px]  select-none">Cliente</div>;
+          return <div className="select-none">Cliente</div>;
         },
         cell: ({ getValue }) => {
           const cliente = getValue() as any;
-          return <div className="p-[4px] pb-[4px]  ">{cliente}</div>;
+          return <div className="w-full">{cliente}</div>;
         },
         size: 100,
         minSize: 31,
@@ -96,10 +39,10 @@ const UserList = ({ openEdit }: Props) => {
         accessorKey: "email",
         id: "email",
         header: () => {
-          return <div className="p-[5px]  select-none">Email</div>;
+          return <div className="select-none">Email</div>;
         },
         cell: ({ getValue }) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue() as any}</div>;
+          return <div className="w-full">{getValue() as any}</div>;
         },
         size: 100,
         minSize: 31,
@@ -108,11 +51,11 @@ const UserList = ({ openEdit }: Props) => {
         accessorKey: "nroDocument",
         id: "nroDocument",
         header: () => {
-          return <div className="p-[5px]  select-none">Doc/Nro</div>;
+          return <div className="select-none">Doc/Nro</div>;
         },
         cell: (props) => {
           return (
-            <div className="p-[4px] pb-[4px]  ">
+            <div className="w-full">
               {props.row.original.tipDocument + " / " + props.getValue()}
             </div>
           );
@@ -124,14 +67,10 @@ const UserList = ({ openEdit }: Props) => {
         accessorKey: "role",
         id: "role",
         header: () => {
-          return <div className="p-[5px]  select-none">Rol</div>;
+          return <div className="select-none">Rol</div>;
         },
         cell: (props) => {
-          return (
-            <div className="p-[4px] pb-[4px]  ">
-              {(props.getValue() as any).name}
-            </div>
-          );
+          return <div className="w-full">{(props.getValue() as any).name}</div>;
         },
         size: 100,
         minSize: 31,
@@ -140,10 +79,10 @@ const UserList = ({ openEdit }: Props) => {
         accessorKey: "username",
         id: "username",
         header: () => {
-          return <div className="p-[5px]  select-none">Usuario</div>;
+          return <div className="select-none">Usuario</div>;
         },
         cell: ({ getValue }: any) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue()}</div>;
+          return <div className="w-full">{getValue()}</div>;
         },
         size: 100,
         minSize: 31,
@@ -152,10 +91,10 @@ const UserList = ({ openEdit }: Props) => {
         accessorKey: "owner",
         id: "owner",
         header: () => {
-          return <div className="p-[5px]  select-none">Creado por</div>;
+          return <div className="select-none">Creado por</div>;
         },
         cell: ({ getValue }) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue() as any}</div>;
+          return <div className="w-full">{getValue() as any}</div>;
         },
         size: 100,
         minSize: 31,
@@ -164,12 +103,10 @@ const UserList = ({ openEdit }: Props) => {
         accessorKey: "fecha_creada",
         id: "fecha_creada",
         header: () => {
-          return <div className="p-[5px]  select-none">Fecha creada</div>;
+          return <div className="select-none">Fecha creada</div>;
         },
         cell: (props) => {
-          return (
-            <div className="p-[4px] pb-[4px]  ">{"" + props.getValue()}</div>
-          );
+          return <div className="w-full">{"" + props.getValue()}</div>;
         },
         size: 100,
         minSize: 31,
@@ -178,12 +115,10 @@ const UserList = ({ openEdit }: Props) => {
         accessorKey: "fecha_editada",
         id: "fecha_editada",
         header: () => {
-          return <div className="p-[5px]  select-none">Fecha editada</div>;
+          return <div className="select-none">Fecha editada</div>;
         },
         cell: (props) => {
-          return (
-            <div className="p-[4px] pb-[4px]  ">{"" + props.getValue()}</div>
-          );
+          return <div className="w-full">{"" + props.getValue()}</div>;
         },
         size: 100,
         minSize: 31,
@@ -192,11 +127,11 @@ const UserList = ({ openEdit }: Props) => {
         accessorKey: "fecha_restaurada",
         id: "fecha_restaurada",
         header: () => {
-          return <div className="p-[5px]  select-none">Fecha restaurada</div>;
+          return <div className="select-none">Fecha restaurada</div>;
         },
         cell: (props) => {
           return (
-            <div className="p-[4px] pb-[4px]  ">
+            <div className="w-full">
               {props.getValue() ? "" + props.getValue() : ""}
             </div>
           );
@@ -208,11 +143,11 @@ const UserList = ({ openEdit }: Props) => {
         accessorKey: "fecha_eliminada",
         id: "fecha_eliminada",
         header: () => {
-          return <div className="p-[5px]  select-none">Fecha eliminada</div>;
+          return <div className="select-none">Fecha eliminada</div>;
         },
         cell: (props) => {
           return (
-            <div className="p-[4px] pb-[4px]  ">
+            <div className="w-full">
               {props.getValue() ? "" + props.getValue() : ""}
             </div>
           );
@@ -221,18 +156,18 @@ const UserList = ({ openEdit }: Props) => {
         minSize: 31,
       },
       {
-        accessorKey: "select",
-        id: "select",
+        accessorKey: "select2",
+        id: "select2",
         header: () => {
           return (
-            <div className="text-center p-[5px]  select-none">
-              Eliminar/Restaurar
+            <div className="text-center w-full  select-none">
+              Desactivar/Activar
             </div>
           );
         },
         cell: (props) => {
           return (
-            <div className="text-center p-[4px] pb-[4px]  ">
+            <div className="text-center w-full">
               {props.row.original.status ? (
                 <CgClose
                   onClick={() => getItemsRemoves(props.row.original)}
@@ -253,26 +188,19 @@ const UserList = ({ openEdit }: Props) => {
         minSize: 31,
       },
       {
-        accessorKey: "actions",
+        accessorKey: "show_columns",
         header: () => {
-          return <div className="p-[5px]  select-none text-center">...</div>;
+          return <div className="select-none text-center w-full">...</div>;
         },
         size: 28,
         minSize: 28,
         enableResizing: false,
         enableSorting: false,
+        enableHiding: false,
       },
     ],
     [getItemsRemoves, getItemsRestores]
   );
-
-  const loadData = useMemo(() => {
-    if (data) {
-      return data;
-    }
-
-    return [];
-  }, [data]);
 
   useEffect(() => {
     if (isErrorUsers) {
@@ -282,18 +210,11 @@ const UserList = ({ openEdit }: Props) => {
 
   return (
     <>
-      {/* <div className="bg-none border overflow-hidden whitespace-nowrap relative text-black">
-        <div className="float-left m-[3px_3px_3px_0px] w-full">
-          <div className="float-left">
-            <label>FOE</label>
-          </div>
-        </div>
-      </div> */}
-      <ComponentTable
-        loading={isLoading}
-        data={loadData}
+      <DataTable<IUser>
+        isLoading={isLoading}
+        data={data || []}
         columns={columns}
-        openEdit={openEdit}
+        onRowClick={onRowClick}
       />
     </>
   );

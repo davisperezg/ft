@@ -1,19 +1,11 @@
-import { ModalContext } from "../../../store/context/dialogContext";
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import InputText from "../../../components/Material/Input/InputText";
 import SearchIcon from "@mui/icons-material/Search";
 import { SelectSimple } from "../../../components/common/Selects/SelectSimple";
 import MoveToInboxIcon from "@mui/icons-material/MoveToInbox";
 import AddIcon from "@mui/icons-material/Add";
 import Divider from "@mui/material/Divider";
-import HighlightOff from "@mui/icons-material/HighlightOff";
+import { FaTrashAlt } from "react-icons/fa";
 import Button from "@mui/material/Button";
 import ButtonSimple from "../../../components/Material/Button/ButtonSimple";
 import Alert from "@mui/material/Alert";
@@ -22,15 +14,16 @@ import {
   Controller,
   useFieldArray,
   FormProvider,
+  Resolver,
 } from "react-hook-form";
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 import ModalObservacion from "../components/Factura/FacturaModalObservacion";
 import ModalProductos from "../components/Factura/FacturaModalProducto";
-import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
+import { FaEdit } from "react-icons/fa";
 import InputDate from "../../../components/Material/Input/InputDate";
 import { getRucSunat } from "../../../services/api/ext.service";
 import { fixed, isError, round } from "../../../utils/functions.utils";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useMonedas } from "../../Monedas/hooks/useMoneda";
 import { useFormaPago } from "../../TiposFormaPago/hooks/useFormaPago";
 import { useEntidadesByEmpresa } from "../../Entidades/hooks/useEntidades";
@@ -45,92 +38,28 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import { FaCheck } from "react-icons/fa";
 import { MdOutlineClose } from "react-icons/md";
-import { yupResolver } from "@hookform/resolvers/yup";
 import { FaCloudUploadAlt } from "react-icons/fa";
-import { schemaFormInvoice } from "../validations/invoice.schema";
-import { IInvoice } from "../../../interfaces/models/invoices/invoice.interface";
-import { IProducto } from "../../../interfaces/models/producto/producto.interface";
+import { IDTOQueryInvoiceRegistered } from "../../../interfaces/models/invoices/invoice.interface";
 import { PageEnum } from "../../../types/enums/page.enum";
 import { IAuthEmpresa } from "../../../interfaces/models/auth/auth.interface";
 import { useUserStore } from "../../../store/zustand/user-zustand";
-
-const INITIAL_PRODUCTO: IProducto = {
-  tipAfeIgv: "10",
-  cantidad: 1,
-  unidad: "NIU",
-  codigo: "",
-  descripcion: "",
-  porcentajeIgv: 18,
-  mtoValorUnitario: "",
-  // mtoBaseIgv: "0.00",
-  // igv: "0.00",
-  // totalImpuestos: "0.00",
-  // mtoTotalItem: "0.00",
-  //igvUnitario: 0,
-  //mtoPrecioUnitario: 0,
-  //precio_base: "",
-  //precio_unitario: "",
-};
-
-const INITIAL_FACTURA: IInvoice = {
-  serie: "",
-  numero: "",
-  numeroConCeros: "",
-  fecha_emision: dayjs(new Date()),
-  fecha_vencimiento: null,
-  ruc: "",
-  cliente: "",
-  direccion: "",
-  tipo_entidad: "6", //dni, ruc - default es 2 ya q factura solo acepta rucs
-  //tipo_documento: 0, //boleta, factura(setear jalando dato del context)
-  tipo_operacion: "0101",
-  moneda: "PEN",
-  forma_pago: "Contado",
-  observacion: "",
-  observaciones_invoice: [],
-  productos: [],
-  producto: INITIAL_PRODUCTO,
-};
-
-interface IProductsExtend extends IProducto {
-  uuid?: string;
-  mtoPrecioUnitario: string;
-  mtoTotalItem: string;
-}
-
-interface IProductTable {
-  operacion_gravada: number;
-  igv: number;
-  operacion_exonerada: number;
-  operacion_inafecta: number;
-  operacion_exportacion: number;
-  operacion_gratuita: number;
-  operacion_total: number;
-  items: IProductsExtend[];
-}
-
-interface IInvoiceRegistered {
-  aceptada_sunat: string;
-  borrador: boolean;
-  cdr: string;
-  codigo_sunat: number;
-  correlativo_registrado: string;
-  correlativo_registradoConCeros: string;
-  documento: string;
-  enviada_sunat: number;
-  estado: string;
-  fileName: string;
-  invoice: IInvoice;
-  loading: boolean;
-  mensaje_sunat: string;
-  numero: string;
-  numeroConCeros: string;
-  otros_sunat: string;
-  pdfA4: string;
-  serie: string;
-  total: string;
-  xml: string;
-}
+import { usePageStore } from "../../../store/zustand/page-zustand";
+import Grid from "@mui/material/Grid2";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { IFormInvoice } from "../../../interfaces/forms/invoices/invoice.interface";
+import {
+  IFeatureInvoice,
+  IFeatureInvoiceProductTable,
+} from "../../../interfaces/features/invoices/invoice.interface";
+import {
+  FORM_INITIAL_INVOICE,
+  FORM_MODAL_PRODUCT_INVOICE,
+} from "../../../config/constants";
+import {
+  _schemaTypeFormInvoice,
+  schemaFormInvoice,
+} from "../validations/invoice.schema";
+//import { DevTool } from "@hookform/devtools";
 
 const initialOptions = {
   whatsapp: false,
@@ -140,9 +69,10 @@ const initialOptions = {
 
 const FacturaScreen = () => {
   const DECIMAL = 6;
-  const { dialogState, dispatch } = useContext(ModalContext);
   const userGlobal = useUserStore((state) => state.userGlobal);
   const setUserGlobal = useUserStore((state) => state.setUserGlobal);
+  const setPage = usePageStore((state) => state.setPage);
+  const page = usePageStore((state) => state.page);
   const [isActiveModalObs, setActiveModalObs] = useState(false);
   const [isActiveModalProductos, setActiveModalProductos] = useState(false);
   const [isOpenDateEmision, setIsOpenDateEmision] = useState(false);
@@ -153,9 +83,13 @@ const FacturaScreen = () => {
   const [confirmDialog, setConfigDialog] = useState(false);
   const [isDraft, setDraft] = useState(false);
   const [invoiceRegistered, setInvoiceRegistered] =
-    useState<IInvoiceRegistered | null>(null);
+    useState<IDTOQueryInvoiceRegistered | null>(null);
   const [options, setOptions] = useState(initialOptions);
   const [nroWsp, setNroWsp] = useState("");
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const [objectFit, setObjectFit] = useState<"object-cover" | "object-fill">(
+    "object-cover"
+  );
 
   const handleCloseBackdrop = () => setBackdrop(false);
   const handleOpenBackdrop = (e: any) => {
@@ -177,7 +111,6 @@ const FacturaScreen = () => {
   };
 
   //const [format, setFormat] = useState<string | undefined>("");
-
   const CPE = userGlobal?.empresaActual?.establecimiento?.documentos?.find(
     (doc) => String(doc.nombre).toUpperCase() === "FACTURA"
   );
@@ -185,28 +118,29 @@ const FacturaScreen = () => {
   const configuracionesEstablecimiento =
     userGlobal?.empresaActual?.establecimiento?.configuraciones;
 
-  const CPE_SERIES = useMemo(
-    () => CPE?.series.filter((serie) => serie.estado) || [],
-    [CPE?.series]
-  );
+  const CPE_SERIES = useMemo(() => {
+    return CPE?.series.filter((serie) => serie.estado) || [];
+  }, [CPE]);
 
-  const methods = useForm<IInvoice>({
+  const methods = useForm<IFeatureInvoice>({
     defaultValues: {
-      ...INITIAL_FACTURA,
-      productos: dialogState.payload ? dialogState.payload.productos : [],
+      ...FORM_INITIAL_INVOICE,
+      details: page.payload?.details || [],
+      observaciones: page.payload?.observaciones || [],
     },
-    values: dialogState.payload
-      ? {
-          ...dialogState.payload,
-        }
-      : {
-          ...INITIAL_FACTURA,
-          serie: CPE_SERIES?.[0]?.serie ?? "",
-          numero: CPE_SERIES?.[0]?.numero ?? "",
-          numeroConCeros: CPE_SERIES?.[0]?.numeroConCeros ?? "",
-          //fecha_emision: dayjs(new Date()),
-        },
-    resolver: yupResolver(schemaFormInvoice),
+    values: page.payload || {
+      ...FORM_INITIAL_INVOICE,
+      serie: CPE_SERIES?.[0]?.serie || "",
+      numero: CPE_SERIES?.[0]?.numero || "",
+      numeroConCeros: CPE_SERIES?.[0]?.numeroConCeros || "",
+    },
+    resolver: yupResolver(
+      schemaFormInvoice
+    ) as Resolver<_schemaTypeFormInvoice>,
+    context: {
+      isModalOpen: isActiveModalProductos,
+      isModalObsOpen: isActiveModalObs,
+    },
     mode: "onChange",
   });
 
@@ -214,14 +148,14 @@ const FacturaScreen = () => {
     control,
     register,
     handleSubmit,
-    formState: { errors },
-    clearErrors,
+    formState: { errors, isValid },
     watch,
     getValues,
     setValue,
     setError,
     reset,
     trigger,
+    unregister,
   } = methods;
 
   const {
@@ -230,7 +164,7 @@ const FacturaScreen = () => {
     remove: removeObs,
   } = useFieldArray({
     control,
-    name: "observaciones_invoice",
+    name: "observaciones",
     keyName: "uuid",
   });
 
@@ -241,7 +175,7 @@ const FacturaScreen = () => {
     update: updateProducts,
   } = useFieldArray({
     control,
-    name: "productos",
+    name: "details",
     keyName: "uuid",
   });
 
@@ -250,17 +184,25 @@ const FacturaScreen = () => {
   };
 
   const agregarProducto = () => {
-    appendProducts(getValues("producto") ?? INITIAL_PRODUCTO);
+    appendProducts(getValues("producto") ?? FORM_MODAL_PRODUCT_INVOICE);
     handleCloseProductos();
   };
 
-  const agregarObservacion = () => {
-    appendObs({ observacion: String(getValues("observacion")) });
+  const agregarObservacion = async () => {
+    const validObs = await trigger("observacion");
+    if (!validObs) return;
+    appendObs({
+      observacion: String(getValues("observacion")),
+      uuid: undefined,
+    });
     handleCloseObservacion();
   };
 
   const actualizarProducto = (posicionTabla: number) => {
-    updateProducts(posicionTabla, getValues("producto") ?? INITIAL_PRODUCTO);
+    updateProducts(
+      posicionTabla,
+      getValues("producto") ?? FORM_MODAL_PRODUCT_INVOICE
+    );
     handleCloseProductos();
   };
 
@@ -269,18 +211,20 @@ const FacturaScreen = () => {
     return correlativo;
   };
 
-  const handleCloseObservacion = () => {
+  const handleCloseObservacion = async () => {
     setActiveModalObs(false);
-    setValue("observacion", "");
+    await trigger("observacion");
+    unregister("observacion");
   };
-  const handleCloseProductos = () => {
+
+  const handleCloseProductos = async () => {
     setActiveModalProductos(false);
-    setValue("producto", INITIAL_PRODUCTO);
-    clearErrors("producto");
+    await trigger();
+    unregister("producto");
   };
 
   const operacionesProductos = fieldsProducts.reduce(
-    (prev: IProductTable, curr) => {
+    (prev: IFeatureInvoiceProductTable, curr) => {
       //gravada onerosa
       if (curr.tipAfeIgv === "10") {
         const mtoValorUnitario = round(Number(curr.mtoValorUnitario), DECIMAL);
@@ -400,21 +344,25 @@ const FacturaScreen = () => {
   const ruc = watch("ruc");
 
   const memoEntidades = useMemo(() => {
-    let result = dataEntidades || [];
+    let result = dataEntidades ?? [];
 
     if (ruc.length > 0) {
       //filtrar por ruc
       result =
         dataEntidades?.filter((item) =>
           item.numero_documento.toLowerCase().includes(ruc)
-        ) || [];
+        ) ?? [];
     }
 
     return result;
   }, [dataEntidades, ruc]);
 
   const consultarRuc = async () => {
+    const validRuc = await trigger("ruc");
+    if (!validRuc) return;
+
     setOpenSearch(false);
+
     try {
       const entidad = await getRucSunat(getValues("ruc"));
       if (!entidad.lista) {
@@ -454,7 +402,7 @@ const FacturaScreen = () => {
         label: `${item.abrstandar} - (${item.simbolo}) ${abreviado}`,
         value: item.abrstandar,
       };
-    }) || [];
+    }) ?? [];
 
   const { data: dataFormaPagos, isLoading: isLoadingFormaPagos } =
     useFormaPago();
@@ -465,57 +413,39 @@ const FacturaScreen = () => {
         label: item.forma_pago,
         value: item.forma_pago,
       };
-    }) || [];
-
-  useEffect(() => {
-    const handleOutsideClick = (event: any) => {
-      // Verificar si el clic fue fuera del componente
-      if (rucSelect.current && !rucSelect.current.contains(event.target)) {
-        setOpenSearch(false);
-      }
-    };
-
-    // Agregar el evento al documento cuando el componente se monta
-    document.addEventListener("mousedown", handleOutsideClick);
-
-    // Eliminar el evento cuando el componente se desmonta
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-    };
-  }, []);
+    }) ?? [];
 
   const { socket, reconnecting } = useSocketInvoice();
 
-  const onSubmit = async (values: IInvoice, borrador: boolean) => {
+  const onSubmit = async (values: IFeatureInvoice, borrador: boolean) => {
     setLoading(true);
 
-    const { fecha_emision, fecha_vencimiento, ...rest } = values;
+    const { fecha_emision, fecha_vencimiento } = values;
 
-    const fechaEmision = (fecha_emision as Dayjs).toDate();
-    //Actualizamos la hora de la fecha de emisison
-    const fechaActual = new Date(); // Obtener la fecha y hora actual
-    const hora = fechaActual.getHours();
-    const minutos = fechaActual.getMinutes();
-    const segundos = fechaActual.getSeconds();
-    fechaEmision.setHours(hora, minutos, segundos); // Actualizar solo la hora
-
+    const fechaEmision = dayjs(fecha_emision).toDate();
     const fechaVencimiento = fecha_vencimiento
-      ? (fecha_vencimiento as Dayjs).toDate()
-      : null;
+      ? dayjs(fecha_vencimiento).toDate()
+      : undefined;
 
-    console.log(CPE);
-    console.log(CPE_SERIES);
-    const data: IInvoice = {
-      ...rest,
-      empresa: Number(userGlobal?.empresaActual?.id),
-      establecimiento: Number(userGlobal?.empresaActual?.establecimiento?.id),
+    const data: IFormInvoice = {
+      tipo_documento: values.tipo_documento,
+      serie: values.serie,
+      numero: values.numero,
+      tipo_entidad: values.tipo_entidad,
+      ruc: values.ruc,
+      cliente: values.cliente,
+      direccion: values.direccion,
       fecha_emision: fechaEmision,
       fecha_vencimiento: fechaVencimiento,
-      tipo_documento: CPE?.codigo,
+      tipo_operacion: values.tipo_operacion,
+      moneda: values.moneda,
+      details: values.details,
+      forma_pago: values.forma_pago,
+      observaciones: values.observaciones?.map((item) => item.observacion),
+      empresa: Number(userGlobal?.empresaActual?.id),
+      establecimiento: Number(userGlobal?.empresaActual?.establecimiento?.id),
       borrador: borrador,
-      // total_igv: decimalesSimples(String(sumarIGVTotal())),
-      // total_pagar: decimalesSimples(String(sumarImporteTotal())),
-      // total_gravada: decimalesSimples(String(sumarOpeGravadasTotal())),
+      id: values.id,
     };
 
     console.log(data);
@@ -535,8 +465,10 @@ const FacturaScreen = () => {
           setSuccess(true);
 
           //Reiniciamos valores por defecto excepto la serie y correlativos
-          dispatch({
-            type: PageEnum.SCREEN_FACTURA,
+          setPage({
+            namePage: PageEnum.SCREEN_FACTURA,
+            open: true,
+            pageComplete: true,
             payload: null,
           });
           reset();
@@ -581,9 +513,11 @@ const FacturaScreen = () => {
           };
 
           //Actualizamos la nueva mutacion del correlativo
-          setUserGlobal({
-            ...userGlobal,
-            empresaActual: updateSerie,
+          setUserGlobal((user) => {
+            return {
+              ...user,
+              empresaActual: updateSerie,
+            };
           });
           // sessionStorage.setItem("empresaActual", JSON.stringify(updateSerie));
           setLoading(data.loading);
@@ -600,14 +534,31 @@ const FacturaScreen = () => {
     },
     [
       setUserGlobal,
+      setPage,
       userGlobal,
-      dispatch,
       reset,
       setValue,
       CPE_SERIES,
       CPE?.nombre,
     ]
   );
+
+  useEffect(() => {
+    const handleOutsideClick = (event: any) => {
+      // Verificar si el clic fue fuera del componente
+      if (rucSelect.current && !rucSelect.current.contains(event.target)) {
+        setOpenSearch(false);
+      }
+    };
+
+    // Agregar el evento al documento cuando el componente se monta
+    document.addEventListener("mousedown", handleOutsideClick);
+
+    // Eliminar el evento cuando el componente se desmonta
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, []);
 
   useEffect(() => {
     if (socket) {
@@ -627,10 +578,30 @@ const FacturaScreen = () => {
   }, [handleIdInvoice, socket]);
 
   useEffect(() => {
-    if (!dialogState.payload) {
-      setValue("fecha_emision", dayjs(new Date()));
+    const imgElement = imgRef.current;
+
+    const handleLoad = () => {
+      if (imgElement) {
+        if (imgElement.naturalWidth > imgElement.naturalHeight) {
+          setObjectFit("object-fill");
+        } else {
+          setObjectFit("object-cover");
+        }
+      }
+    };
+
+    if (imgElement?.complete) {
+      handleLoad(); // Si la imagen ya está cargada
+    } else {
+      imgElement?.addEventListener("load", handleLoad);
     }
-  }, [dialogState.payload, setValue]);
+
+    return () => {
+      imgElement?.removeEventListener("load", handleLoad);
+    };
+  }, []);
+
+  console.log(invoiceRegistered);
 
   return (
     <>
@@ -687,7 +658,8 @@ const FacturaScreen = () => {
                 <Alert
                   icon={false}
                   severity={
-                    invoiceRegistered?.aceptada_sunat === "RECHAZADA"
+                    invoiceRegistered?.aceptada_sunat === "RECHAZADA" ||
+                    invoiceRegistered?.aceptada_sunat === "ERROR_CONTRIBUYENTE"
                       ? "error"
                       : "success"
                   }
@@ -701,7 +673,10 @@ const FacturaScreen = () => {
                         )
                           ? invoiceRegistered?.aceptada_sunat === "RECHAZADA"
                             ? "Generado con rechazo."
-                            : "Generado con éxito."
+                            : invoiceRegistered?.aceptada_sunat ===
+                                "ERROR_CONTRIBUYENTE"
+                              ? "Hubo una excepcion del documento por SUNAT"
+                              : "Generado con éxito."
                           : "Generado con éxito. Segun configuraciones este documento no envia a SUNAT."
                       }`}
                 </Alert>
@@ -718,70 +693,83 @@ const FacturaScreen = () => {
                   TOTAL: {invoiceRegistered?.total}
                 </h4>
                 {(!invoiceRegistered?.aceptada_sunat &&
-                  invoiceRegistered?.borrador) || (
-                  <div className="w-full border py-3 px-5 flex justify-center items-center mt-2">
-                    <Button
-                      component="a"
-                      target="_blank"
-                      href={invoiceRegistered?.pdfA4}
-                      rel="noopener noreferrer"
-                      variant="contained"
-                      color="primary"
-                    >
-                      IMPRIMIR
-                    </Button>
-                  </div>
-                )}
+                  invoiceRegistered?.borrador) ||
+                  invoiceRegistered?.aceptada_sunat === "ERROR_CONTRIBUYENTE" ||
+                  invoiceRegistered?.aceptada_sunat === "RECHAZADA" || (
+                    <div className="w-full border py-3 px-5 flex justify-center items-center mt-2">
+                      <Button
+                        className="hover:text-white"
+                        component="a"
+                        target="_blank"
+                        href={invoiceRegistered?.pdfA4}
+                        rel="noopener noreferrer"
+                        variant="contained"
+                        color="primary"
+                      >
+                        IMPRIMIR
+                      </Button>
+                    </div>
+                  )}
 
                 {(!invoiceRegistered?.aceptada_sunat &&
-                  invoiceRegistered?.borrador) || (
-                  <div className="w-full border py-3 px-5 flex gap-2 justify-center items-center mt-2">
-                    <Button
-                      component="a"
-                      target="_blank"
-                      href={invoiceRegistered?.pdfA4}
-                      rel="noopener noreferrer"
-                      variant="contained"
-                      color="secondary"
-                      className="hover:text-white"
-                    >
-                      VER PDF
-                    </Button>
+                  invoiceRegistered?.borrador) ||
+                  invoiceRegistered?.aceptada_sunat === "ERROR_CONTRIBUYENTE" ||
+                  invoiceRegistered?.aceptada_sunat === "RECHAZADA" || (
+                    <div className="w-full border py-3 px-5 flex gap-2 justify-center items-center mt-2">
+                      <Button
+                        component="a"
+                        target="_blank"
+                        href={invoiceRegistered?.pdfA4}
+                        rel="noopener noreferrer"
+                        variant="contained"
+                        color="secondary"
+                        className="hover:text-white"
+                      >
+                        VER PDF
+                      </Button>
 
-                    {/* https://greenter.dev/faq/#facturas */}
-                    {/* 0100 a 1999	Excepciones	Corregir y volver a enviar la factura */}
-                    {/* 2000 a 3999	Errores (Rechazo)	Emitir una nueva factura */}
-                    {/* >4000	Observaciones	Corregir en futuras facturas */}
-                    {invoiceRegistered?.aceptada_sunat === "EXCEPCION" ||
-                      !configuracionesEstablecimiento?.some(
-                        (config) => config.enviar_inmediatamente_a_sunat
-                      ) || (
-                        <>
-                          <Button
-                            component="a"
-                            href={invoiceRegistered?.xml}
-                            variant="contained"
-                            color="success"
-                            className="hover:text-white"
-                          >
-                            DESCARGAR XML
-                          </Button>
-                          <Button
-                            component="a"
-                            href={invoiceRegistered?.cdr}
-                            variant="contained"
-                            color="primary"
-                            className="hover:text-white"
-                          >
-                            DESCARGAR CDR
-                          </Button>
-                        </>
-                      )}
-                  </div>
-                )}
+                      {/* https://greenter.dev/faq/#facturas */}
+                      {/* 0100 a 999	Excepciones	SUNAT Corregir y volver a enviar la factura */}
+                      {/* 1000 a 1999	Excepciones	Contribuyente Corregir y volver a enviar la factura */}
+                      {/* 2000 a 3999	Errores (Rechazo)	Emitir una nueva factura */}
+                      {/* >4000	Observaciones	Corregir en futuras facturas */}
+                      {invoiceRegistered?.aceptada_sunat ===
+                        "ERROR_CONTRIBUYENTE" ||
+                        invoiceRegistered?.aceptada_sunat ===
+                          "ERROR_EXCEPCION" ||
+                        invoiceRegistered?.aceptada_sunat === "ERROR" ||
+                        invoiceRegistered?.aceptada_sunat === null ||
+                        !configuracionesEstablecimiento?.some(
+                          (config) => config.enviar_inmediatamente_a_sunat
+                        ) || (
+                          <>
+                            <Button
+                              component="a"
+                              href={invoiceRegistered?.xml}
+                              variant="contained"
+                              color="success"
+                              className="hover:text-white"
+                            >
+                              DESCARGAR XML
+                            </Button>
+                            <Button
+                              component="a"
+                              href={invoiceRegistered?.cdr}
+                              variant="contained"
+                              color="primary"
+                              className="hover:text-white"
+                            >
+                              DESCARGAR CDR
+                            </Button>
+                          </>
+                        )}
+                    </div>
+                  )}
 
                 <div className="w-full border py-3 px-5 gap-2 flex flex-col justify-center items-center mt-2 cursor-pointer">
                   {invoiceRegistered?.aceptada_sunat === "RECHAZADA" ||
+                    invoiceRegistered?.aceptada_sunat ===
+                      "ERROR_CONTRIBUYENTE" ||
                     (!invoiceRegistered?.aceptada_sunat &&
                       invoiceRegistered?.borrador) || (
                       <>
@@ -904,10 +892,10 @@ const FacturaScreen = () => {
                     Ver comprobantes
                   </a>
                 </div>
-                {invoiceRegistered?.aceptada_sunat === "EXCEPCION" ||
+                {invoiceRegistered?.aceptada_sunat === "ERROR_CONTRIBUYENTE" ||
                   invoiceRegistered?.aceptada_sunat === "RECHAZADA" || (
                     <div className="w-full border py-3 px-5 flex justify-center items-center mt-2">
-                      <Button variant="contained" color="primary" fullWidth>
+                      <Button variant="contained" color="error" fullWidth>
                         ANULAR o comunicar de baja
                       </Button>
                     </div>
@@ -923,13 +911,17 @@ const FacturaScreen = () => {
                   </Alert>
                 ) : null}
                 <div
-                  className={`flex w-full border py-3 px-5 flex-col gap-2 mt-2 ${invoiceRegistered?.borrador || invoiceRegistered?.aceptada_sunat === "RECHAZADA" ? "text-red-600" : "text-green-700"}`}
+                  className={`flex w-full border py-3 px-5 flex-col gap-2 mt-2 ${invoiceRegistered?.borrador || invoiceRegistered?.aceptada_sunat === "ERROR_CONTRIBUYENTE" ? "text-red-600" : "text-green-700"}`}
                 >
                   <strong className="flex items-center">
                     Enviada a la Sunat?:&nbsp;
                     {invoiceRegistered?.enviada_sunat === 2 ? (
                       <FaCheck />
-                    ) : invoiceRegistered?.aceptada_sunat === "EXCEPCION" ? (
+                    ) : invoiceRegistered?.aceptada_sunat ===
+                        "ERROR_EXCEPCION" ||
+                      invoiceRegistered?.aceptada_sunat === null ||
+                      (invoiceRegistered?.aceptada_sunat === "ERROR" &&
+                        !invoiceRegistered?.borrador) ? (
                       <FaCloudUploadAlt />
                     ) : invoiceRegistered?.aceptada_sunat === "RECHAZADA" ? (
                       <FaCheck />
@@ -941,11 +933,17 @@ const FacturaScreen = () => {
                     Aceptada por la Sunat?:&nbsp;
                     {invoiceRegistered?.aceptada_sunat === "ACEPTADA" ? ( //cpe aceptado
                       <FaCheck />
-                    ) : !invoiceRegistered?.aceptada_sunat ? ( //borrador
+                    ) : (!invoiceRegistered?.aceptada_sunat &&
+                        invoiceRegistered?.borrador) ||
+                      (invoiceRegistered?.aceptada_sunat === "ERROR" &&
+                        invoiceRegistered?.borrador) ? ( //borrador
                       <MdOutlineClose />
                     ) : invoiceRegistered?.aceptada_sunat === "RECHAZADA" ? ( //errones generan rechazo de sunat comprobante invalido
                       "RECHAZADA"
-                    ) : invoiceRegistered?.aceptada_sunat === "EXCEPCION" ? (
+                    ) : invoiceRegistered?.aceptada_sunat ===
+                        "ERROR_EXCEPCION" ||
+                      invoiceRegistered?.aceptada_sunat === null ||
+                      invoiceRegistered?.aceptada_sunat === "ERROR" ? (
                       `Tu Factura ${invoiceRegistered?.serie}-${invoiceRegistered?.correlativo_registradoConCeros} ha sido emitida e informada a SUNAT` //Errores de sunat 0100-999 se mostraran como exito y luego seran enviados hasta que sunat los acepte
                     ) : (
                       invoiceRegistered?.aceptada_sunat // Otros errores
@@ -997,6 +995,7 @@ const FacturaScreen = () => {
         <FormProvider {...methods}>
           {isActiveModalObs && (
             <ModalObservacion
+              errors={errors}
               control={control}
               open={isActiveModalObs}
               handleClose={handleCloseObservacion}
@@ -1021,49 +1020,144 @@ const FacturaScreen = () => {
           )}
           <form>
             {/* HEADER */}
-            <div className="flex flex-row  p-2 gap-2 w-full pt-[20px]">
-              <div className="w-[70%] flex flex-col">
-                <div className="flex w-full p-1 gap-2 relative">
-                  <div className="flex gap-2 relative">
-                    <label className="flex justify-center items-center gap-2 relative">
-                      RUC:
-                      <Controller
-                        name="ruc"
-                        control={control}
-                        render={({ field }) => (
-                          <InputText
-                            {...field}
-                            hiddenLabel
-                            variant="filled"
-                            autoComplete="off"
-                            error={!!errors.ruc}
-                            helperText={errors.ruc?.message}
-                            inputProps={{ maxLength: 11 }}
-                            placeholder="Número de documento"
-                            onChange={(e) => {
-                              field.onChange(e);
-                              setValue("cliente", "");
-                              setValue("direccion", "");
-                              if (memoEntidades && memoEntidades?.length > 0) {
-                                setOpenSearch(true);
-                              }
-                            }}
-                            onClick={() => {
-                              if (
-                                (dataEntidades && dataEntidades?.length > 0) ||
-                                isLoadingEntidades
-                              ) {
-                                setOpenSearch(true);
-                              }
-                            }}
-                          />
+            <div className="px-5 pt-[20px]">
+              <Grid container spacing={2} columns={12}>
+                <Grid container spacing={2} size={8}>
+                  <Grid size={4}>
+                    <div className="flex items-center justify-end">
+                      <img
+                        ref={imgRef}
+                        className={`w-[130px] h-[130px] ${objectFit}`}
+                        alt="Logo Empresa"
+                        src={String(
+                          userGlobal?.empresaActual?.establecimiento?.logo
                         )}
                       />
-                    </label>
+                    </div>
+                  </Grid>
+                  <Grid size={8}>
+                    <div className="gap-2 flex flex-col justify-start items-start h-full">
+                      <span className="text-[22px]">
+                        <strong>
+                          {userGlobal?.empresaActual?.razon_social ??
+                            "Razón social"}
+                        </strong>
+                      </span>
+
+                      <span className="text-[14px]">
+                        {userGlobal?.empresaActual?.establecimiento
+                          ?.direccion ?? "S/A"}
+                      </span>
+
+                      <span className="text-[14px]">
+                        {String(
+                          userGlobal?.empresaActual?.establecimiento
+                            ?.distrito ?? "-"
+                        )}{" "}
+                        {String(
+                          userGlobal?.empresaActual?.establecimiento
+                            ?.provincia ?? "-"
+                        )}{" "}
+                        {String(
+                          userGlobal?.empresaActual?.establecimiento
+                            ?.departamento ?? "-"
+                        )}
+                      </span>
+                    </div>
+                  </Grid>
+                </Grid>
+
+                <Grid size={4}>
+                  <div className="text-[15px] gap-5 m-1 pt-4 pb-4 border border-dashed border-black flex flex-col justify-between items-center">
+                    <div className="font-bold h-1/3 flex justify-center items-start">
+                      <span>R.U.C. N° {userGlobal?.empresaActual?.ruc}</span>
+                    </div>
+                    <div className="font-bold h-1/3 flex justify-center items-start">
+                      <span>FACTURA ELECTRÓNICA</span>
+                    </div>
+                    {CPE_SERIES.length > 0 ? (
+                      <div className="h-1/3 flex items-center flex-row w-full justify-between px-4">
+                        <select
+                          {...register("serie", {
+                            onChange: (e) => {
+                              const value = e.target.value;
+                              const serie = obtenerSerie(value);
+                              setValue("numero", String(serie?.numero));
+                              setValue(
+                                "numeroConCeros",
+                                String(serie?.numeroConCeros)
+                              );
+                            },
+                          })}
+                          className="border w-5/12 h-full outline-none cursor-pointer px-[6px] py-[8px]"
+                        >
+                          {CPE_SERIES.map((item) => {
+                            return (
+                              <option key={item.id} disabled={!item.estado}>
+                                {String(item.serie).toUpperCase()}
+                              </option>
+                            );
+                          })}
+                        </select>
+                        <span className="w-2/12 flex justify-center items-center">
+                          -
+                        </span>
+                        <label className="w-5/12 border h-full flex justify-center items-center px-[6px] py-[8px]">
+                          {watch("numeroConCeros")}
+                        </label>
+                      </div>
+                    ) : (
+                      <div className="h-1/3 flex items-center flex-row w-full justify-center pr-4 pl-4 text-danger">
+                        No tienes series asignadas
+                      </div>
+                    )}
+                  </div>
+                </Grid>
+              </Grid>
+            </div>
+            {/* FIN HEADER */}
+
+            {/* BODY */}
+            <div className="flex flex-row p-2 gap-2 w-full">
+              <div className="w-full">
+                <div className="flex w-full p-1 gap-2 relative">
+                  <div className="flex gap-1 relative">
+                    <Controller
+                      name="ruc"
+                      control={control}
+                      render={({ field }) => (
+                        <InputText
+                          {...field}
+                          hiddenLabel
+                          variant="filled"
+                          autoComplete="off"
+                          error={!!errors.ruc}
+                          helperText={errors.ruc?.message}
+                          inputProps={{ maxLength: 11 }}
+                          placeholder="RUC"
+                          onChange={(e) => {
+                            field.onChange(e);
+                            setValue("cliente", "");
+                            setValue("direccion", "");
+                            if (memoEntidades && memoEntidades?.length > 0) {
+                              setOpenSearch(true);
+                            }
+                          }}
+                          onClick={() => {
+                            if (
+                              (dataEntidades && dataEntidades?.length > 0) ||
+                              isLoadingEntidades
+                            ) {
+                              setOpenSearch(true);
+                            }
+                          }}
+                        />
+                      )}
+                    />
                     <button
                       type="button"
                       onClick={consultarRuc}
-                      className="hover:border-blueAction border w-[32px]"
+                      className="hover:border-blueAction border w-[32px] h-[32px]"
                     >
                       <SearchIcon className="text-borders" />
                     </button>
@@ -1088,11 +1182,12 @@ const FacturaScreen = () => {
                                         ? "bg-primary text-white"
                                         : ""
                                     }`}
-                                    onClick={() => {
+                                    onClick={async () => {
                                       setValue("ruc", item.numero_documento);
                                       setValue("cliente", item.entidad);
                                       setValue("direccion", item.direccion);
                                       setOpenSearch(false);
+                                      await trigger();
                                     }}
                                   >
                                     {item.numero_documento} - {item.entidad}
@@ -1105,8 +1200,7 @@ const FacturaScreen = () => {
                       </>
                     )}
                   </div>
-                </div>
-                <div className="flex w-full p-1">
+
                   <div className="w-full">
                     <Controller
                       name="cliente"
@@ -1124,6 +1218,7 @@ const FacturaScreen = () => {
                     />
                   </div>
                 </div>
+
                 <div className="flex w-full p-1">
                   <div className="w-full">
                     <Controller
@@ -1140,8 +1235,9 @@ const FacturaScreen = () => {
                     />
                   </div>
                 </div>
-                <div className="flex w-full p-1 justify-between">
-                  <div className="flex w-1/2">
+
+                <div className="flex w-full p-1 gap-32 justify-end">
+                  <div className="flex w-auto">
                     <label className="flex w-full whitespace-nowrap justify-center items-center">
                       F. de Emisión: &nbsp;
                       <Controller
@@ -1158,7 +1254,7 @@ const FacturaScreen = () => {
                               format="YYYY-MM-DD"
                               onChange={(e) => {
                                 field.onChange(e);
-                                setValue("fecha_vencimiento", null);
+                                setValue("fecha_vencimiento", undefined);
                               }}
                               slotProps={{
                                 textField: {
@@ -1172,9 +1268,9 @@ const FacturaScreen = () => {
                     </label>
                   </div>
 
-                  <div className="flex w-1/3">
+                  <div className="flex w-auto">
                     <label className="flex w-full whitespace-nowrap justify-center items-center">
-                      Vencimiento: &nbsp;
+                      F. de Vencimiento: &nbsp;
                       <Controller
                         name="fecha_vencimiento"
                         control={control}
@@ -1202,6 +1298,7 @@ const FacturaScreen = () => {
                     </label>
                   </div>
                 </div>
+
                 <div className="flex w-full p-1 gap-2">
                   <div className="w-8/12">
                     <Controller
@@ -1215,7 +1312,8 @@ const FacturaScreen = () => {
                           isSearchable={false}
                           value={[
                             {
-                              label: "Venta Interna (productos/servicios)",
+                              label:
+                                "0101 - Venta Interna (productos/servicios)",
                               value: "0101",
                             },
                           ].find(
@@ -1223,7 +1321,8 @@ const FacturaScreen = () => {
                           )}
                           options={[
                             {
-                              label: "Venta Interna (productos/servicios)",
+                              label:
+                                "0101 - Venta Interna (productos/servicios)",
                               value: "0101",
                             },
                           ]}
@@ -1259,54 +1358,10 @@ const FacturaScreen = () => {
                   </div>
                 </div>
               </div>
-              <div className="w-[30%] m-1 pt-4 pb-4 border border-dashed border-black flex flex-col justify-between items-center">
-                <div className="font-bold h-1/3 flex justify-center items-start">
-                  R.U.C. N° {userGlobal?.empresaActual?.ruc}
-                </div>
-                <div className="font-bold h-1/3 flex justify-center items-start">
-                  FACTURA ELECTRÓNICA
-                </div>
-                {CPE_SERIES.length > 0 ? (
-                  <div className="h-1/3 flex items-center flex-row w-full justify-between pr-4 pl-4">
-                    <select
-                      {...register("serie", {
-                        onChange: (e) => {
-                          const value = e.target.value;
-                          const serie = obtenerSerie(value);
-                          setValue("numero", String(serie?.numero));
-                          setValue(
-                            "numeroConCeros",
-                            String(serie?.numeroConCeros)
-                          );
-                        },
-                      })}
-                      className="border w-5/12 h-full outline-none cursor-pointer"
-                    >
-                      {CPE_SERIES.map((item) => {
-                        return (
-                          <option key={item.id} disabled={!item.estado}>
-                            {String(item.serie).toUpperCase()}
-                          </option>
-                        );
-                      })}
-                    </select>
-                    <span className="w-2/12 flex justify-center items-center">
-                      -
-                    </span>
-                    <label className="w-5/12 border h-full flex justify-center items-center">
-                      {watch("numeroConCeros")}
-                    </label>
-                  </div>
-                ) : (
-                  <div className="h-1/3 flex items-center flex-row w-full justify-center pr-4 pl-4 text-danger">
-                    No tienes series asignadas
-                  </div>
-                )}
-              </div>
             </div>
-            {/* FIN HEADER */}
+            {/* FIN BODY */}
 
-            {/* BODY */}
+            {/* TABLE */}
             <div className="flex flex-col px-4 gap-4 flex-1 justify-between">
               {/* ITEMS */}
               <div className="flex w-full flex-col">
@@ -1316,11 +1371,11 @@ const FacturaScreen = () => {
                       <table className="w-full">
                         <thead>
                           <tr className="border uppercase bg-bgDisabled text-[#3A3A3A]">
-                            <th className="w-[80px]">Cant.</th>
-                            <th className="w-[120px]">Codigo</th>
+                            <th className="px-3 py-2 w-[80px]">Cant.</th>
+                            <th className="px-3 py-2 w-[120px]">Codigo</th>
                             <th>Descripcion</th>
-                            <th className="w-[140px]">P. Unit</th>
-                            <th className="w-[140px]">Total</th>
+                            <th className="px-3 py-2 w-[140px]">P. Unit</th>
+                            <th className="px-3 py-2 w-[140px]">Total</th>
                             <th></th>
                             <th></th>
                           </tr>
@@ -1336,7 +1391,7 @@ const FacturaScreen = () => {
                                     } mr-2`}
                                   >
                                     <input
-                                      className="w-[80px] px-2 text-textDisabled text-shadow-disabled cursor-not-allowed"
+                                      className="w-[80px] px-3 py-2 text-textDisabled text-shadow-disabled cursor-not-allowed"
                                       disabled
                                       value={item.cantidad}
                                     />
@@ -1349,7 +1404,7 @@ const FacturaScreen = () => {
                                     } mr-2`}
                                   >
                                     <input
-                                      className="w-[120px] px-2 text-textDisabled text-shadow-disabled cursor-not-allowed"
+                                      className="w-[120px] px-3 py-2 text-textDisabled text-shadow-disabled cursor-not-allowed"
                                       disabled
                                       value={item.codigo}
                                     />
@@ -1362,7 +1417,7 @@ const FacturaScreen = () => {
                                     } mr-2`}
                                   >
                                     <input
-                                      className="px-2 w-full text-textDisabled text-shadow-disabled cursor-not-allowed"
+                                      className="px-3 py-2 w-full text-textDisabled text-shadow-disabled cursor-not-allowed"
                                       disabled
                                       value={item.descripcion}
                                     />
@@ -1375,7 +1430,7 @@ const FacturaScreen = () => {
                                     } mr-2`}
                                   >
                                     <input
-                                      className="w-[140px] px-2 text-right text-textDisabled text-shadow-disabled cursor-not-allowed"
+                                      className="w-[140px] px-3 py-2 text-right text-textDisabled text-shadow-disabled cursor-not-allowed"
                                       disabled
                                       value={item.mtoPrecioUnitario}
                                     />
@@ -1388,7 +1443,7 @@ const FacturaScreen = () => {
                                     } mr-2`}
                                   >
                                     <input
-                                      className="w-[140px] px-2 text-right text-textDisabled text-shadow-disabled cursor-not-allowed"
+                                      className="w-[140px] px-3 py-2 text-right text-textDisabled text-shadow-disabled cursor-not-allowed"
                                       disabled
                                       value={item.mtoTotalItem}
                                     />
@@ -1397,29 +1452,25 @@ const FacturaScreen = () => {
                                 <td className="text-center w-[30px]">
                                   <button
                                     type="button"
+                                    className="bg-primary text-white p-2 rounded-md"
                                     onClick={() => {
                                       setValue("producto", {
                                         ...item,
-                                        posicionTabla: i,
+                                        posicionTabla: Number(i),
                                       });
                                       setActiveModalProductos(true);
                                     }}
                                   >
-                                    <BorderColorOutlinedIcon
-                                      color="primary"
-                                      className="cursor-pointer"
-                                    />
+                                    <FaEdit className="cursor-pointer text-[15px]" />
                                   </button>
                                 </td>
                                 <td className="text-center w-[30px]">
                                   <button
                                     type="button"
+                                    className="bg-danger text-white p-2 rounded-md "
                                     onClick={() => eliminarProducto(i)}
                                   >
-                                    <HighlightOff
-                                      color="primary"
-                                      className="cursor-pointer"
-                                    />
+                                    <FaTrashAlt className="cursor-pointer text-[15px]" />
                                   </button>
                                 </td>
                               </tr>
@@ -1431,6 +1482,7 @@ const FacturaScreen = () => {
                     <ButtonSimple
                       onClick={() => {
                         setActiveModalProductos(true);
+                        setValue("producto", FORM_MODAL_PRODUCT_INVOICE);
                       }}
                       className="w-full !border !border-dashed !border-bordersAux !mt-1"
                     >
@@ -1451,8 +1503,9 @@ const FacturaScreen = () => {
                     <ButtonSimple
                       disabled={CPE_SERIES.length === 0}
                       onClick={() => {
-                        clearErrors("producto");
+                        //clearErrors("producto");
                         setActiveModalProductos(true);
+                        setValue("producto", FORM_MODAL_PRODUCT_INVOICE);
                       }}
                       className="!border !border-dashed !border-bordersAux"
                     >
@@ -1616,14 +1669,14 @@ const FacturaScreen = () => {
 
                   {/* OBSERVACIONES */}
                   <div className="flex flex-col">
-                    {fieldsObs.map((obs: any) => {
+                    {fieldsObs.map((obs, i) => {
                       return (
-                        <>
+                        <div key={obs.uuid}>
                           <Divider
                             orientation="horizontal"
                             sx={{ marginTop: 0.5, marginBottom: 0.5 }}
                           />
-                          <div key={obs.uuid} className="flex w-full">
+                          <div className="flex w-full">
                             <div className="border w-full bg-bgDisabled text-textDisabled text-shadow-disabled cursor-not-allowed">
                               <span className="px-2 w-auto">
                                 {obs.observacion}
@@ -1632,16 +1685,13 @@ const FacturaScreen = () => {
                             <div className="w-[60px] flex justify-center items-center">
                               <button
                                 type="button"
-                                onClick={() => removeObs(obs.uuid)}
+                                onClick={() => removeObs(i)}
                               >
-                                <HighlightOff
-                                  color="primary"
-                                  className="cursor-pointer"
-                                />
+                                <FaTrashAlt className="cursor-pointer" />
                               </button>
                             </div>
                           </div>
-                        </>
+                        </div>
                       );
                     })}
                   </div>
@@ -1650,7 +1700,10 @@ const FacturaScreen = () => {
                   <div className="flex w-full flex-col mt-[4px]">
                     <ButtonSimple
                       disabled={CPE_SERIES.length === 0}
-                      onClick={() => setActiveModalObs(true)}
+                      onClick={() => {
+                        setActiveModalObs(true);
+                        setValue("observacion", "");
+                      }}
                       className="w-full !border !border-dashed !border-bordersAux"
                     >
                       <AddIcon />
@@ -1664,10 +1717,10 @@ const FacturaScreen = () => {
                   <div className="flex w-1/2">
                     <Button
                       fullWidth
-                      disabled={loading || CPE_SERIES.length === 0}
+                      disabled={!isValid || loading || CPE_SERIES.length === 0}
                       variant="contained"
                       color="secondary"
-                      onClick={() => handleOpenConfirmDialog(true)}
+                      onClick={async () => await handleOpenConfirmDialog(true)}
                     >
                       {/* (e) =>
                         handleSubmit((data, event) =>
@@ -1686,10 +1739,11 @@ const FacturaScreen = () => {
                   <div className="flex w-1/2">
                     <Button
                       fullWidth
-                      disabled={loading || CPE_SERIES.length === 0}
+                      disabled={!isValid || loading || CPE_SERIES.length === 0}
                       variant="contained"
-                      color="primary"
-                      onClick={() => handleOpenConfirmDialog(false)}
+                      color="primaryHover"
+                      className="hover:bg-hoverPrimary"
+                      onClick={async () => await handleOpenConfirmDialog(false)}
                     >
                       {!isDraft && loading ? (
                         <span>

@@ -1,21 +1,22 @@
 import { useMemo, useEffect } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import ComponentTable from "../../../components/common/Table/Index";
-import {
-  useActivateResources,
-  useDesactivateResources,
-  useResources,
-} from "../hooks/useResources";
-import { toast } from "react-toastify";
-import { isError } from "../../../utils/functions.utils";
-import IndeterminateCheckbox from "../../../components/common/Inputs/IndeterminateCheckbox";
+import { useResources } from "../hooks/useResources";
+import { toast } from "sonner";
 import { IPermisos } from "../../../interfaces/models/permisos/permisos.interface";
+import { DataTable } from "../../../components/common/Table/DataTable";
+import { IGroup } from "../../../interfaces/models/grupos/grupo-permiso.interface";
 
 interface Props {
-  openEdit: (value: boolean, row: IPermisos) => void;
+  onRowClick: (row: IPermisos) => void;
+  getItemsRemoves: (items: any[]) => void;
+  getItemsRestores: (items: any[]) => void;
 }
 
-const ResourceList = ({ openEdit }: Props) => {
+const ResourceList = ({
+  onRowClick,
+  getItemsRemoves,
+  getItemsRestores,
+}: Props) => {
   const {
     data,
     error: errorResources,
@@ -23,108 +24,20 @@ const ResourceList = ({ openEdit }: Props) => {
     isError: isErrorResources,
   } = useResources();
 
-  const { mutateAsync: mutateDesact } = useDesactivateResources();
-
-  const { mutateAsync: mutateAct } = useActivateResources();
-
-  const getItemsRemoves = async (items: any) => {
-    const eliminar = confirm(
-      `Esta seguro que desea eliminar ${items.length} items ?`
-    );
-
-    if (eliminar) {
-      for (let index = 0; index < items.length; index++) {
-        const element = items[index];
-        try {
-          await mutateDesact({ id: element.original._id });
-        } catch (e) {
-          if (isError(e)) {
-            toast.error(e.response.data.message);
-          }
-        }
-      }
-    }
-  };
-
-  const getItemsRestores = async (items: any) => {
-    const restaurar = confirm(
-      `Esta seguro que desea restaurar ${items.length} items ?`
-    );
-
-    if (restaurar) {
-      for (let index = 0; index < items.length; index++) {
-        const element = items[index];
-        try {
-          await mutateAct({ id: element.original._id });
-        } catch (e) {
-          if (isError(e)) {
-            toast.error(e.response.data.message);
-          }
-        }
-      }
-    }
-  };
-
   const columns = useMemo<ColumnDef<IPermisos>[]>(
     () => [
-      {
-        id: "select",
-        header: ({ table }) => (
-          <div className="pl-[7px] pt-[5px]">
-            <IndeterminateCheckbox
-              {...{
-                checked: table.getIsAllRowsSelected(),
-                indeterminate: table.getIsSomeRowsSelected(),
-                onChange: table.getToggleAllRowsSelectedHandler(),
-              }}
-            />
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="pl-[7px] pt-[5px]">
-            <IndeterminateCheckbox
-              {...{
-                checked: row.getIsSelected(),
-                disabled: !row.getCanSelect(),
-                indeterminate: row.getIsSomeSelected(),
-                onChange: row.getToggleSelectedHandler(),
-              }}
-            />
-          </div>
-        ),
-        size: 28,
-        minSize: 28,
-      },
-      {
-        accessorKey: "index",
-        id: "index",
-        header: () => {
-          return <div className="p-[5px]  select-none text-center">#</div>;
-        },
-        cell: ({ getValue }) => {
-          return (
-            <div className="p-[4px] pb-[4px]   text-center">
-              {getValue() as any}
-            </div>
-          );
-        },
-        size: 28,
-        minSize: 28,
-      },
       {
         accessorKey: "status",
         id: "status",
         header: () => {
-          return <div className="p-[5px]  select-none text-center">Estado</div>;
+          return <div className="w-full select-none text-center">Estado</div>;
         },
         cell: ({ getValue }) => {
           const estado = getValue() as any;
           return (
             <div
-              className={`
-              ${estado ? "bg-green-600" : "bg-red-600"}
-              p-[4px] pb-[4px]  text-center
-            `}
+              className={`${estado ? "bg-green-600" : "bg-red-600"}
+              w-[30px] h-full text-center m-auto`}
             ></div>
           );
         },
@@ -135,23 +48,28 @@ const ResourceList = ({ openEdit }: Props) => {
         accessorKey: "group_resource",
         id: "group_resource",
         header: () => {
-          return <div className="p-[5px]  select-none">Categoría</div>;
+          return <div className="w-full select-none">Categoría</div>;
         },
         cell: ({ getValue }) => {
-          const group = getValue() as any;
-          return <div className="p-[4px] pb-[4px]  ">{group.name}</div>;
+          const group = getValue() as IGroup;
+          return <div className="w-full">{group.name}</div>;
         },
         size: 100,
         minSize: 31,
+        sortingFn: (rowA, rowB) => {
+          const a = rowA.original.group_resource as IGroup;
+          const b = rowB.original.group_resource as IGroup;
+          return a.name.localeCompare(b.name);
+        },
       },
       {
         accessorKey: "name",
         id: "name",
         header: () => {
-          return <div className="p-[5px]  select-none">Permiso</div>;
+          return <div className="w-full select-none">Permiso</div>;
         },
         cell: ({ getValue }) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue() as any}</div>;
+          return <div className="w-full">{getValue() as any}</div>;
         },
         size: 200,
         minSize: 31,
@@ -160,12 +78,10 @@ const ResourceList = ({ openEdit }: Props) => {
         accessorKey: "description",
         id: "description",
         header: () => {
-          return <div className="p-[5px]  select-none">Descripción</div>;
+          return <div className="w-full select-none">Descripción</div>;
         },
         cell: (props) => {
-          return (
-            <div className="p-[4px] pb-[4px]  ">{props.getValue() as any}</div>
-          );
+          return <div className="w-full">{props.getValue() as any}</div>;
         },
         size: 620,
         minSize: 31,
@@ -174,37 +90,28 @@ const ResourceList = ({ openEdit }: Props) => {
         accessorKey: "key",
         id: "key",
         header: () => {
-          return <div className="p-[5px]  select-none">Key</div>;
+          return <div className="w-full select-none">Key</div>;
         },
         cell: (props) => {
-          return (
-            <div className="p-[4px] pb-[4px]  ">{props.getValue() as any}</div>
-          );
+          return <div className="w-full">{props.getValue() as any}</div>;
         },
         size: 180,
         minSize: 31,
       },
       {
-        accessorKey: "actions",
+        accessorKey: "show_columns",
         header: () => {
-          return <div className="p-[5px]  select-none text-center">...</div>;
+          return <div className="select-none text-center w-full">...</div>;
         },
         size: 28,
         minSize: 28,
         enableResizing: false,
         enableSorting: false,
+        enableHiding: false,
       },
     ],
     []
   );
-
-  const loadData = useMemo(() => {
-    if (data) {
-      return data;
-    }
-
-    return [];
-  }, [data]);
 
   useEffect(() => {
     if (isErrorResources) {
@@ -214,13 +121,15 @@ const ResourceList = ({ openEdit }: Props) => {
 
   return (
     <>
-      <ComponentTable
-        loading={isLoading}
-        data={loadData}
+      <DataTable<IPermisos>
+        isLoading={isLoading}
+        data={data || []}
         columns={columns}
         getItemsRemoves={getItemsRemoves}
         getItemsRestores={getItemsRestores}
-        openEdit={openEdit}
+        onRowClick={onRowClick}
+        selects
+        //manualSorting
       />
     </>
   );

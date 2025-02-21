@@ -3,8 +3,8 @@ import { Table, flexRender } from "@tanstack/react-table";
 import {
   ReactNode,
   UIEvent,
-  memo,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -27,53 +27,15 @@ interface Props<T extends object> {
   table: Table<T>;
 }
 
-interface PropsTBody<T extends object> {
-  table: Table<T>;
-}
-
 interface PropsTableCell<T extends object> {
   cell: Cell<T, unknown>;
   row: Row<T>;
 }
 
-const LiveRegionStyler = () => {
-  useEffect(() => {
-    const polite = document.querySelectorAll<HTMLDivElement>("#-live-region");
-    polite.forEach((item) => {
-      item.style.width = "0px";
-    });
-
-    // Función para aplicar estilos
-    const applyStyles = (element: HTMLElement) => {
-      element.style.width = "0px";
-    };
-
-    // Configurar el MutationObserver
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
-          mutation.addedNodes.forEach((node) => {
-            if (node instanceof HTMLElement && node.id === "-live-region") {
-              applyStyles(node);
-            }
-          });
-        }
-      });
-    });
-
-    // Observar el cuerpo del documento
-    const targetNode = document.body;
-    observer.observe(targetNode, {
-      childList: true, // Observar cambios en los hijos directos
-      subtree: true, // Observar todos los descendientes
-    });
-
-    // Limpiar el observador al desmontar el componente
-    return () => observer.disconnect();
-  }, []);
-
-  return null; // Este componente no renderiza nada
-};
+interface ShowOptPositions {
+  left: number | "auto";
+  right: number | "auto";
+}
 
 //https://tanstack.com/table/latest/docs/guide/column-ordering#reordering-columns
 function TableCell<T extends object>({ cell, row }: PropsTableCell<T>) {
@@ -96,68 +58,16 @@ function TableCell<T extends object>({ cell, row }: PropsTableCell<T>) {
           },
         }}
       >
-        {flexRender(cell.column.columnDef.cell, cell.getContext()) as ReactNode}
+        {flexRender(cell.column.columnDef.cell, cell.getContext())}
       </div>
     </td>
   );
 }
 
-function TableBody<T extends object>({ table }: PropsTBody<T>) {
-  return (
-    <>
-      {table.getRowModel().rows.map((row: Row<any>, i) => {
-        return (
-          <tr
-            key={row.id}
-            style={{
-              backgroundColor: i % 2 !== 0 ? "#f5f5f5" : "#fff",
-            }}
-            className={`flex ${
-              !row.original.status
-                ? " text-borders cursor-default"
-                : "hover:!bg-bgDefaultAux"
-            }`}
-          >
-            {row.getVisibleCells().map((cell) => {
-              return (
-                <td
-                  key={cell.id}
-                  {...{
-                    id: cell.column.id,
-                    className: `overflow-hidden flex whitespace-nowrap  align-middle p-0`,
-                  }}
-                >
-                  <div
-                    {...{
-                      className: `flex items-center p-[4px] ${
-                        cell.id !== row.id + "_show_columns"
-                          ? "border-r border-solid border-b "
-                          : "border-none bg-white select-none"
-                      }`,
-                      style: {
-                        width: `calc(var(--col-${cell.column.id}-size) * 1px)`,
-                      },
-                    }}
-                  >
-                    {
-                      flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      ) as ReactNode
-                    }
-                  </div>
-                </td>
-              );
-            })}
-          </tr>
-        );
-      })}
-    </>
-  );
-}
-
 //https://github.com/TanStack/table/discussions/5558#discussioncomment-10095814
 export function DataTable2<T extends object>({ table: table2 }: Props<T>) {
+  const rowsTable2 = table2.getSortedRowModel().rows;
+
   const columns = useMemo(() => {
     const indexColumn: ExtendedColumnDef<T> = {
       id: "index",
@@ -166,7 +76,7 @@ export function DataTable2<T extends object>({ table: table2 }: Props<T>) {
         let result = 0;
 
         // Obtener todas las filas ordenadas
-        const sortedRows = table2.getSortedRowModel().rows;
+        const sortedRows = rowsTable2;
 
         // Encontrar el índice de la fila actual en las filas ordenadas
         const sortedIndex = sortedRows.findIndex(
@@ -187,12 +97,7 @@ export function DataTable2<T extends object>({ table: table2 }: Props<T>) {
     };
 
     return [indexColumn, ...table2.options.columns];
-  }, [
-    table2.options.columns,
-    table2.getSortedRowModel().rows,
-    table2.getState().pagination.pageIndex,
-    table2.getState().pagination.pageSize,
-  ]);
+  }, [table2, rowsTable2]);
 
   const table = useReactTable({
     ...table2.options,
@@ -241,70 +146,92 @@ export function DataTable2<T extends object>({ table: table2 }: Props<T>) {
    */
   const columnSizeVars = useMemo(() => {
     const headers = table.getAllLeafColumns();
-    const colSizes: { [key: string]: number } = {};
-    for (let i = 0; i < headers.length; i++) {
-      const header = headers[i]!;
+    const colSizes: Record<string, number> = {};
+    for (const header of headers) {
       colSizes[`--header-${header.id}-size`] = header.getSize();
       colSizes[`--col-${header.id}-size`] = header.getSize();
       colSizes[`--resizer-${header.id}-size`] = header.getSize();
     }
 
     return colSizes;
-  }, [table.getState().columnSizingInfo, table.getState().columnSizing]);
+    //table.getState().columnSizingInfo, table.getState().columnSizing
+  }, [table]);
 
   const itemsSelecteds = table
     .getSelectedRowModel()
     .flatRows.map((a) => a.original) as any[];
 
-  const withShowOpts = useMemo(() => {
+  // Añade un estado para las posiciones
+  const [showOptPositions, setShowOptPositions] = useState<ShowOptPositions>({
+    left: 0,
+    right: "auto",
+  });
+
+  // También ajustamos el manejo del evento click para el botón de mostrar columnas
+  const handleShowColumns = () => {
+    if (!showOptions) {
+      // Calculamos la posición antes de mostrar el menú
+      const header = refSizeHeader.current;
+      if (header) {
+        const anchoTotalColumnas = Array.from(
+          header.querySelectorAll("th")
+        ).reduce((acc, th) => acc + th.getBoundingClientRect().width, 0);
+
+        setShowOptPositions({
+          left: anchoTotalColumnas - 28,
+          right: "auto",
+        });
+      }
+    }
+    setShowOptions(!showOptions);
+  };
+
+  useLayoutEffect(() => {
     if (
+      !table.options.enableLoading &&
       refShowColumns.current &&
       showOptions &&
       refSizeHeader.current &&
       refHeader.current
     ) {
-      const widthViewport = window.innerWidth;
-      const widthShowOpt = refShowColumns.current.offsetWidth;
+      const medidas = {
+        anchoVentana: window.innerWidth,
+        anchoMenu: refShowColumns.current.offsetWidth,
+        anchoHeader: refHeader.current.clientWidth,
+        anchoTotalColumnas: Array.from(
+          refSizeHeader.current.querySelectorAll("th")
+        ).reduce((acc, th) => acc + th.getBoundingClientRect().width, 0),
+      };
 
-      const allTh = refSizeHeader.current.querySelectorAll("th");
-      const widthHeader = refHeader.current.clientWidth;
-      const widthTotalTh = Array.from(allTh)
-        .map((item) => item.getBoundingClientRect().width)
-        .reduce((acc, item) => acc + item, 0);
+      let nuevaPosicion: ShowOptPositions;
 
-      if (widthShowOpt > widthTotalTh) {
-        return {
-          left: widthTotalTh - 28,
+      if (medidas.anchoMenu > medidas.anchoTotalColumnas) {
+        nuevaPosicion = {
+          left: medidas.anchoTotalColumnas - 28,
           right: "auto",
         };
-      } else if (widthTotalTh > widthViewport) {
-        return {
+      } else if (medidas.anchoTotalColumnas > medidas.anchoVentana) {
+        nuevaPosicion = {
           left: "auto",
           right: 0,
         };
-      } else if (widthTotalTh < widthHeader) {
-        return {
-          left: widthTotalTh - widthShowOpt,
+      } else if (medidas.anchoTotalColumnas < medidas.anchoHeader) {
+        nuevaPosicion = {
+          left: medidas.anchoTotalColumnas - medidas.anchoMenu,
           right: "auto",
         };
       } else {
-        return {
+        nuevaPosicion = {
           left: "auto",
           right: 0,
         };
       }
-    }
 
-    return {
-      left: "auto",
-      right: "auto",
-    };
-  }, [
-    refShowColumns.current,
-    showOptions,
-    refSizeHeader.current,
-    refHeader.current,
-  ]);
+      requestAnimationFrame(() => {
+        setShowOptPositions(nuevaPosicion);
+      });
+    }
+  }, [showOptions, table.options.enableLoading]);
 
   useEffect(() => {
     if (windowsize || resizing) {
@@ -318,7 +245,26 @@ export function DataTable2<T extends object>({ table: table2 }: Props<T>) {
 
       return () => clearTimeout(timer);
     }
-  }, [windowsize, refBody.current?.offsetWidth, resizing]);
+  }, [windowsize, resizing]);
+
+  // Efecto separado para manejar el mouse over
+  useEffect(() => {
+    if (showOptions) {
+      const handleMouseOver = (e: MouseEvent) => {
+        if (refShowColumns.current?.contains(e.target as Node)) {
+          setShowOptions(true);
+        } else {
+          setShowOptions(false);
+        }
+      };
+
+      document.addEventListener("mouseover", handleMouseOver);
+
+      return () => {
+        document.removeEventListener("mouseover", handleMouseOver);
+      };
+    }
+  }, [showOptions]);
 
   return (
     <div
@@ -329,7 +275,6 @@ export function DataTable2<T extends object>({ table: table2 }: Props<T>) {
       }}
       className="flex flex-col flex-[1_1_auto] overflow-hidden border border-solid relative rounded-[4px]"
     >
-      <LiveRegionStyler />
       {table.options.enableLoading ? (
         <div className="flex h-full justify-center items-center">
           Por favor, espere, buscando...
@@ -344,9 +289,9 @@ export function DataTable2<T extends object>({ table: table2 }: Props<T>) {
               height: "auto",
               width: "auto",
               whiteSpace: "nowrap",
-              left: withShowOpts.left,
-              right: withShowOpts.right,
-              visibility: showOptions ? "visible" : "hidden",
+              left: showOptPositions.left,
+              right: showOptPositions.right,
+              display: showOptions ? "block" : "none",
               top: 25.5,
             }}
           >
@@ -658,27 +603,8 @@ export function DataTable2<T extends object>({ table: table2 }: Props<T>) {
                                       );
                                       changeClicked(header.index);
                                     } else if (header.id === "show_columns") {
-                                      setShowOptions(!showOptions);
-                                    } else {
-                                    }
-                                  },
-                                  onMouseOut: (_) => {
-                                    if (header.id === "show_columns") {
-                                      if (showOptions) {
-                                        document.onmouseover = function (e) {
-                                          if (
-                                            refShowColumns.current &&
-                                            refShowColumns.current.contains(
-                                              e.target as null
-                                            )
-                                          ) {
-                                            setShowOptions(true);
-                                          } else {
-                                            setShowOptions(false);
-                                            document.onmouseover = null;
-                                          }
-                                        };
-                                      }
+                                      //setShowOptions(!showOptions);
+                                      handleShowColumns();
                                     }
                                   },
                                 }}
@@ -910,15 +836,3 @@ export function DataTable2<T extends object>({ table: table2 }: Props<T>) {
     </div>
   );
 }
-
-//special memoized wrapper for our table body that we will use during column resizing
-export const MemoizedTableBody = memo(
-  TableBody,
-  (prev, next) => prev.table.options.data === next.table.options.data
-) as typeof TableBody;
-
-//special memoized wrapper for our table body that we will use during column resizing
-export const MemoizedTableCell = memo(
-  TableCell,
-  (prev, next) => prev.cell.row.original === next.cell.row.original
-) as typeof TableCell;

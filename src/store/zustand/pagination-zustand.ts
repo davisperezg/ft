@@ -3,11 +3,11 @@ import { INITIAL_VALUE_PAGINATION } from "../../config/constants";
 import { create } from "zustand";
 import { PaginationState } from "@tanstack/react-table";
 
-type PaginationStoreState = {
+interface PaginationStoreState {
   pagination: PaginationState;
-};
+}
 
-type PaginationStoreActions = {
+interface PaginationStoreActions {
   setPagination: (
     currentPag:
       | PaginationStoreState["pagination"]
@@ -15,7 +15,7 @@ type PaginationStoreActions = {
           currentTab: PaginationStoreState["pagination"]
         ) => PaginationStoreState["pagination"])
   ) => void;
-};
+}
 
 type PaginationStore = PaginationStoreState & PaginationStoreActions;
 
@@ -34,6 +34,7 @@ export const usePaginationStore = create<PaginationStore>()(
     }),
     {
       enabled: true,
+      name: "pagination store",
     }
   )
 );

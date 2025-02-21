@@ -1,13 +1,13 @@
 import { Controller, useFormContext } from "react-hook-form";
 import { Grid } from "@mui/material";
 import InputText from "../../../../components/Material/Input/InputText";
-import { IEmpresa } from "../../../../interfaces/models/empresa/empresa.interface";
+import { IFormEmpresaUpdate } from "../../../../interfaces/forms/empresa/empresa.interface";
 
 const EmpresaEditContactos = () => {
   const {
     control,
     formState: { errors },
-  } = useFormContext<IEmpresa>();
+  } = useFormContext<IFormEmpresaUpdate>();
 
   return (
     <>

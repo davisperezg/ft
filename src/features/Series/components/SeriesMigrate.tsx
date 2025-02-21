@@ -22,10 +22,9 @@ import TransferList from "../../../components/Material/TransferList/Index";
 import { useMigrateSerie, useSerie } from "../hooks/useSeries";
 import CachedIcon from "@mui/icons-material/Cached";
 import { isError } from "../../../utils/functions.utils";
-import { toastError } from "../../../components/common/Toast/ToastNotify";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { FORM_INITIAL_SERIES_MIGRATE } from "../../../config/constants";
-import { ITipoDocsExtentido } from "../../../interfaces/models/tipo-docs-cpe/tipodocs.interface";
+import { ITipoDocsExtentido } from "../../../interfaces/features/tipo-docs-cpe/tipo-docs.interface";
 import { schemaFormSeriesMigrate } from "../validations/serie-migrations.schema";
 import {
   ISeriesMigrate,
@@ -80,7 +79,7 @@ const SeriesMigrate = () => {
     isError: isErrorSeries,
   } = useSerie(getValues("empresa"));
 
-  const { mutateAsync: mutateSerieAsync, isLoading: isLoadingSerie } =
+  const { mutateAsync: mutateSerieAsync, isPending: isLoadingSerie } =
     useMigrateSerie();
 
   const onSubmit: SubmitHandler<ISeriesMigrate> = async (values) => {
@@ -110,7 +109,7 @@ const SeriesMigrate = () => {
       dispatch({ type: "INIT" });
     } catch (e) {
       if (isError(e)) {
-        toastError(e.response.data.message);
+        toast.error(e.response.data.message);
       }
     }
   };
@@ -120,7 +119,7 @@ const SeriesMigrate = () => {
       value: Number(item.id),
       label: item.razon_social,
       disabled: !item.estado,
-    })) || [];
+    })) ?? [];
 
   const listEstablecimientos =
     dataEstablecimientos?.map((item) => ({
@@ -129,7 +128,7 @@ const SeriesMigrate = () => {
         item.denominacion
       }`,
       disabled: !item.estado,
-    })) || [];
+    })) ?? [];
 
   const obtenerDocumentosXEstablecimiento = (
     establecimiento: number
@@ -154,7 +153,7 @@ const SeriesMigrate = () => {
             };
           }),
         };
-      }) || []
+      }) ?? []
     );
   };
 
@@ -215,7 +214,7 @@ const SeriesMigrate = () => {
                         placeholder="Seleccione empresa"
                         error={!!errors.empresa || isErrorEmpresa}
                         helperText={
-                          errors.empresa?.message ||
+                          errors.empresa?.message ??
                           errorEmpresas?.response.data.message
                         }
                         value={listEmpresas.find(
@@ -282,7 +281,7 @@ const SeriesMigrate = () => {
                           !!errors.establecimiento || isErrorEstablecimientos
                         }
                         helperText={
-                          errors.establecimiento?.message ||
+                          errors.establecimiento?.message ??
                           errorEstablecimientos?.response.data.message
                         }
                         value={
@@ -326,7 +325,7 @@ const SeriesMigrate = () => {
                           isErrorEstablecimientos
                         }
                         helperText={
-                          errors.establecimiento_destino?.message ||
+                          errors.establecimiento_destino?.message ??
                           errorEstablecimientos?.response.data.message
                         }
                         noOptionsMessage={() => {
@@ -408,8 +407,9 @@ const SeriesMigrate = () => {
                                           return {
                                             idDocumento: Number(doc.id),
                                             serie: serie.serie,
-                                            establecimiento:
-                                              serie.aliasEstablecimiento,
+                                            establecimiento: String(
+                                              serie.aliasEstablecimiento
+                                            ),
                                           };
                                         }
                                       ),
@@ -429,8 +429,9 @@ const SeriesMigrate = () => {
                                       return {
                                         idDocumento: Number(doc.id),
                                         serie: serie.serie,
-                                        establecimiento:
-                                          serie.aliasEstablecimiento,
+                                        establecimiento: String(
+                                          serie.aliasEstablecimiento
+                                        ),
                                       };
                                     }),
                                   };

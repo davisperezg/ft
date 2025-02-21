@@ -14,7 +14,11 @@ const DemoPaper = styled(Paper)(({ theme }) => ({
 const PaperRounded = (props: PaperProps) => {
   const { children } = props;
   return (
-    <DemoPaper {...props} className="border" square={false}>
+    <DemoPaper
+      {...props}
+      className={`${props.className} border`}
+      square={false}
+    >
       {children}
     </DemoPaper>
   );

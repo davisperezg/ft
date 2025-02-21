@@ -1,12 +1,9 @@
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { Button, Grid, Stack } from "@mui/material";
-
-import { SelectSimple } from "../../../../components/common/Selects/SelectSimple";
-import { useUsersEmpresa } from "../../hooks/useEmpresa";
 import InputFile from "../../../../components/Material/Input/InputFile";
 import { useRef, ChangeEvent } from "react";
 import InputText from "../../../../components/Material/Input/InputText";
-import { IEmpresa } from "../../../../interfaces/models/empresa/empresa.interface";
+import { IFormEmpresaUpdate } from "../../../../interfaces/forms/empresa/empresa.interface";
 
 let imagePreview = "";
 
@@ -15,18 +12,18 @@ const EmpresaEditGeneral = () => {
     control,
     setValue: setValueModel,
     formState: { errors },
-  } = useFormContext<IEmpresa>();
+  } = useFormContext<IFormEmpresaUpdate>();
 
   const valuesWatch = useWatch({
     control,
   });
 
-  const {
-    data: dataUsers,
-    isLoading: isLoadingUsers,
-    error: errorUsers,
-    isError: isErrorUsers,
-  } = useUsersEmpresa();
+  // const {
+  //   data: dataUsers,
+  //   isLoading: isLoadingUsers,
+  //   error: errorUsers,
+  //   isError: isErrorUsers,
+  // } = useUsersEmpresa();
 
   const refLogo = useRef<HTMLInputElement | null>(null);
 
@@ -34,7 +31,7 @@ const EmpresaEditGeneral = () => {
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     field: any
   ) => {
-    const files = (e.target as HTMLInputElement).files as FileList;
+    const files = (e.target as HTMLInputElement).files! as FileList;
 
     if (files.length > 0) {
       if (files[0].type !== "image/png") {
@@ -48,11 +45,11 @@ const EmpresaEditGeneral = () => {
     }
   };
 
-  const listUsuarios =
-    dataUsers?.map((item) => ({
-      value: item.id,
-      label: `${item.id} - ${item.usuario}`,
-    })) || [];
+  // const listUsuarios =
+  //   dataUsers?.map((item) => ({
+  //     value: item.id,
+  //     label: `${item.id} - ${item.usuario}`,
+  //   })) ?? [];
 
   const handleBrowseLogoButtonClick = () => {
     if (refLogo.current) {
@@ -66,7 +63,7 @@ const EmpresaEditGeneral = () => {
         <Grid item xs={9}>
           <Grid xs={12} item container>
             {/* Usuario */}
-            <Grid item xs={4}>
+            {/* <Grid item xs={4}>
               Usuario: <strong className="text-danger">*</strong>
             </Grid>
             <Grid item xs={8} container>
@@ -86,7 +83,7 @@ const EmpresaEditGeneral = () => {
                         placeholder="Seleccione usuario"
                         error={!!errors.usuario || isErrorUsers}
                         helperText={
-                          errors.usuario?.message ||
+                          errors.usuario?.message ??
                           errorUsers?.response.data.message
                         }
                         value={listUsuarios.find(
@@ -99,10 +96,10 @@ const EmpresaEditGeneral = () => {
                   }}
                 />
               </Grid>
-            </Grid>
+            </Grid> */}
 
             {/* Ruc */}
-            <Grid item xs={4}>
+            {/* <Grid item xs={4}>
               Ruc: <strong className="text-danger">*</strong>
             </Grid>
             <Grid item xs={8} container>
@@ -123,10 +120,10 @@ const EmpresaEditGeneral = () => {
                   )}
                 />
               </Grid>
-            </Grid>
+            </Grid> */}
 
             {/* Razon social */}
-            <Grid item xs={4}>
+            {/* <Grid item xs={4}>
               Razon social: <strong className="text-danger">*</strong>
             </Grid>
             <Grid item xs={8} container>
@@ -145,7 +142,7 @@ const EmpresaEditGeneral = () => {
                   )}
                 />
               </Grid>
-            </Grid>
+            </Grid> */}
 
             {/* Nombre comercial */}
             <Grid item xs={4}>

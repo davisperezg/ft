@@ -4,6 +4,8 @@ import { storage } from "../utils/storage.utils";
 import { getRefresh } from "../features/Authentication/services/auth.service";
 
 export function jwtInterceptor() {
+  const AUTHORIZATION_HEADER = "Authorization";
+
   axios.interceptors.request.use((request) => {
     // add auth header with jwt if account is logged in and request is to the api url
     const base_API = String(BASE_API);
@@ -12,7 +14,7 @@ export function jwtInterceptor() {
     const isApiUrl = request.url?.startsWith(base_API);
 
     if (isLoggedIn && isApiUrl) {
-      request.headers["Authorization"] = `Bearer ${isLoggedIn}`;
+      request.headers[AUTHORIZATION_HEADER] = `Bearer ${isLoggedIn}`;
     }
 
     return request;
@@ -58,7 +60,8 @@ export function jwtInterceptor() {
               "SESSION"
             );
             const token = storage.getItem("access_token", "SESSION");
-            axios.defaults.headers.common["Authorization"] = "Bearer " + token;
+            axios.defaults.headers.common[AUTHORIZATION_HEADER] =
+              "Bearer " + token;
             return axios(originalRequest);
           }
         } catch (_) {

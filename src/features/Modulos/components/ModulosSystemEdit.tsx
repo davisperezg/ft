@@ -1,7 +1,6 @@
-import { useContext, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { SubmitHandler, useForm, Controller } from "react-hook-form";
-import { toast } from "react-toastify";
-import { ModalContext } from "../../../store/context/dialogContext";
+import { toast } from "sonner";
 import { useMenus } from "../../Recursos/hooks/useMenus";
 import { useEditModule } from "../hooks/useModuleS";
 import { IModulosSystem } from "../../../interfaces/features/modulo/modulo_system.interface";
@@ -10,7 +9,6 @@ import { DialogContentBeta } from "../../../components/common/Dialogs/_DialogCon
 import { DialogTitleBeta } from "../../../components/common/Dialogs/_DialogTitle";
 import { DialogActionsBeta } from "../../../components/common/Dialogs/_DialogActions";
 import { DialogBeta } from "../../../components/common/Dialogs/DialogBasic";
-import { toastError } from "../../../components/common/Toast/ToastNotify";
 import TabsModal from "../../../components/Material/Tabs/TabsModal";
 import TabModal from "../../../components/Material/Tab/TabModal";
 import TabModalPanel from "../../../components/Material/Tab/TabModalPanel";
@@ -25,12 +23,14 @@ import { FORM_INITIAL_MODULO } from "../../../config/constants";
 import { schemaFormModulo } from "../validations/modulo.schema";
 
 interface Props {
-  data?: any;
+  state: {
+    visible: boolean;
+    row: any;
+  };
   closeEdit: () => void;
 }
 
-const ModulosSystemEdit = ({ data, closeEdit }: Props) => {
-  const { dispatch, dialogState } = useContext(ModalContext);
+const ModulosSystemEdit = ({ state, closeEdit }: Props) => {
   const [isRefreshMenus, setRefreshMenus] = useState(false);
 
   const {
@@ -42,9 +42,9 @@ const ModulosSystemEdit = ({ data, closeEdit }: Props) => {
   const methods = useForm<IModulosSystem>({
     defaultValues: FORM_INITIAL_MODULO,
     values: {
-      name: data.name,
-      description: data.description,
-      menu: data.menu.map((a: any) => a._id),
+      name: state.row.name,
+      description: state.row.description,
+      menu: state.row.menu.map((a: any) => a._id),
     },
     resolver: yupResolver(schemaFormModulo),
     mode: "onChange",
@@ -72,14 +72,14 @@ const ModulosSystemEdit = ({ data, closeEdit }: Props) => {
     setValue(newValue);
   };
 
-  const { mutateAsync, isLoading: isLoadingEdit } = useEditModule();
+  const { mutateAsync, isPending: isLoadingEdit } = useEditModule();
 
   const handleRefreshMenus = () => {
     setRefreshMenus(true);
     setTimeout(() => {
       setValueModel(
         "menu",
-        data.menu.map((a: any) => a._id)
+        state.row.menu.map((a: any) => a._id)
       );
       setRefreshMenus(false);
     }, 1000);
@@ -89,26 +89,25 @@ const ModulosSystemEdit = ({ data, closeEdit }: Props) => {
     try {
       const response = await mutateAsync({
         body: values,
-        id: data._id as string,
+        id: state.row._id as string,
       });
       closeModal();
       toast.success(response.message);
     } catch (e) {
       if (isError(e)) {
-        toastError(e.response.data.message);
+        toast.error(e.response.data.message);
       }
     }
   };
 
   const closeModal = () => {
     closeEdit();
-    dispatch({ type: "INIT" });
   };
 
   return (
     <>
-      <DialogBeta open={dialogState.open && !dialogState.nameDialog}>
-        <DialogTitleBeta>{`Modulo ${data.name}`}</DialogTitleBeta>
+      <DialogBeta open={state.visible}>
+        <DialogTitleBeta>{`Modulo ${state.row.name}`}</DialogTitleBeta>
         <IconButton
           aria-label="close"
           onClick={closeModal}
@@ -155,7 +154,7 @@ const ModulosSystemEdit = ({ data, closeEdit }: Props) => {
                     autoFocus
                     type="text"
                     className={`border w-8/12 focus:outline-none pl-1 rounded-sm ${
-                      errors.name ? "border-primary" : ""
+                      errors.name ? "border-danger" : ""
                     }`}
                   />
                   {errors.name && (
@@ -179,7 +178,7 @@ const ModulosSystemEdit = ({ data, closeEdit }: Props) => {
                     cols={10}
                     rows={8}
                     className={`border w-8/12 focus:outline-none pl-1 rounded-sm ${
-                      errors.description ? "border-primary" : ""
+                      errors.description ? "border-danger" : ""
                     }`}
                   />
                   {errors.description && (

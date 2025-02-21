@@ -3,9 +3,8 @@ import { usePostResources } from "../hooks/useResources";
 import { useContext, useMemo } from "react";
 import { useGroups } from "../../Grupos/Permisos/hooks/useGroups";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { isError } from "../../../utils/functions.utils";
-import { toastError } from "../../../components/common/Toast/ToastNotify";
 import { DialogActionsBeta } from "../../../components/common/Dialogs/_DialogActions";
 import { DialogContentBeta } from "../../../components/common/Dialogs/_DialogContent";
 import { DialogTitleBeta } from "../../../components/common/Dialogs/_DialogTitle";
@@ -18,7 +17,7 @@ import { IPermisos } from "../../../interfaces/models/permisos/permisos.interfac
 const ResourceCreate = () => {
   const { dispatch, dialogState } = useContext(ModalContext);
 
-  const { mutateAsync, isLoading: isLoadingPost } = usePostResources();
+  const { mutateAsync, isPending: isLoadingPost } = usePostResources();
 
   //GETS
   const {
@@ -41,7 +40,7 @@ const ResourceCreate = () => {
       name: "",
       description: "",
       key: "",
-      group_resource: memoGroups[0]._id as string,
+      group_resource: memoGroups[0]._id!,
     },
     mode: "onChange",
   });
@@ -59,7 +58,7 @@ const ResourceCreate = () => {
       toast.success(response.message);
     } catch (e) {
       if (isError(e)) {
-        toastError(e.response.data.message);
+        toast.error(e.response.data.message);
       }
     }
   };
@@ -102,8 +101,8 @@ const ResourceCreate = () => {
                     },
                   })}
                   className={`border w-8/12 focus:outline-none pl-1 rounded-sm ${
-                    errors.group_resource || isErrorGroups
-                      ? "border-primary"
+                    (errors.group_resource ?? isErrorGroups)
+                      ? "border-danger"
                       : ""
                   }`}
                 >
@@ -155,7 +154,7 @@ const ResourceCreate = () => {
                   autoFocus
                   type="text"
                   className={`border w-8/12 focus:outline-none pl-1 rounded-sm ${
-                    errors.name ? "border-primary" : ""
+                    errors.name ? "border-danger" : ""
                   }`}
                 />
                 {errors.name && (
@@ -185,7 +184,7 @@ const ResourceCreate = () => {
                   })}
                   type="text"
                   className={`border w-8/12 focus:outline-none pl-1 rounded-sm ${
-                    errors.key ? "border-primary" : ""
+                    errors.key ? "border-danger" : ""
                   }`}
                 />
                 {errors.key && (
@@ -209,7 +208,7 @@ const ResourceCreate = () => {
                   cols={10}
                   rows={8}
                   className={`border w-8/12 focus:outline-none pl-1 rounded-sm ${
-                    errors.description ? "border-primary" : ""
+                    errors.description ? "border-danger" : ""
                   }`}
                 />
                 {errors.description && (

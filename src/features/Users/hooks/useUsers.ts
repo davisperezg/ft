@@ -31,7 +31,9 @@ export const usePostUser = () => {
         return prevUsers ? [...prevUsers, response] : [response];
       });
 
-      queryClient.invalidateQueries([KEY]);
+      queryClient.invalidateQueries({
+        queryKey: [KEY],
+      });
     },
   });
 };
@@ -55,7 +57,9 @@ export const useEditUser = () => {
         return prevUsers;
       });
 
-      queryClient.invalidateQueries([KEY]);
+      queryClient.invalidateQueries({
+        queryKey: [KEY],
+      });
     },
   });
 };
@@ -86,7 +90,9 @@ export const useDeleteUser = () => {
             : prevUsers
         );
 
-        queryClient.invalidateQueries([KEY]);
+        queryClient.invalidateQueries({
+          queryKey: [KEY],
+        });
       }
     },
   });
@@ -108,7 +114,9 @@ export const useRestoreUser = () => {
             : prevUsers;
         });
 
-        queryClient.invalidateQueries([KEY]);
+        queryClient.invalidateQueries({
+          queryKey: [KEY],
+        });
       }
     },
   });

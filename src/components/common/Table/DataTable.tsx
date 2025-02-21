@@ -6,13 +6,18 @@ import {
   getPaginationRowModel,
   SortingState,
   RowSelectionState,
-  ColumnDef,
   Row,
-  ColumnResizeMode,
-  ColumnResizeDirection,
   VisibilityState,
 } from "@tanstack/react-table";
-import { useState, useMemo, useRef, UIEvent } from "react";
+import {
+  useState,
+  useMemo,
+  useRef,
+  UIEvent,
+  useEffect,
+  useLayoutEffect,
+  ReactNode,
+} from "react";
 import type { TableProps } from "./types";
 import { IoClose } from "react-icons/io5";
 import { FaUndo } from "react-icons/fa";
@@ -23,99 +28,180 @@ import {
   MdKeyboardDoubleArrowRight,
 } from "react-icons/md";
 import { usePaginationStore } from "../../../store/zustand/pagination-zustand";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { ExtendedColumnDef } from "@tanstack/react-table";
+import useSize from "../../../hooks/useSize";
+import { Cell } from "@tanstack/react-table";
+import IndeterminateCheckbox from "../Inputs/IndeterminateCheckbox";
+
+interface PropsTableCell<T extends object> {
+  cell: Cell<T, unknown>;
+  row: Row<any>;
+  children: ReactNode;
+  onRowClick?: (row: T) => void;
+}
+
+function TableCell<T extends object>({
+  cell,
+  row,
+  children,
+  onRowClick,
+}: PropsTableCell<T>) {
+  return (
+    <td
+      id={cell.id}
+      className="overflow-hidden flex whitespace-nowrap  align-middle p-0"
+      onClick={() => {
+        if (
+          row.original.estado &&
+          cell.id !== row.id + "_select" &&
+          cell.id !== row.id + "_select2"
+        ) {
+          onRowClick?.(row.original);
+        }
+      }}
+    >
+      <div
+        {...{
+          className: `cursor-pointer flex items-center p-[4px] ${
+            cell.id !== row.id + "_show_columns"
+              ? "border-r border-solid border-b "
+              : "border-none bg-white select-none"
+          }`,
+          style: {
+            width: `calc(var(--col-${cell.column.id}-size) * 1px)`,
+          },
+        }}
+      >
+        {children}
+      </div>
+    </td>
+  );
+}
+
+interface ShowOptPositions {
+  left: number | "auto";
+  right: number | "auto";
+}
 
 export function DataTable<T extends object>({
   data,
   columns: userColumns,
   isLoading,
-  onRowClick,
-  manualPagination = false,
-  propsPagination,
   footerVisible = true,
   getItemsRemoves,
   getItemsRestores,
-  sortDescFirst = true,
+  sortDescFirst = false,
+  onRowClick,
+  selects,
+  manualSorting = false,
 }: TableProps<T>) {
-  const columnResizeMode = useState<ColumnResizeMode>("onEnd")[0];
-
-  const columnResizeDirection = useState<ColumnResizeDirection>("ltr")[0];
-
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const pagination = usePaginationStore((state) => state.pagination);
   const setPagination = usePaginationStore((state) => state.setPagination);
+  const windowsize = useSize();
+  const [resizing, setResizing] = useState(false);
+  const [resizerId, setResizerId] = useState("");
+  const [bodyHeight, setBodyHeight] = useState(0);
+  const [showOptions, setShowOptions] = useState(false);
+  const refHeader = useRef<HTMLDivElement>(null);
+  const refResizer = useRef<HTMLDivElement>(null);
+  const refBody = useRef<HTMLDivElement>(null);
+  const refSizeHeader = useRef<HTMLTableElement>(null);
+  const refShowColumns = useRef<HTMLDivElement>(null);
 
   // Crear la columna de índice y combinarla con las columnas del usuario
   const columns = useMemo(() => {
     const indexColumn: ExtendedColumnDef<T> = {
       id: "index",
-      header: () => <div className="text-center">#</div>,
+      header: () => <div className="text-center w-full">#</div>,
       cell: ({ row, table }) => {
         let result = 0;
         // Obtener todas las filas ordenadas
         const sortedRows = table.getSortedRowModel().rows;
+
         // Encontrar el índice de la fila actual en las filas ordenadas
         const sortedIndex = sortedRows.findIndex(
           (sortedRow) => sortedRow.id === row.id
         );
+
         // Calcular el índice final considerando la paginación
         result = pagination.pageIndex * pagination.pageSize + sortedIndex + 1;
-        return <div className="text-center">{result}</div>;
+        return <div className="text-center w-full">{result}</div>;
       },
       size: 28,
       minSize: 28,
     };
 
-    const itemsColumns = userColumns.map((item) => ({
-      ...item,
-      sortDescFirst: sortDescFirst,
-    }));
+    const selectColumn: ExtendedColumnDef<T> = {
+      id: "select",
+      header: () => <div className="text-center w-full">Seleccione</div>,
+      cell: ({ row }) => {
+        return (
+          <div className="text-center w-full flex justify-center">
+            <IndeterminateCheckbox
+              {...{
+                checked: row.getIsSelected(),
+                disabled: !row.getCanSelect(),
+                indeterminate: row.getIsSomeSelected(),
+                onChange: row.getToggleSelectedHandler(),
+              }}
+            />
+          </div>
+        );
+      },
+      size: 80,
+      minSize: 28,
+    };
 
-    return [indexColumn, ...itemsColumns];
-  }, [userColumns, propsPagination]);
+    return selects
+      ? [indexColumn, selectColumn, ...userColumns]
+      : [indexColumn, ...userColumns];
+  }, [userColumns, pagination.pageIndex, pagination.pageSize, selects]);
 
+  const indexClicked = columns.findIndex(
+    (item) =>
+      item.id !== "index" && item.id !== "select" && item.id !== "estado"
+  );
+
+  const [clicked, setClicked] = useState<number>(indexClicked);
   const initialVisibleColumn: VisibilityState = columns.reduce(
     (acc: VisibilityState, item) => {
-      const visible = item.visible === undefined ? true : item.visible;
+      const visible = item.visible ?? true;
       acc[String(item.id)] = visible;
       return acc;
     },
     {}
   );
-
   const [columnVisibility, setColumnVisibility] =
     useState<VisibilityState>(initialVisibleColumn);
 
   const initialSortColumn: SortingState = columns.reduce(
     (acc: SortingState, item) => {
-      if (item.sortDescFirst && initialVisibleColumn[String(item.id)]) {
-        acc.push({ id: String(item.id), desc: item.sortDescFirst });
+      if (item.id && initialVisibleColumn[String(item.id)]) {
+        acc.push({ id: String(item.id), desc: Boolean(item.sortDescFirst) });
       }
       return acc;
     },
     []
   );
 
+  const validSortColumns = initialSortColumn.filter(
+    (item) =>
+      item.id !== "index" && item.id !== "select" && item.id !== "estado"
+  );
+
   const [sorting, setSorting] = useState<SortingState>([
-    { id: initialSortColumn[0].id, desc: initialSortColumn[0].desc },
+    { id: validSortColumns[0].id, desc: validSortColumns[0].desc },
   ]);
 
-  const indexClicked = columns.findIndex(
-    (item) => item.id !== "index" && item.id !== "select"
-  );
-  const [clicked, setClicked] = useState<number>(indexClicked);
-  //const [tableBody, setTableBody] = useState(270);
-  const refHeader = useRef<HTMLDivElement>(null);
-  const refBody = useRef<HTMLDivElement>(null);
-
-  const rowCount = manualPagination ? propsPagination?.rowCount : data.length;
-
   const table = useReactTable({
-    data,
+    data: data.map((item: any) => {
+      return {
+        ...item,
+        estado: item.estado ?? item.status,
+      };
+    }),
     columns,
-    columnResizeMode,
-    columnResizeDirection,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -127,19 +213,17 @@ export function DataTable<T extends object>({
     },
     enableRowSelection: true, //enable row selection for all rows
     onColumnVisibilityChange: setColumnVisibility,
-    manualPagination: manualPagination, // true si es paginacion del lado del servidor, false de lado del cliente
+    manualSorting: manualSorting, //use pre-sorted row model instead of sorted row model
+    manualPagination: false, // true si es paginacion del lado del servidor, false de lado del cliente
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
+    sortDescFirst: sortDescFirst,
     onPaginationChange: setPagination,
     enableSortingRemoval: false,
     //pageCount: manualPagination, //calcula la cantidad de paginas
-    rowCount: rowCount, // cantidad de filas
+    rowCount: data.length, // cantidad de filas
     autoResetPageIndex: false, // true la paginacion restablecera a la primera pagina cuando exista un cambio, false la paginacion se mantiene
   });
-
-  const itemsSelecteds = table
-    .getSelectedRowModel()
-    .flatRows.map((a) => a.original) as any[];
 
   //const tamañoPantalla = window.innerWidth;
 
@@ -148,61 +232,210 @@ export function DataTable<T extends object>({
   const itemsCurrent = table.getRowModel().rows;
 
   const handleScroll = (e: UIEvent<HTMLDivElement>) => {
-    if (typeof refHeader === "object") {
-      if (refHeader.current) {
-        refHeader.current.style.transform = `translateX(-${e.currentTarget.scrollLeft}px)`;
-      }
+    const scrollLeft = Number(e.currentTarget.scrollLeft) ?? 0;
+    if (refHeader.current && refResizer.current) {
+      // Actualizar el transform del header y del resizer
+      refHeader.current.style.transform = `translateX(-${scrollLeft}px)`;
+      refResizer.current.style.transform = `translateX(-${scrollLeft}px)`;
     }
   };
 
-  const rowVirtualizer = useVirtualizer({
-    count: itemsCurrent.length,
-    estimateSize: () => 33, //estimate row height for accurate scrollbar dragging
-    getScrollElement: () => refBody.current,
-    //measure dynamic row height, except in firefox because it measures table border height incorrectly
-    measureElement:
-      typeof window !== "undefined" &&
-      navigator.userAgent.indexOf("Firefox") === -1
-        ? (element) => element?.getBoundingClientRect().height
-        : undefined,
-    overscan: 5,
+  const columnSizeVars = useMemo(() => {
+    const headers = table.getAllLeafColumns();
+    const colSizes: Record<string, number> = {};
+    for (const header of headers) {
+      colSizes[`--header-${header.id}-size`] = header.getSize();
+      colSizes[`--col-${header.id}-size`] = header.getSize();
+      colSizes[`--resizer-${header.id}-size`] = header.getSize();
+    }
+
+    return colSizes;
+  }, [table]);
+
+  const itemsSelecteds = table
+    .getSelectedRowModel()
+    .flatRows.map((a) => a.original) as any[];
+
+  // Añade un estado para las posiciones
+  const [showOptPositions, setShowOptPositions] = useState<ShowOptPositions>({
+    left: 0,
+    right: "auto",
   });
 
-  //   useEffect(() => {
-  //     if (refBody.current) {
-  //       const altTbody = refBody.current.offsetHeight;
-  //       setTableBody(altTbody);
+  // También ajustamos el manejo del evento click para el botón de mostrar columnas
+  const handleShowColumns = () => {
+    if (!showOptions) {
+      // Calculamos la posición antes de mostrar el menú
+      const header = refSizeHeader.current;
+      if (header) {
+        const anchoTotalColumnas = Array.from(
+          header.querySelectorAll("th")
+        ).reduce((acc, th) => acc + th.getBoundingClientRect().width, 0);
 
-  //       const changeWindows = () => {
-  //         if (refBody.current) {
-  //           if (window.innerWidth !== tamañoPantalla) {
-  //             const altTbody = refBody.current.offsetHeight;
-  //             setTableBody(altTbody);
-  //           }
-  //         }
-  //       };
+        setShowOptPositions({
+          left: anchoTotalColumnas - 28,
+          right: "auto",
+        });
+      }
+    }
+    setShowOptions(!showOptions);
+  };
 
-  //       window.addEventListener("resize", changeWindows);
+  useLayoutEffect(() => {
+    if (
+      !isLoading &&
+      refShowColumns.current &&
+      showOptions &&
+      refSizeHeader.current &&
+      refHeader.current
+    ) {
+      const medidas = {
+        anchoVentana: window.innerWidth,
+        anchoMenu: refShowColumns.current.offsetWidth,
+        anchoHeader: refHeader.current.clientWidth,
+        anchoTotalColumnas: Array.from(
+          refSizeHeader.current.querySelectorAll("th")
+        ).reduce((acc, th) => acc + th.getBoundingClientRect().width, 0),
+      };
 
-  //       return () => {
-  //         window.removeEventListener("resize", changeWindows);
-  //       };
-  //     }
-  //   }, [refBody]);
+      let nuevaPosicion: ShowOptPositions;
+
+      if (medidas.anchoMenu > medidas.anchoTotalColumnas) {
+        nuevaPosicion = {
+          left: medidas.anchoTotalColumnas - 28,
+          right: "auto",
+        };
+      } else if (medidas.anchoTotalColumnas > medidas.anchoVentana) {
+        nuevaPosicion = {
+          left: "auto",
+          right: 0,
+        };
+      } else if (medidas.anchoTotalColumnas < medidas.anchoHeader) {
+        nuevaPosicion = {
+          left: medidas.anchoTotalColumnas - medidas.anchoMenu,
+          right: "auto",
+        };
+      } else {
+        nuevaPosicion = {
+          left: "auto",
+          right: 0,
+        };
+      }
+
+      requestAnimationFrame(() => {
+        setShowOptPositions(nuevaPosicion);
+      });
+    }
+  }, [showOptions, table.options.enableLoading, isLoading]);
+
+  useEffect(() => {
+    if (windowsize || resizing) {
+      const timer = setTimeout(() => {
+        if (refBody.current && refHeader.current) {
+          const clientHeightBody = refBody.current.clientHeight;
+          const clientHeightHead = refHeader.current.clientHeight;
+          setBodyHeight(clientHeightBody + clientHeightHead);
+        }
+      }, 1500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [windowsize, resizing]);
+
+  // Efecto separado para manejar el mouse over
+  useEffect(() => {
+    if (showOptions) {
+      const handleMouseOver = (e: MouseEvent) => {
+        if (refShowColumns.current?.contains(e.target as Node)) {
+          setShowOptions(true);
+        } else {
+          setShowOptions(false);
+        }
+      };
+
+      document.addEventListener("mouseover", handleMouseOver);
+
+      return () => {
+        document.removeEventListener("mouseover", handleMouseOver);
+      };
+    }
+  }, [showOptions]);
 
   return (
-    <div className="flex flex-col flex-[1_1_auto] overflow-hidden border border-solid relative rounded-[4px]">
+    <div
+      {...{
+        style: {
+          ...columnSizeVars,
+        },
+      }}
+      className="flex flex-col flex-[1_1_auto] overflow-hidden border border-solid relative rounded-[4px]"
+    >
       {isLoading ? (
         <div className="flex h-full justify-center items-center">
           Por favor, espere, buscando...
         </div>
       ) : (
         <>
-          {/* HEADER */}
-          <div ref={refHeader} className="flex flex-[0_0_auto] relative">
+          {/* SELECTION SHOW COLUMN */}
+          <div
+            ref={refShowColumns}
+            className="flex-[0_0_auto] z-[11] absolute overflow-x-hidden overflow-y-auto max-h-[300px] float-left shadow-[0_1px_5px_rgba(0,0,0,.3)] bg-white"
+            style={{
+              height: "auto",
+              width: "auto",
+              whiteSpace: "nowrap",
+              left: showOptPositions.left,
+              right: showOptPositions.right,
+              visibility: showOptions ? "visible" : "hidden",
+              top: 25.5,
+            }}
+          >
+            {table.getAllLeafColumns().map((column, i) => {
+              if (column.getCanHide()) {
+                const headerFn = column.columnDef.header;
+                let result = "";
+                if (typeof headerFn === "function") {
+                  const headerElement = headerFn as any;
+                  const childrenValue = headerElement().props.children;
+                  result = childrenValue;
+                } else {
+                  result = column.columnDef.header as string;
+                }
+
+                return (
+                  <div
+                    key={column.id}
+                    className={`cursor-pointer p-[8px] hover:bg-[#EDEDEF] ${i === 0 ? "mt-1" : ""}`}
+                  >
+                    <label className="select-none block pl-[15px] indent-[-15px] cursor-pointer">
+                      <input
+                        {...{
+                          type: "checkbox",
+                          checked: column.getIsVisible(),
+                          onChange: column.getToggleVisibilityHandler(),
+                          style: {
+                            overflow: "hidden",
+                            top: "-4px",
+                            position: "relative",
+                            verticalAlign: "bottom",
+                            cursor: "pointer",
+                          },
+                        }}
+                      />
+                      <span className="m-[5px]">{result}</span>
+                    </label>
+                  </div>
+                );
+              }
+            })}
+          </div>
+          {/* FIN SELECTION SHOW COLUMN */}
+
+          {/* RESIZING */}
+          <div ref={refResizer} className="z-[2] flex flex-[0_0_auto] relative">
             <div className="float-left pr-[40px] text-default">
               <table
-                className="border-r border-solid border-[#444]"
+                className="table border-none"
                 {...{
                   style: {
                     width: table.getCenterTotalSize(),
@@ -212,90 +445,272 @@ export function DataTable<T extends object>({
                 <thead>
                   {table.getHeaderGroups().map((headerGroup) => {
                     return (
-                      <tr key={headerGroup.id}>
-                        {headerGroup.headers.map((header, i) => {
-                          return (
-                            <th
-                              key={header.id}
-                              className={`hover:!bg-selected border-r border-solid font-bold h-[24px] whitespace-nowrap align-middle text-left p-0 relative cursor-pointer`}
+                      <tr key={headerGroup.id} className="flex">
+                        {headerGroup.headers.map((header) => (
+                          <th
+                            key={header.id}
+                            colSpan={header.colSpan}
+                            className="relative flex whitespace-nowrap p-0"
+                          >
+                            <div
                               {...{
-                                colSpan: header.colSpan,
                                 style: {
-                                  backgroundColor:
-                                    clicked === i ? "#e2e2e2" : "#1723360A",
-                                  width: header.getSize(),
-                                  //opacity: isDragging ? 0.5 : 1,
-                                },
-                                onClick: () => {
-                                  changeClicked(i);
+                                  width: `calc(var(--resizer-${header?.id}-size) * 1px`,
                                 },
                               }}
                             >
+                              {header.column.getCanResize() && (
+                                <div
+                                  className={`${resizerId === header.id ? "isResizing" : "resizer"} absolute top-0 right-0 w-[5px] bg-none cursor-col-resize touch-none select-none`}
+                                  {...{
+                                    style: {
+                                      zIndex: 2,
+                                      height: bodyHeight,
+                                      display: "block",
+                                    },
+                                    onMouseDown: (e) => {
+                                      e.stopPropagation();
+                                      // Usar la referencia del evento actual
+                                      const refTableHead = refHeader.current;
+                                      const refTableBody = refBody.current;
+                                      const refTableResizer =
+                                        refResizer.current;
+                                      const resizer = e.currentTarget;
+                                      const getWidthCol =
+                                        refTableHead?.style.getPropertyValue(
+                                          `--header-${header?.id}-size`
+                                        );
+
+                                      const currenSize = getWidthCol
+                                        ? parseInt(getWidthCol)
+                                        : Number(header.getSize());
+
+                                      // Variables para el arrastre
+                                      let isDragging = true;
+                                      let deltaX = 0;
+                                      setResizing(true);
+                                      setResizerId(header.id);
+
+                                      const startX = e.clientX;
+                                      const currentLeft = currenSize;
+
+                                      // Función de movimiento del ratón
+                                      const onMouseMove = (moveEvent: any) => {
+                                        moveEvent.stopPropagation();
+                                        if (!isDragging) return;
+
+                                        // Calcular el nuevo left en tiempo real
+                                        deltaX = moveEvent.clientX - startX;
+                                        const newLeft = currentLeft + deltaX;
+                                        resizer.style.left = `${newLeft}px`;
+                                      };
+
+                                      // Función de soltar el ratón
+                                      const onMouseUp = () => {
+                                        // Detener el arrastre
+                                        isDragging = false;
+                                        setResizing(false);
+                                        setResizerId("");
+
+                                        refTableHead?.style.setProperty(
+                                          `--header-${header.id}-size`,
+                                          `${currenSize + deltaX}`,
+                                          "important"
+                                        );
+
+                                        // Actualizar el width del table body
+                                        refTableBody?.style.setProperty(
+                                          `--col-${header.id}-size`,
+                                          `${currenSize + deltaX}`,
+                                          "important"
+                                        );
+
+                                        refTableResizer?.style.setProperty(
+                                          `--resizer-${header.id}-size`,
+                                          `${currenSize + deltaX}`,
+                                          "important"
+                                        );
+
+                                        // Remover listeners globales
+                                        document.removeEventListener(
+                                          "mousemove",
+                                          onMouseMove
+                                        );
+                                        document.removeEventListener(
+                                          "mouseup",
+                                          onMouseUp
+                                        );
+                                      };
+
+                                      // Añadir listeners globales de documento
+                                      document.addEventListener(
+                                        "mousemove",
+                                        onMouseMove
+                                      );
+                                      document.addEventListener(
+                                        "mouseup",
+                                        onMouseUp
+                                      );
+                                    },
+                                  }}
+                                ></div>
+                              )}
+                            </div>
+                          </th>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </thead>
+              </table>
+            </div>
+          </div>
+          {/* FIN RESIZING */}
+
+          {/* HEADER */}
+          <div ref={refHeader} className="z-[1] flex flex-[0_0_auto] relative">
+            <div className="float-left pr-[40px] text-default">
+              <table
+                ref={refSizeHeader}
+                className="table border-none"
+                {...{
+                  style: {
+                    width: table.getCenterTotalSize(),
+                  },
+                }}
+              >
+                <thead>
+                  {table.getHeaderGroups().map((headerGroup) => {
+                    return (
+                      <tr
+                        className="flex"
+                        key={headerGroup.id}
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                        }}
+                        onDrop={(event) => {
+                          // Prevenir el comportamiento por defecto del navegador
+                          event.preventDefault();
+                          const target = event.target as HTMLElement;
+
+                          if (
+                            target.closest("th")?.id === "show_columns" ||
+                            target.closest("th")?.id === "acciones" ||
+                            resizing
+                          )
+                            return;
+
+                          // Recuperar el ID de la columna que se está arrastrando
+                          const draggedColumnId =
+                            event.dataTransfer.getData("columnId");
+                          // Obtener todas las columnas de la tabla
+                          const currentColumns = table.getAllLeafColumns();
+
+                          // Encontrar el índice de la columna que se está arrastrando
+                          const draggedColumnIndex = currentColumns.findIndex(
+                            (column) => column.id === draggedColumnId
+                          );
+
+                          // Encontrar el índice de la columna donde se suelta (objetivo)
+                          const targetColumnIndex = currentColumns.findIndex(
+                            (column) => column.id === target.closest("th")?.id
+                          );
+
+                          // Verificar que ambos índices sean válidos
+                          if (
+                            draggedColumnIndex !== -1 &&
+                            targetColumnIndex !== -1
+                          ) {
+                            // Reordenar columnas
+                            const newColumnOrder = [...currentColumns];
+
+                            // Intercambiar las columnas
+                            [
+                              newColumnOrder[draggedColumnIndex],
+                              newColumnOrder[targetColumnIndex],
+                            ] = [
+                              newColumnOrder[targetColumnIndex],
+                              newColumnOrder[draggedColumnIndex],
+                            ];
+
+                            // Actualizar el orden de las columnas
+                            table.setColumnOrder(
+                              newColumnOrder.map((col) => col.id)
+                            );
+                          }
+                        }}
+                      >
+                        {headerGroup.headers.map((header) => {
+                          return (
+                            <th
+                              id={header.id}
+                              key={header.id}
+                              colSpan={header.colSpan}
+                              draggable={
+                                header.id !== "show_columns" &&
+                                header.id !== "acciones" &&
+                                !resizing
+                              }
+                              onDragStart={(event) => {
+                                event.dataTransfer.setData(
+                                  "columnId",
+                                  header.id
+                                );
+                              }}
+                              className="relative flex hover:!bg-[#e2e2e2] cursor-pointer h-[28px] whitespace-nowrap p-0 text-left font-[500]"
+                              {...{
+                                style: {
+                                  backgroundColor:
+                                    clicked === header.index
+                                      ? "#e2e2e2"
+                                      : "#EDEDEF",
+                                },
+                              }}
+                            >
+                              {/* `calc(var(--header-${header?.id}-size) * 1px` */}
                               <div
                                 {...{
+                                  style: {
+                                    width: `calc(var(--header-${header?.id}-size) * 1px`,
+                                  },
                                   className: `${
                                     {
-                                      asc: `before:content-['▲'] before:text-center before:text-default before:text-[7px] ${
+                                      asc: `before:content-['▼'] before:text-center before:text-default before:text-[7px] ${
                                         header.column.getIsSorted()
                                           ? "pl-[5px] flex items-center"
                                           : ""
                                       }`,
-                                      desc: `before:content-['▼'] before:text-center before:text-default before:text-[7px] ${
+                                      desc: `before:content-['▲'] before:text-center before:text-default before:text-[7px] ${
                                         header.column.getIsSorted()
                                           ? "pl-[5px] flex items-center"
                                           : ""
                                       }`,
                                     }[header.column.getIsSorted() as string] ??
                                     ""
-                                  } overflow-hidden`,
-                                  style: {
-                                    width: header.column.getSize(),
+                                  } select-none overflow-hidden px-[5px] flex items-center ${clicked === header.index ? "" : "border-r"}`,
+                                  onClick: (e) => {
+                                    if (
+                                      header.id !== "show_columns" &&
+                                      header.id !== "acciones"
+                                    ) {
+                                      header.column.getToggleSortingHandler()?.(
+                                        e
+                                      );
+                                      changeClicked(header.index);
+                                    } else if (header.id === "show_columns") {
+                                      //setShowOptions(!showOptions);
+                                      handleShowColumns();
+                                    }
                                   },
-                                  onClick:
-                                    header.column.getToggleSortingHandler(),
                                 }}
                               >
-                                <div className="p-[5px] select-none">
-                                  {header.isPlaceholder
-                                    ? null
-                                    : flexRender(
-                                        header.column.columnDef.header,
-                                        header.getContext()
-                                      )}
-                                </div>
+                                {header.isPlaceholder
+                                  ? null
+                                  : flexRender(
+                                      header.column.columnDef.header,
+                                      header.getContext()
+                                    )}
                               </div>
-                              <div
-                                {...{
-                                  //   onDoubleClick: () =>
-                                  //     header.column.resetSize(),
-                                  onMouseDown: header.getResizeHandler(),
-                                  onTouchStart: header.getResizeHandler(),
-                                  className: `resizer ${
-                                    table.options.columnResizeDirection
-                                  } ${
-                                    header.column.getIsResizing()
-                                      ? "isResizing"
-                                      : ""
-                                  }`,
-                                  style: {
-                                    height:
-                                      refBody?.current?.offsetHeight ?? "100%",
-                                    zIndex: 1,
-                                    transform:
-                                      columnResizeMode === "onEnd" &&
-                                      header.column.getIsResizing()
-                                        ? `translateX(${
-                                            (table.options
-                                              .columnResizeDirection === "rtl"
-                                              ? -1
-                                              : 1) *
-                                            (table.getState().columnSizingInfo
-                                              .deltaOffset ?? 0)
-                                          }px)`
-                                        : "",
-                                  },
-                                }}
-                              />
                             </th>
                           );
                         })}
@@ -317,33 +732,21 @@ export function DataTable<T extends object>({
             <table
               {...{
                 style: {
-                  width: table.getCenterTotalSize(),
+                  //width: table.getCenterTotalSize(),
                   marginBottom: 10,
                 },
               }}
             >
-              <tbody
-                style={{
-                  height: `${rowVirtualizer.getTotalSize()}px`, //tells scrollbar how big the table is
-                  position: "relative", //needed for absolute positioning of rows
-                }}
-              >
-                {rowVirtualizer.getVirtualItems().map((virtualRow, i) => {
-                  const row = table.getRowModel().rows[
-                    virtualRow.index
-                  ] as Row<any>;
-
+              <tbody>
+                {table.getRowModel().rows.map((row: Row<any>, i) => {
                   return (
                     <tr
-                      data-index={virtualRow.index} //needed for dynamic row height measurement
-                      ref={(node) => rowVirtualizer.measureElement(node)} //measure dynamic row height
+                      key={row.id}
                       style={{
                         backgroundColor: i % 2 !== 0 ? "#f5f5f5" : "#fff",
-                        transform: `translateY(${virtualRow.start}px)`, //this should always be a `style` as it changes on scroll
                       }}
-                      key={row.id}
-                      className={`absolute ${
-                        !row.original.status
+                      className={`flex ${
+                        !row.original.estado
                           ? " text-borders cursor-default"
                           : "hover:!bg-bgDefaultAux"
                       }`}
@@ -351,46 +754,17 @@ export function DataTable<T extends object>({
                     >
                       {row.getVisibleCells().map((cell) => {
                         return (
-                          <td
+                          <TableCell
+                            cell={cell}
+                            row={row}
                             key={cell.id}
-                            className={`${
-                              cell.id !== row.id + "_actions"
-                                ? "border-r border-solid whitespace-nowrap  align-middle p-0 border-b overflow-hidden"
-                                : "border-none bg-white select-none"
-                            } ${
-                              table.getState().columnSizingInfo.deltaOffset !==
-                              null
-                                ? "cursor-col-resize"
-                                : !row.original.status
-                                  ? ""
-                                  : "cursor-pointer"
-                            }`}
-                            onClick={() => {
-                              if (
-                                row.original.status &&
-                                cell.id !== row.id + "_select"
-                              ) {
-                                console.log("OPEN EDIT");
-                                // dispatch({
-                                //   type: "OPEN_EDIT",
-                                //   payload: row.original,
-                                // });
-                                // openEdit && openEdit(true, row.original);
-                              }
-                            }}
+                            onRowClick={onRowClick}
                           >
-                            <div
-                              style={{
-                                width: cell.column.getSize(),
-                              }}
-                              className="p-[4px]"
-                            >
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext()
-                              )}
-                            </div>
-                          </td>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
                         );
                       })}
                     </tr>
@@ -408,7 +782,7 @@ export function DataTable<T extends object>({
                   <div className="float-left bg-none h-[24px] m-[0_10px_0_0] align-middle whitespace-nowrap flex items-center">
                     <label
                       className={`${
-                        itemsSelecteds.filter((a) => !a.status).length > 0 ||
+                        itemsSelecteds.filter((a) => !a.estado).length > 0 ||
                         itemsSelecteds.length === 0
                           ? "text-borders cursor-default"
                           : "text-danger cursor-pointer"
@@ -416,7 +790,7 @@ export function DataTable<T extends object>({
                       onClick={() => {
                         if (
                           itemsSelecteds.length > 0 &&
-                          !itemsSelecteds.find((a) => !a.status)
+                          !itemsSelecteds.find((a) => !a.estado)
                         ) {
                           if (getItemsRemoves) {
                             return getItemsRemoves(
@@ -435,7 +809,7 @@ export function DataTable<T extends object>({
                   <div className="float-left bg-none h-[24px] m-[0_10px_0_0] align-middle whitespace-nowrap flex items-center">
                     <label
                       className={`${
-                        itemsSelecteds.filter((a) => a.status).length > 0 ||
+                        itemsSelecteds.filter((a) => a.estado).length > 0 ||
                         itemsSelecteds.length === 0
                           ? "text-borders cursor-default"
                           : "text-default cursor-pointer"
@@ -443,7 +817,7 @@ export function DataTable<T extends object>({
                       onClick={() => {
                         if (
                           itemsSelecteds.length > 0 &&
-                          !itemsSelecteds.find((a) => a.status)
+                          !itemsSelecteds.find((a) => a.estado)
                         ) {
                           if (getItemsRestores) {
                             return getItemsRestores(
@@ -558,7 +932,7 @@ export function DataTable<T extends object>({
                       {table.getState().pagination.pageSize *
                         table.getState().pagination.pageIndex +
                         itemsCurrent.length}{" "}
-                      de {rowCount} elementos.
+                      de {table.getRowCount()} elementos.
                     </label>
                   </div>
                 </div>

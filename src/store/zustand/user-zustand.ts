@@ -2,11 +2,11 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { IAuthPayload } from "../../interfaces/models/auth/auth.interface";
 
-type UserStoreState = {
+interface UserStoreState {
   userGlobal: IAuthPayload | null;
-};
+}
 
-type UserStoreActions = {
+interface UserStoreActions {
   setUserGlobal: (
     currentTab:
       | UserStoreState["userGlobal"]
@@ -14,7 +14,7 @@ type UserStoreActions = {
           currentTab: UserStoreState["userGlobal"]
         ) => UserStoreState["userGlobal"])
   ) => void;
-};
+}
 
 type UserStore = UserStoreState & UserStoreActions;
 
@@ -33,6 +33,7 @@ export const useUserStore = create<UserStore>()(
     }),
     {
       enabled: true,
+      name: "user store",
     }
   )
 );

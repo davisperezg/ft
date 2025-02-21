@@ -1,6 +1,6 @@
 import { useContext, useMemo, useState } from "react";
 import { SubmitHandler, useForm, Controller } from "react-hook-form";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { ModalContext } from "../../../store/context/dialogContext";
 import { useModulesAvailables } from "../../Modulos/hooks/useModuleS";
 import { usePostRol } from "../hooks/useRoles";
@@ -8,7 +8,6 @@ import { isError } from "../../../utils/functions.utils";
 import TabsModal from "../../../components/Material/Tabs/TabsModal";
 import TabModal from "../../../components/Material/Tab/TabModal";
 import TabModalPanel from "../../../components/Material/Tab/TabModalPanel";
-import { toastError } from "../../../components/common/Toast/ToastNotify";
 import { DialogContentBeta } from "../../../components/common/Dialogs/_DialogContent";
 import { DialogTitleBeta } from "../../../components/common/Dialogs/_DialogTitle";
 import { DialogActionsBeta } from "../../../components/common/Dialogs/_DialogActions";
@@ -25,7 +24,7 @@ import { FORM_INITIAL_ROL } from "../../../config/constants";
 const RolCreate = () => {
   const [value, setValue] = useState(0);
   const { dispatch, dialogState } = useContext(ModalContext);
-  const { mutateAsync, isLoading: isLoadingPost } = usePostRol();
+  const { mutateAsync, isPending: isLoadingPost } = usePostRol();
 
   const {
     data: dataModules,
@@ -57,7 +56,7 @@ const RolCreate = () => {
       toast.success(response.message);
     } catch (e) {
       if (isError(e)) {
-        toastError(e.response.data.message);
+        toast.error(e.response.data.message);
       }
     }
   };

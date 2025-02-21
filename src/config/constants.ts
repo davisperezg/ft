@@ -1,14 +1,21 @@
 import { DialogState } from "../interfaces/common/dialog.interface";
 import { PageState } from "../interfaces/common/page.interface";
-import { IPagination } from "../interfaces/components/pagination/pagination.interface";
+import { IPaginationTable } from "../interfaces/common/pagination.interface";
 import { ITabItem } from "../interfaces/components/tab-top/tab.interface";
+import {
+  IFeatureEmpresaCreate,
+  IFeatureEmpresaUpdate,
+} from "../interfaces/features/empresa/empresa.interface";
+import { IFeatureInvoice } from "../interfaces/features/invoices/invoice.interface";
 import { IModulosSystem } from "../interfaces/features/modulo/modulo_system.interface";
-import { IEmpresa } from "../interfaces/models/empresa/empresa.interface";
 import { IRol } from "../interfaces/models/rol/rol.interface";
 import {
   IUser,
   IUserWithPassword,
 } from "../interfaces/models/user/user.interface";
+import { IValidationInvoiceDetails } from "../interfaces/validations/invoice/invoice-detail.interface";
+import { PageEnum } from "../types/enums/page.enum";
+import dayjs from "dayjs";
 
 export const BASE_API = import.meta.env.VITE_API_URL;
 //import.meta.env.VITE_API_URL ??
@@ -20,7 +27,7 @@ export const MENU_PERMISOS = "Permisos";
 export const MENU_ROLES = "Roles";
 export const MENU_USUARIOS = "Usuarios";
 export const MENU_COMPROBANTES_ELECT = "Comprobantes Electrónicos";
-export const MENU_ALTAS = "Tipo de documentos";
+export const MENU_TIPO_DOCUMENTOS = "Tipo de documentos";
 export const MENU_EMPRESAS = "Empresas";
 export const MENU_SERIES = "Series";
 export const MODS_TEST = [
@@ -105,7 +112,7 @@ export const FORM_INITIAL_USER: IUserWithPassword = {
   empresasAsign: [],
 };
 
-export const FORM_INITIAL_EMPRESA: IEmpresa = {
+export const FORM_INITIAL_EMPRESA: IFeatureEmpresaCreate = {
   logo: undefined,
   cert: undefined,
   usuario: -1,
@@ -129,6 +136,72 @@ export const FORM_INITIAL_EMPRESA: IEmpresa = {
   usu_secundario_ose_password: "",
   usu_secundario_user: "",
   usu_secundario_password: "",
+  tip_documento: -1,
+  departamento: undefined,
+  provincia: undefined,
+  distrito: undefined,
+};
+
+export const FORM_INITIAL_EMPRESA_UPDATE: IFeatureEmpresaUpdate = {
+  cert: undefined,
+  logo: undefined,
+  nombre_comercial: "",
+  domicilio_fiscal: "",
+  ubigeo: "",
+  urbanizacion: "",
+  modo: 0,
+  ose_enabled: false,
+  web_service: "",
+  usu_secundario_ose_password: "",
+  usu_secundario_ose_user: "",
+  usu_secundario_user: "",
+  usu_secundario_password: "",
+  cert_password: "",
+  documentos: [],
+  correo: "",
+  telefono_fijo_1: "",
+  telefono_movil_1: "",
+  telefono_fijo_2: "",
+  telefono_movil_2: "",
+  establecimientos: [],
+};
+
+export const FORM_MODAL_PRODUCT_INVOICE: IValidationInvoiceDetails = {
+  id: undefined,
+  tipAfeIgv: "10",
+  cantidad: 1,
+  unidad: "NIU",
+  codigo: "",
+  descripcion: "",
+  porcentajeIgv: 18,
+  mtoValorUnitario: "",
+  presentation: undefined,
+  producto: undefined,
+  posicionTabla: undefined,
+};
+
+export const FORM_INITIAL_INVOICE: IFeatureInvoice = {
+  empresa: 0,
+  establecimiento: 0,
+  tipo_documento: "01", //boleta(03), factura(01)
+  serie: "",
+  numero: "",
+  numeroConCeros: "",
+  fecha_emision: dayjs(new Date()),
+  fecha_vencimiento: undefined,
+  ruc: "",
+  cliente: "",
+  direccion: "",
+  tipo_entidad: "6", //dni, ruc - default es 2 tipos ya q factura solo acepta rucs
+  tipo_operacion: "0101",
+  moneda: "PEN",
+  forma_pago: "Contado",
+  observaciones: [],
+  details: [],
+  producto: FORM_MODAL_PRODUCT_INVOICE,
+  borrador: false,
+  id: undefined,
+  observacion: undefined,
 };
 
 export const FORM_INITIAL_SERIES = {
@@ -151,8 +224,9 @@ export const INITIAL_VALUE_DIALOG: DialogState = {
 };
 
 export const INITIAL_VALUE_PAGE: PageState = {
-  namePage: "",
-  pageComplete: false,
+  open: false,
+  namePage: PageEnum.INIT,
+  pageComplete: true,
 };
 
 export const INITIAL_VALUE_TAB: ITabItem = {
@@ -175,7 +249,7 @@ export const INITIAL_VALUE_TAB: ITabItem = {
   },
 };
 
-export const INITIAL_VALUE_PAGINATION: IPagination = {
+export const INITIAL_VALUE_PAGINATION: IPaginationTable = {
   pageIndex: 0,
   pageSize: 10,
 };

@@ -1,4 +1,8 @@
-import { ISeriesExtendida } from "../series/series.interface";
+import { IFormCPEType } from "../../forms/type-doc-cpe/type-doc-cpe.interface";
+import { ISeriesExtendida } from "../../models/series/series.interface";
+
+//export interface IFeatureCPEType extends IFormCPEType {}
+export type IFeatureCPEType = IFormCPEType;
 
 export interface ITipoDoc {
   id?: number;
@@ -7,10 +11,6 @@ export interface ITipoDoc {
   abreviado: string;
   estado?: boolean;
   status?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-  deleteAt?: Date;
-  restoreAt?: Date;
   new?: boolean;
 }
 

@@ -1,21 +1,20 @@
-import IndeterminateCheckbox from "../../../components/common/Inputs/IndeterminateCheckbox";
 import { useMemo } from "react";
-import ComponentTable from "../../../components/common/Table/Index";
-import { ColumnDef } from "@tanstack/react-table";
-import {
-  useDisableEmpresas,
-  useEmpresas,
-  useEnableEmpresas,
-} from "../hooks/useEmpresa";
-import { isError } from "../../../utils/functions.utils";
-import { toast } from "react-toastify";
-import { IEmpresa } from "../../../interfaces/models/empresa/empresa.interface";
+import { useEmpresas } from "../hooks/useEmpresa";
+import { IDTOEmpresa } from "../../../interfaces/models/empresa/empresa.interface";
+import { DataTable } from "../../../components/common/Table/DataTable";
+import { ExtendedColumnDef } from "@tanstack/react-table";
 
 interface Props {
-  openEdit: (value: boolean, row: IEmpresa) => void;
+  onRowClick: (row: IDTOEmpresa) => void;
+  getItemsRemoves: (items: any[]) => void;
+  getItemsRestores: (items: any[]) => void;
 }
 
-const EmpresaList = ({ openEdit }: Props) => {
+const EmpresaList = ({
+  onRowClick,
+  getItemsRemoves,
+  getItemsRestores,
+}: Props) => {
   const {
     data,
     //error: errorEmpresas,
@@ -23,67 +22,18 @@ const EmpresaList = ({ openEdit }: Props) => {
     //isError: isErrorEmpresas,
   } = useEmpresas();
 
-  const { mutateAsync: mutateDisable } = useDisableEmpresas();
-
-  const { mutateAsync: mutateEnable } = useEnableEmpresas();
-
-  const columns = useMemo<ColumnDef<IEmpresa>[]>(
+  const columns = useMemo<ExtendedColumnDef<IDTOEmpresa>[]>(
     () => [
-      {
-        id: "select",
-        header: ({ table }) => (
-          <div className="pl-[7px] pt-[5px]">
-            <IndeterminateCheckbox
-              {...{
-                checked: table.getIsAllRowsSelected(),
-                indeterminate: table.getIsSomeRowsSelected(),
-                onChange: table.getToggleAllRowsSelectedHandler(),
-              }}
-            />
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="pl-[7px] pt-[5px]">
-            <IndeterminateCheckbox
-              {...{
-                checked: row.getIsSelected(),
-                disabled: !row.getCanSelect(),
-                indeterminate: row.getIsSomeSelected(),
-                onChange: row.getToggleSelectedHandler(),
-              }}
-            />
-          </div>
-        ),
-        size: 28,
-        minSize: 28,
-      },
-      {
-        accessorKey: "index",
-        id: "index",
-        header: () => {
-          return <div className="p-[5px]  select-none text-center">#</div>;
-        },
-        cell: ({ getValue }) => {
-          return (
-            <div className="p-[4px] pb-[4px]   text-center">
-              {getValue() as any}
-            </div>
-          );
-        },
-        size: 28,
-        minSize: 28,
-      },
       {
         accessorKey: "usuario",
         id: "usuario",
         header: () => {
-          return <div className="p-[5px]  select-none">User Root</div>;
+          return <div className="select-none">User Root</div>;
         },
         cell: ({ getValue }) => {
+          //const value: IUser = getValue<IEmpresa["usuario"]>();
           const value = getValue() as any;
-          return (
-            <div className="p-[4px] pb-[4px]  ">{value.nombre_completo}</div>
-          );
+          return <div className="">{value.nombre_completo}</div>;
         },
         size: 100,
         minSize: 31,
@@ -92,10 +42,10 @@ const EmpresaList = ({ openEdit }: Props) => {
         accessorKey: "ruc",
         id: "ruc",
         header: () => {
-          return <div className="p-[5px]  select-none">RUC</div>;
+          return <div className="select-none">RUC</div>;
         },
         cell: ({ getValue }) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue() as any}</div>;
+          return <div className="">{getValue() as any}</div>;
         },
         size: 100,
         minSize: 31,
@@ -104,167 +54,123 @@ const EmpresaList = ({ openEdit }: Props) => {
         accessorKey: "razon_social",
         id: "razon_social",
         header: () => {
-          return <div className="p-[5px]  select-none">Razon social</div>;
+          return <div className="select-none">Razon social</div>;
         },
         cell: ({ getValue }) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue() as any}</div>;
+          return <div className="">{getValue() as any}</div>;
         },
-        size: 100,
+        size: 250,
         minSize: 31,
       },
       {
         accessorKey: "modo",
         id: "modo",
         header: () => {
-          return <div className="p-[5px]  select-none">Modo</div>;
+          return <div className="text-center w-full select-none">Modo</div>;
         },
         cell: ({ getValue }) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue() as any}</div>;
+          return <div className="text-center w-full">{getValue() as any}</div>;
         },
-        size: 100,
+        size: 50,
         minSize: 31,
       },
       {
         accessorKey: "ose",
         id: "ose",
         header: () => {
-          return <div className="p-[5px]  select-none">OSE</div>;
+          return <div className="text-center w-full select-none">OSE</div>;
         },
         cell: ({ getValue }) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue() as any}</div>;
+          return <div className="text-center w-full">{getValue() as any}</div>;
         },
-        size: 100,
+        size: 50,
         minSize: 31,
       },
       {
         accessorKey: "web_service",
         id: "web_service",
         header: () => {
-          return <div className="p-[5px]  select-none">Web service</div>;
+          return <div className="select-none">Web service</div>;
         },
         cell: ({ getValue }) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue() as any}</div>;
+          return <div className="">{getValue() as any}</div>;
         },
-        size: 100,
+        size: 380,
         minSize: 31,
       },
       {
         accessorKey: "sunat_usu",
         id: "sunat_usu",
         header: () => {
-          return <div className="p-[5px]  select-none">SUNAT USU</div>;
+          return <div className="select-none">SUNAT USU</div>;
         },
         cell: ({ getValue }) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue() as any}</div>;
+          return <div className="">{getValue() as any}</div>;
         },
-        size: 100,
+        size: 50,
         minSize: 31,
       },
       {
         accessorKey: "sunat_pass",
         id: "sunat_pass",
         header: () => {
-          return <div className="p-[5px]  select-none">SUNAT PASS</div>;
+          return <div className="select-none">SUNAT PASS</div>;
         },
         cell: ({ getValue }) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue() as any}</div>;
+          return <div className="">{getValue() as any}</div>;
         },
-        size: 100,
+        size: 50,
         minSize: 31,
       },
       {
         accessorKey: "ose_usu",
         id: "ose_usu",
         header: () => {
-          return <div className="p-[5px]  select-none">OSE USU</div>;
+          return <div className="select-none">OSE USU</div>;
         },
         cell: ({ getValue }) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue() as any}</div>;
+          return <div className="">{getValue() as any}</div>;
         },
-        size: 100,
+        size: 50,
         minSize: 31,
       },
       {
         accessorKey: "ose_pass",
         id: "ose_pass",
         header: () => {
-          return <div className="p-[5px]  select-none">OSE PASS</div>;
+          return <div className="select-none">OSE PASS</div>;
         },
         cell: ({ getValue }) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue() as any}</div>;
+          return <div className="">{getValue() as any}</div>;
         },
-        size: 100,
+        size: 50,
         minSize: 31,
       },
       {
-        accessorKey: "actions",
+        accessorKey: "show_columns",
         header: () => {
-          return <div className="p-[5px]  select-none text-center">...</div>;
+          return <div className="select-none text-center w-full">...</div>;
         },
         size: 28,
         minSize: 28,
         enableResizing: false,
         enableSorting: false,
+        enableHiding: false,
       },
     ],
     []
   );
 
-  const loadData = useMemo(() => {
-    if (data) {
-      return data;
-    }
-
-    return [];
-  }, [data]);
-
-  const getItemsRemoves = async (items: any) => {
-    const eliminar = confirm(
-      `Esta seguro que desea eliminar ${items.length} items ?`
-    );
-
-    if (eliminar) {
-      for (let index = 0; index < items.length; index++) {
-        const element = items[index];
-        try {
-          await mutateDisable({ id: element.original.id });
-        } catch (e) {
-          if (isError(e)) {
-            toast.error(e.response.data.message);
-          }
-        }
-      }
-    }
-  };
-
-  const getItemsRestores = async (items: any) => {
-    const restaurar = confirm(
-      `Esta seguro que desea restaurar ${items.length} items ?`
-    );
-
-    if (restaurar) {
-      for (let index = 0; index < items.length; index++) {
-        const element = items[index];
-        try {
-          await mutateEnable({ id: element.original.id });
-        } catch (e) {
-          if (isError(e)) {
-            toast.error(e.response.data.message);
-          }
-        }
-      }
-    }
-  };
-
   return (
     <>
-      <ComponentTable
-        loading={isLoading}
-        data={loadData}
+      <DataTable<IDTOEmpresa>
+        isLoading={isLoading}
+        data={data || []}
         columns={columns}
         getItemsRemoves={getItemsRemoves}
         getItemsRestores={getItemsRestores}
-        openEdit={openEdit}
+        onRowClick={onRowClick}
+        selects
       />
     </>
   );

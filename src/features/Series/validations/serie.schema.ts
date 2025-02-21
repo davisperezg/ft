@@ -17,10 +17,12 @@ export const schemaFormSeries = yup.object({
             .string()
             .required("El documento es requerido.")
             .typeError("El documento es requerido.")
-        : yup
-            .number()
-            .positive("Seleccione un documento.")
-            .required("El documento es requerido.")
+        : typeof value === "number"
+          ? yup
+              .number()
+              .positive("Seleccione un documento.")
+              .required("El documento es requerido.")
+          : yup.boolean().required("El documento es requerido.")
     ),
   }),
   serie: yup

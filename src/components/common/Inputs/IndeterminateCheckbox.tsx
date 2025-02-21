@@ -15,10 +15,10 @@ const IndeterminateCheckbox = ({
 
   return (
     <input
+      {...rest}
       type="checkbox"
       ref={ref}
       className={className + " cursor-pointer"}
-      {...rest}
     />
   );
 };

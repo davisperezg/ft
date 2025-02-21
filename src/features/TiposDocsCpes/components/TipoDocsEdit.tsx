@@ -1,10 +1,7 @@
 import { SubmitHandler, useForm } from "react-hook-form";
-import { ModalContext } from "../../../store/context/dialogContext";
-import { useContext } from "react";
 import { useEditTipDoc } from "../hooks/useTipoDocs";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { isError } from "../../../utils/functions.utils";
-import { toastError } from "../../../components/common/Toast/ToastNotify";
 import Button from "@mui/material/Button";
 import { DialogContentBeta } from "../../../components/common/Dialogs/_DialogContent";
 import { DialogBeta } from "../../../components/common/Dialogs/DialogBasic";
@@ -12,31 +9,31 @@ import { DialogActionsBeta } from "../../../components/common/Dialogs/_DialogAct
 import { DialogTitleBeta } from "../../../components/common/Dialogs/_DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
-import { ITipoDoc } from "../../../interfaces/models/tipo-docs-cpe/tipodocs.interface";
+import { ITipoDoc } from "../../../interfaces/features/tipo-docs-cpe/tipo-docs.interface";
 
 interface Props {
-  data: ITipoDoc;
+  state: {
+    visible: boolean;
+    row: ITipoDoc;
+  };
   closeEdit: () => void;
 }
 
-const TipoDocsEdit = ({ data, closeEdit }: Props) => {
-  const { dispatch, dialogState } = useContext(ModalContext);
-
+const TipoDocsEdit = ({ state, closeEdit }: Props) => {
   const {
     register,
     handleSubmit,
     formState: { errors, isDirty, isValid },
   } = useForm<ITipoDoc>({
     defaultValues: {
-      nombre: data.nombre,
-      abreviado: data.abreviado,
-      codigo: data.codigo,
+      nombre: state.row.nombre,
+      abreviado: state.row.abreviado,
+      codigo: state.row.codigo,
     },
   });
 
   const closeModal = () => {
     closeEdit();
-    dispatch({ type: "INIT" });
   };
 
   const { mutateAsync: mutateTipoDoc, isPending: isLoadingTipoDoc } =
@@ -46,25 +43,25 @@ const TipoDocsEdit = ({ data, closeEdit }: Props) => {
     try {
       const response = await mutateTipoDoc({
         body: values,
-        id: data.id as number,
+        id: state.row.id!,
       });
 
       toast.success(response.message);
       closeModal();
     } catch (e) {
       if (isError(e)) {
-        toastError(e.response.data.message);
+        toast.error(e.response.data.message);
       }
     }
   };
 
   return (
     <>
-      <DialogBeta open={dialogState.open && !dialogState.nameDialog}>
-        <DialogTitleBeta>Editar {data.nombre}</DialogTitleBeta>
+      <DialogBeta open={state.visible}>
+        <DialogTitleBeta>Editar {state.row.nombre}</DialogTitleBeta>
         <IconButton
           aria-label="close"
-          onClick={() => dispatch({ type: "INIT" })}
+          onClick={closeModal}
           sx={{
             position: "absolute",
             right: 8,

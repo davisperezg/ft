@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import { storage } from "../../../utils/storage.utils";
-import { toast } from "react-toastify";
 //import { v4 as uuidv4 } from "uuid";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { schemaFormLogin } from "../validations/auth.schema";
 import { IAuthUser } from "../../../interfaces/features/auth/auth.interface";
 import { postLogin } from "../services/auth.service";
+import { toast } from "sonner";
 
 const LoginForm = () => {
   const {
@@ -15,8 +15,8 @@ const LoginForm = () => {
     formState: { errors },
   } = useForm<IAuthUser>({
     defaultValues: {
-      username: storage.getItem("username", "LOCAL") || "",
-      password: storage.getItem("password", "LOCAL") || "",
+      username: storage.getItem("username", "LOCAL") ?? "",
+      password: storage.getItem("password", "LOCAL") ?? "",
       checkbox: storage.getItem("username", "LOCAL") ? true : false,
     },
     resolver: yupResolver(schemaFormLogin),
@@ -89,9 +89,7 @@ const LoginForm = () => {
                     disabled={disabled}
                     type="text"
                     className={`autofill:shadow-[0_0_0_30px_white_inset] w-full p-1 rounded-sm border border-hover focus:outline-none pl-2 text-[14px] ${
-                      errors.username
-                        ? "border-primary"
-                        : "hover:border-borders"
+                      errors.username ? "border-danger" : "hover:border-borders"
                     }`}
                     placeholder="Usuario"
                   />
@@ -120,9 +118,7 @@ const LoginForm = () => {
                     type="password"
                     autoComplete="current-password"
                     className={`autofill:shadow-[0_0_0_30px_white_inset] w-full p-1 rounded-sm border border-hover focus:outline-none pl-2 text-[14px] ${
-                      errors.password
-                        ? "border-primary"
-                        : "hover:border-borders"
+                      errors.password ? "border-danger" : "hover:border-borders"
                     }`}
                     placeholder="Contraseña"
                   />

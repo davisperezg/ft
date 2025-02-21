@@ -1,58 +1,134 @@
-import { Dayjs } from "dayjs";
-import { IProducto } from "../producto/producto.interface";
 import { IEmpresa } from "../empresa/empresa.interface";
 import { IEstablecimiento } from "../establecimiento/establecimiento.interface";
 import { IUserMysql } from "../user/user.interface";
 import { IMoneda } from "../tipo-moneda/moneda.interface";
 import { IFormaPagos } from "../forma-pagos/forma_pagos.interface";
 import { IEntidad } from "../entidad/entidad.interface";
+import { ICPEType } from "../tipo-docs-cpe/tipo-docs.interface";
+import {
+  IInvoiceDetails,
+  IQueryDetailsInvoice,
+} from "./invoice-details.interface";
 
 export interface IInvoice {
   id?: number;
-  serie: string;
-  correlativo?: string;
-  numero: string;
-  numeroConCeros?: string;
-  fecha_emision: Dayjs | Date | string;
-  fecha_vencimiento?: Dayjs | null | Date;
-  ruc: string;
-  cliente: IEntidad | string;
-  direccion?: string;
-  tipo_documento?: string; //boleta, factura, etc...
-  tipo_entidad: string; //dni, ruc, pasaporte, ce
   tipo_operacion: string; //0101 venta interna
-  moneda: IMoneda | string;
-  forma_pago: IFormaPagos | string;
-  observacion?: string;
-  observaciones_invoice?: any[];
-  observaciones_sunat?: any[] | string;
-  producto?: IProducto;
-  productos: IProducto[];
-  mto_operaciones_gravadas?: string;
-  mto_operaciones_exoneradas?: string;
-  mto_operaciones_inafectas?: string;
-  mto_operaciones_exportacion?: string;
-  mto_operaciones_gratuitas?: string;
-  mto_igv?: string;
-  mto_igv_gratuitas?: string;
-  porcentaje_igv?: string;
+  tipo_documento: ICPEType; //boleta, factura, etc...
+  serie: string;
+  correlativo: string;
+  fecha_emision: Date;
+  fecha_vencimiento?: Date;
+  forma_pago: IFormaPagos;
+  moneda: IMoneda;
+  empresa: IEmpresa;
+  establecimiento: IEstablecimiento;
+  cliente: IEntidad;
+  usuario: IUserMysql;
+  mto_operaciones_gravadas?: number;
+  mto_operaciones_exoneradas?: number;
+  mto_operaciones_inafectas?: number;
+  mto_operaciones_exportacion?: number;
+  mto_operaciones_gratuitas?: number;
+  mto_igv?: number;
+  mto_igv_gratuitas?: number;
+  porcentaje_igv: number;
   estado_operacion?: number;
+  estado_anulacion?: number;
   respuesta_sunat_codigo?: string;
   respuesta_sunat_descripcion?: string;
+  respuesta_anulacion_codigo?: string;
+  respuesta_anulacion_descripcion?: string;
+  observaciones_invoice?: string;
+  observaciones_sunat?: string;
+  entidad: string;
+  entidad_tipo: string; //dni, ruc, pasaporte, ce
+  entidad_documento: string;
+  entidad_direccion: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  borrador?: boolean;
+  invoices_details: IInvoiceDetails[];
+}
+
+export interface IQueryInvoice {
+  statusCode: string;
+  pageSize: number;
+  pageCount: number;
+  rowCount: number;
+  items: IQueryInvoiceList[];
+}
+
+export interface IQueryInvoiceList
+  extends Required<
+    Pick<
+      IInvoice,
+      | "id"
+      | "tipo_operacion"
+      | "serie"
+      | "correlativo"
+      | "mto_operaciones_gravadas"
+      | "mto_operaciones_exoneradas"
+      | "mto_operaciones_inafectas"
+      | "mto_operaciones_exportacion"
+      | "mto_operaciones_gratuitas"
+      | "mto_igv"
+      | "mto_igv_gratuitas"
+      | "porcentaje_igv"
+      | "estado_operacion"
+      | "respuesta_sunat_codigo"
+      | "respuesta_sunat_descripcion"
+      | "borrador"
+    >
+  > {
+  cliente: string;
+  cliente_cod_doc: string;
+  cliente_num_doc: string;
+  cliente_direccion: string;
+  empresa: number;
+  establecimiento: number;
+  moneda_abrstandar: string;
+  moneda_simbolo: string;
+  forma_pago: string;
+  usuario: string;
+  fecha_vencimiento?: Date;
   estado_anulacion?: number;
   respuesta_anulacion_codigo?: string;
   respuesta_anulacion_descripcion?: string;
-  empresa?: IEmpresa | number;
-  establecimiento?: IEstablecimiento | number;
-  usuario?: IUserMysql | string;
-  entidad?: string;
-  entidad_tipo?: string;
-  entidad_documento?: string;
-  entidad_direccion?: string;
-  pdfA4?: string;
+  observaciones_sunat?: string;
+  observaciones?: {
+    observacion: string;
+    uuid: string;
+  }[];
   xml?: string;
-  xmlSigned?: string;
   cdr?: string;
-  status?: boolean;
-  borrador?: boolean;
+  pdfA4?: string;
+  fecha_registro: Date;
+  fecha_emision: Date;
+  details: IQueryDetailsInvoice[];
+  status: boolean;
+  tipo_documento: string;
+  documento: string;
+}
+
+export interface IDTOQueryInvoiceRegistered {
+  aceptada_sunat: string;
+  borrador: boolean;
+  cdr: string;
+  codigo_sunat: number;
+  correlativo_registrado: string;
+  correlativo_registradoConCeros: string;
+  documento: string;
+  enviada_sunat: number;
+  estado: string;
+  fileName: string;
+  invoice: IInvoice;
+  loading: boolean;
+  mensaje_sunat: string;
+  numero: string;
+  numeroConCeros: string;
+  otros_sunat: string;
+  pdfA4: string;
+  serie: string;
+  total: string;
+  xml: string;
 }

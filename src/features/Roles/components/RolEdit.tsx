@@ -1,6 +1,5 @@
-import { useContext, useMemo, useState, useEffect, ChangeEvent } from "react";
+import { useState, useEffect, ChangeEvent } from "react";
 import { SubmitHandler, useForm, Controller } from "react-hook-form";
-import { ModalContext } from "../../../store/context/dialogContext";
 import { useModulesAvailables } from "../../Modulos/hooks/useModuleS";
 import { useEditRol } from "../hooks/useRoles";
 import { TfiReload } from "react-icons/tfi";
@@ -9,9 +8,8 @@ import {
   usePermisosXrole,
   usePostResourcesXRol,
 } from "../../Permisos/hooks/useResources";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { isError } from "../../../utils/functions.utils";
-import { toastError } from "../../../components/common/Toast/ToastNotify";
 import { DialogContentBeta } from "../../../components/common/Dialogs/_DialogContent";
 import { DialogTitleBeta } from "../../../components/common/Dialogs/_DialogTitle";
 import { DialogActionsBeta } from "../../../components/common/Dialogs/_DialogActions";
@@ -28,7 +26,10 @@ import { schemaFormRol } from "../validations/rol.schema";
 import { IRol } from "../../../interfaces/models/rol/rol.interface";
 
 interface Props {
-  data: any;
+  state: {
+    visible: boolean;
+    row: any;
+  };
   closeEdit: () => void;
 }
 
@@ -42,8 +43,7 @@ interface GroupCheckBox {
   checked: boolean;
 }
 
-const RolEdit = ({ data, closeEdit }: Props) => {
-  const { dispatch, dialogState } = useContext(ModalContext);
+const RolEdit = ({ state, closeEdit }: Props) => {
   const [value, setValue] = useState(0);
   const [categorys, setCategorys] = useState<GroupCheckBox[]>([]);
   const [checkAllCategorys, setCheckAllCategorys] = useState<boolean>(false);
@@ -69,16 +69,16 @@ const RolEdit = ({ data, closeEdit }: Props) => {
     isLoading: isLoadingPermisosRole,
     isRefetching: isRefetching2,
     refetch: refetch2,
-  } = usePermisosXrole(data._id);
+  } = usePermisosXrole(state.row._id);
 
-  const { mutateAsync: mutateResources, isLoading: isLoadingResources } =
+  const { mutateAsync: mutateResources, isPending: isLoadingResources } =
     usePostResourcesXRol();
 
   const methods = useForm<FormValues>({
     defaultValues: {
-      name: data.name,
-      description: data.description,
-      module: data.module.map((a: any) => a._id),
+      name: state.row.name,
+      description: state.row.description,
+      module: state.row.module.map((a: any) => a._id),
       resources: [],
     },
     resolver: yupResolver(schemaFormRol),
@@ -94,7 +94,7 @@ const RolEdit = ({ data, closeEdit }: Props) => {
     formState: { errors, isDirty, isValid },
   } = methods;
 
-  const { mutateAsync, isLoading: isLoadingEdit } = useEditRol();
+  const { mutateAsync, isPending: isLoadingEdit } = useEditRol();
 
   const handleRefresh = () => {
     refetch2();
@@ -105,7 +105,7 @@ const RolEdit = ({ data, closeEdit }: Props) => {
     setTimeout(() => {
       setValueModel(
         "module",
-        data.module.map((a: any) => a._id)
+        state.row.module.map((a: any) => a._id)
       );
       setRefreshModulos(false);
     }, 1000);
@@ -121,41 +121,24 @@ const RolEdit = ({ data, closeEdit }: Props) => {
     try {
       const response = await mutateAsync({
         body: sendRol,
-        id: data._id as string,
+        id: state.row._id as string,
       });
 
       await mutateResources({
-        resources: values.resources as string[],
-        role: data._id,
+        resources: values.resources ?? [],
+        role: state.row._id,
       });
       toast.success(response.message);
       closeModal();
     } catch (e) {
       if (isError(e)) {
-        toastError(e.response.data.message);
+        toast.error(e.response.data.message);
       }
     }
   };
 
-  const memoModulos = useMemo(() => {
-    if (dataModules) {
-      return dataModules;
-    }
-
-    return [];
-  }, [dataModules]);
-
-  const memoPermisos = useMemo(() => {
-    if (dataPermisos) {
-      return dataPermisos;
-    }
-
-    return [];
-  }, [dataPermisos]);
-
   const closeModal = () => {
     closeEdit();
-    dispatch({ type: "INIT" });
   };
 
   const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -178,7 +161,7 @@ const RolEdit = ({ data, closeEdit }: Props) => {
         const categoryChecked =
           permiso.resources.every((a: any) =>
             getValues("resources")?.includes(a.value)
-          ) ?? false;
+          ) || false;
 
         if (categoryChecked) {
           return {
@@ -208,13 +191,13 @@ const RolEdit = ({ data, closeEdit }: Props) => {
     isRefetching2,
     dataPermisos,
     getValues,
-    data?.module,
+    state.row?.module,
   ]);
 
   return (
     <>
-      <DialogBeta open={dialogState.open && !dialogState.nameDialog}>
-        <DialogTitleBeta>{`Rol ${data.name}`}</DialogTitleBeta>
+      <DialogBeta open={state.visible}>
+        <DialogTitleBeta>{`Rol ${state.row.name}`}</DialogTitleBeta>
         <IconButton
           aria-label="close"
           onClick={closeModal}
@@ -252,7 +235,7 @@ const RolEdit = ({ data, closeEdit }: Props) => {
                     autoFocus
                     type="text"
                     className={`border w-8/12 focus:outline-none pl-1 rounded-sm ${
-                      errors.name ? "border-primary" : ""
+                      errors.name ? "border-danger" : ""
                     }`}
                   />
                   {errors.name && (
@@ -271,7 +254,7 @@ const RolEdit = ({ data, closeEdit }: Props) => {
                     cols={10}
                     rows={8}
                     className={`border w-8/12 focus:outline-none pl-1 rounded-sm ${
-                      errors.description ? "border-primary" : ""
+                      errors.description ? "border-danger" : ""
                     }`}
                   />
                   {errors.description && (
@@ -318,7 +301,7 @@ const RolEdit = ({ data, closeEdit }: Props) => {
                         name={`module`}
                         render={({ field }) => (
                           <>
-                            {memoModulos.map((modulo) => {
+                            {dataModules?.map((modulo) => {
                               return (
                                 <label
                                   key={modulo.value}
@@ -401,7 +384,7 @@ const RolEdit = ({ data, closeEdit }: Props) => {
                               //Si todos las categorias estan marcadas entonces marcamos todos los recursos
                               setValueModel(
                                 "resources",
-                                memoPermisos.flatMap((a) =>
+                                dataPermisos?.flatMap((a) =>
                                   a.resources.map((a: any) => a.value)
                                 ),
                                 {
@@ -438,12 +421,12 @@ const RolEdit = ({ data, closeEdit }: Props) => {
                       </label>
                     </div>
                     <div className="grid grid-cols-[repeat(4,_1fr)] gap-[15px]">
-                      {memoPermisos.map((permiso, index) => {
+                      {dataPermisos?.map((permiso, index) => {
                         //Si los recursos del rol incluyen todos de los recursos de la categoria, entonces la categoria estara marcada
                         const categoryChecked =
                           permiso.resources.every((a: any) =>
                             getValues("resources")?.includes(a.value)
-                          ) ?? false;
+                          ) || false;
 
                         return (
                           <div key={index + 1} className="border">
@@ -474,7 +457,7 @@ const RolEdit = ({ data, closeEdit }: Props) => {
                                       setValueModel(
                                         "resources",
                                         [
-                                          ...(getValues("resources") || []),
+                                          ...(getValues("resources") ?? []),
                                           ...permiso.resources.map(
                                             (a: any) => a.value
                                           ),
@@ -494,7 +477,7 @@ const RolEdit = ({ data, closeEdit }: Props) => {
                                       //Si desmarco la categoria, quitamos todos los recursos de la categoria
                                       setValueModel(
                                         "resources",
-                                        (getValues("resources") || []).filter(
+                                        (getValues("resources") ?? []).filter(
                                           (a: any) =>
                                             !permiso.resources
                                               .map((a: any) => a.value)
@@ -578,7 +561,7 @@ const RolEdit = ({ data, closeEdit }: Props) => {
                                                       getValues(
                                                         "resources"
                                                       )?.includes(a.value)
-                                                  ) ?? false;
+                                                  ) || false;
 
                                                 if (findCategoryChecked) {
                                                   const mapCategorys =

@@ -6,26 +6,23 @@ import SunatLogo from "../../../assets/sunat.svg";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { TiCancel } from "react-icons/ti";
 import ButtonSimple from "../../../components/Material/Button/ButtonSimple";
-import { useContext } from "react";
-import { ModalContext } from "../../../store/context/dialogContext";
 import dayjs from "dayjs";
-import { IConfigEstablecimiento } from "../../../interfaces/models/configurations/config_establecimiento.interface";
-import { IEntidad } from "../../../interfaces/models/entidad/entidad.interface";
-import { PageEnum } from "../../../types/enums/page.enum";
-import { IInvoice } from "../../../interfaces/models/invoices/invoice.interface";
-import { IFormaPagos } from "../../../interfaces/models/forma-pagos/forma_pagos.interface";
-import { IMoneda } from "../../../interfaces/models/tipo-moneda/moneda.interface";
+import { IQueryInvoiceList } from "../../../interfaces/models/invoices/invoice.interface";
 import { useUserStore } from "../../../store/zustand/user-zustand";
+import { usePageStore } from "../../../store/zustand/page-zustand";
+import { PageEnum } from "../../../types/enums/page.enum";
+import { IFeatureInvoice } from "../../../interfaces/features/invoices/invoice.interface";
 
 interface IProps {
-  row: Row<IInvoice>;
+  row: Row<IQueryInvoiceList>;
 }
 
 const CPEButtonEnviarSunat = ({ row }: IProps) => {
   const userGlobal = useUserStore((state) => state.userGlobal);
+  const setPage = usePageStore((state) => state.setPage);
 
-  const configuracionesEstablecimiento = userGlobal?.empresaActual
-    ?.establecimiento?.configuraciones as IConfigEstablecimiento[];
+  const configuracionesEstablecimiento =
+    userGlobal?.empresaActual?.establecimiento?.configuraciones ?? [];
 
   const ENVIA_DIRECTO_SUNAT = configuracionesEstablecimiento.some(
     (config) => config.enviar_inmediatamente_a_sunat
@@ -46,33 +43,50 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
   const borrador = row.original.borrador;
 
   //null-no enviado, 1-enviado con ticket, 2-aceptado, 3-rechazado
-  const formatoEditInvoice: IInvoice = {
+  const formatoEditInvoice: IFeatureInvoice = {
     id: row.original.id,
-    cliente: row.original.cliente
-      ? (row.original.cliente as IEntidad).entidad
-      : String(row.original.entidad),
-    direccion: row.original.cliente
-      ? (row.original.cliente as IEntidad).direccion
-      : String(row.original.entidad_direccion),
+    empresa: row.original.empresa,
+    establecimiento: row.original.establecimiento,
+    tipo_documento: row.original.tipo_documento,
+    serie: row.original.serie,
+    numero: row.original.correlativo,
+    numeroConCeros: row.original.correlativo,
     fecha_emision: dayjs(row.original.fecha_emision),
     fecha_vencimiento: row.original.fecha_vencimiento
       ? dayjs(row.original.fecha_vencimiento)
-      : null,
-    forma_pago: (row.original.forma_pago as IFormaPagos).forma_pago,
-    moneda: (row.original.moneda as IMoneda).abrstandar,
-    numero: String(row.original.correlativo),
-    numeroConCeros: row.original.correlativo,
-    observacion: row.original.observacion,
-    observaciones_invoice: [],
-    productos: row.original.productos,
-    ruc: row.original.cliente
-      ? (row.original.cliente as IEntidad).numero_documento
-      : String(row.original.entidad_documento),
-    serie: row.original.serie,
-    tipo_entidad: row.original.cliente
-      ? String((row.original.cliente as IEntidad).tipo_entidad)
-      : String(row.original.tipo_entidad),
+      : undefined,
+    ruc: row.original.cliente_num_doc,
+    cliente: row.original.cliente,
+    direccion: row.original.cliente_direccion,
+    tipo_entidad: row.original.cliente_cod_doc,
     tipo_operacion: row.original.tipo_operacion,
+    moneda: row.original.moneda_abrstandar,
+    forma_pago: row.original.forma_pago,
+    borrador: row.original.borrador,
+    producto: undefined,
+    details: row.original.details.map((item) => {
+      return {
+        id: item.id,
+        posicionTabla: item.posicionTabla,
+        uuid: item.uuid,
+        cantidad: item.cantidad,
+        codigo: item.codigo,
+        descripcion: item.descripcion,
+        mtoValorUnitario: String(item.mtoValorUnitario),
+        porcentajeIgv: item.porcentajeIgv,
+        tipAfeIgv: item.tipAfeIgv,
+        unidad: item.unidad,
+        presentation: undefined,
+        producto: undefined,
+      };
+    }),
+    observaciones: row.original.observaciones?.map((item) => {
+      return {
+        observacion: item.observacion,
+        uuid: item.uuid,
+      };
+    }),
+    observacion: undefined,
   };
 
   const handleEnviaSunat = () => {
@@ -86,7 +100,7 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
         <>
           {borrador ? (
             <ToolTipIconButton
-              title={
+              titleTooltip={
                 <div className="flex flex-col">
                   <>
                     CUIDADO: Los borradores NO se envían automáticamente a la
@@ -95,10 +109,12 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
                   <div className="flex justify-center items-center">
                     <ButtonSimple
                       onClick={() => {
-                        // return dispatch({
-                        //   type: PageEnum.SCREEN_FACTURA,
-                        //   payload: { ...formatoEditInvoice },
-                        // });
+                        setPage({
+                          namePage: PageEnum.SCREEN_FACTURA,
+                          payload: { ...formatoEditInvoice },
+                          open: true,
+                          pageComplete: true,
+                        });
                       }}
                       variant="contained"
                       color="info"
@@ -111,7 +127,7 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
             >
               <a
                 type="button"
-                className="bg-danger text-[10px] text-white px-[5px] py-[2px] rounded-full hover:text-white"
+                className="bg-danger text-[10px] text-white px-[5px] rounded-full hover:text-white"
               >
                 Borrador
               </a>
@@ -119,7 +135,7 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
           ) : ENVIA_DIRECTO_SUNAT ? (
             <ToolTipIconButton
               component={"button"}
-              title="Enviar a sunat"
+              titleTooltip="Enviar a sunat"
               onClick={handleEnviaSunat}
             >
               <img
@@ -139,7 +155,7 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
         </>
       ) : estadoOpe === 1 || estadoAnul === 1 ? (
         <>
-          <ToolTipIconButton title="Enviando a sunat">
+          <ToolTipIconButton titleTooltip="Enviando a sunat">
             <AiOutlineLoading3Quarters className="text-black-700 animate-spin" />
           </ToolTipIconButton>
         </>
@@ -147,7 +163,7 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
         <>
           {estadoAnul === 2 ? (
             <ToolTipIconButton
-              title={
+              titleTooltip={
                 <>
                   <div className="flex flex-col">
                     <span>Estado: Baja</span>
@@ -173,7 +189,7 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
             </ToolTipIconButton>
           ) : estadoAnul === 3 ? (
             <ToolTipIconButton
-              title={
+              titleTooltip={
                 <>
                   <div className="flex flex-col">
                     <span>Estado: Rechazado</span>
@@ -199,7 +215,7 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
             </ToolTipIconButton>
           ) : (
             <ToolTipIconButton
-              title={
+              titleTooltip={
                 <>
                   <div className="flex flex-col">
                     <span>Estado: Aceptado</span>
@@ -226,13 +242,18 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
           )}
         </>
       ) : (
-        estadoOpe === 3 && (
+        (estadoOpe === 3 || estadoOpe === 4) && (
           <div>
             <ToolTipIconButton
-              title={
+              titleTooltip={
                 <>
                   <div className="flex flex-col">
-                    <span>Estado: Rechazado</span>
+                    <span>
+                      Estado:
+                      {estadoOpe === 3
+                        ? "Rechazado"
+                        : "Excepcion - Error del Contribuyente"}
+                    </span>
                     <span>Código: {codigoSunat}</span>
                     <span>Mensaje: {mensajeSunat}</span>
                     <div className="flex flex-row">

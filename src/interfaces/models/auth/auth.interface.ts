@@ -4,9 +4,7 @@ import { IConfigEstablecimiento } from "../configurations/config_establecimiento
 import { IEmpresa } from "../empresa/empresa.interface";
 import { IEstablecimiento } from "../establecimiento/establecimiento.interface";
 import { ISeries } from "../series/series.interface";
-import { ITipoDoc } from "../tipo-docs-cpe/tipodocs.interface";
-
-interface IAuthConfigEstablecimiento extends IConfigEstablecimiento {}
+import { ITipoDoc } from "../../features/tipo-docs-cpe/tipo-docs.interface";
 
 interface IAuthSeries extends Pick<ISeries, "estado" | "id" | "serie"> {
   numero?: string;
@@ -20,17 +18,34 @@ interface IAuthTipoDocs extends Pick<ITipoDoc, "id" | "nombre" | "codigo"> {
 
 export interface IAuthEstablecimiento
   extends Partial<
-    Pick<IEstablecimiento, "id" | "codigo" | "denominacion" | "estado">
+    Pick<
+      IEstablecimiento,
+      | "id"
+      | "codigo"
+      | "denominacion"
+      | "estado"
+      | "departamento"
+      | "provincia"
+      | "distrito"
+      | "direccion"
+      | "logo"
+    >
   > {
   documentos?: IAuthTipoDocs[];
-  configuraciones?: IAuthConfigEstablecimiento[];
+  configuraciones?: IConfigEstablecimiento[];
 }
 
 export interface IAuthEmpresa
   extends Partial<
     Pick<
       IEmpresa,
-      "id" | "logo" | "estado" | "razon_social" | "ruc" | "nombre_comercial"
+      | "id"
+      | "logo"
+      | "estado"
+      | "razon_social"
+      | "ruc"
+      | "nombre_comercial"
+      | "domicilio_fiscal"
     >
   > {
   configuraciones?: IConfigEmpresa[];
@@ -42,7 +57,7 @@ export interface IAuthEmpresas extends Omit<IAuthEmpresa, "establecimiento"> {
   establecimientos?: IAuthEstablecimiento[];
 }
 
-export type IAuthPayload = {
+export interface IAuthPayload {
   id?: string;
   usuario?: string;
   nombre_usuario?: string;
@@ -51,5 +66,5 @@ export type IAuthPayload = {
   email_usuario?: string;
   empresas?: IAuthEmpresas[] | null;
   empresaActual?: IAuthEmpresa | null;
-  rol: IFeatureRol;
-};
+  rol?: IFeatureRol;
+}

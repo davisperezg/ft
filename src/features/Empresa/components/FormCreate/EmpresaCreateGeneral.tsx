@@ -11,12 +11,12 @@ import { Button, Grid, Stack } from "@mui/material";
 import InputText from "../../../../components/Material/Input/InputText";
 import SearchIcon from "@mui/icons-material/Search";
 import { isError } from "../../../../utils/functions.utils";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import CachedIcon from "@mui/icons-material/Cached";
 import ImageIcon from "@mui/icons-material/Image";
 import InputFile from "../../../../components/Material/Input/InputFile";
 import { useUsersEmpresa } from "../../hooks/useEmpresa";
-import { IEmpresa } from "../../../../interfaces/models/empresa/empresa.interface";
+import { IFeatureEmpresaCreate } from "../../../../interfaces/features/empresa/empresa.interface";
 
 let imagePreview = "";
 
@@ -26,7 +26,7 @@ const EmpresaCreateGeneral = () => {
     getValues,
     setValue: setValueModel,
     formState: { errors },
-  } = useFormContext<IEmpresa>();
+  } = useFormContext<IFeatureEmpresaCreate>();
 
   const valuesWatch = useWatch({
     control,
@@ -63,7 +63,7 @@ const EmpresaCreateGeneral = () => {
           value: item.id,
           label: item.departamento,
         }))
-        .concat({ value: "-", label: "-" }) || []
+        .concat({ value: "-", label: "-" }) ?? []
     );
   }, [dataDepartamentos]);
 
@@ -74,7 +74,7 @@ const EmpresaCreateGeneral = () => {
           value: item.id,
           label: item.provincia,
         }))
-        .concat({ value: "-", label: "-" }) || []
+        .concat({ value: "-", label: "-" }) ?? []
     );
   }, [dataProvincias]);
 
@@ -85,7 +85,7 @@ const EmpresaCreateGeneral = () => {
           value: item.id,
           label: item.distrito,
         }))
-        .concat({ value: "-", label: "-" }) || []
+        .concat({ value: "-", label: "-" }) ?? []
     );
   }, [dataDistritos]);
 
@@ -94,13 +94,13 @@ const EmpresaCreateGeneral = () => {
       value: item.id,
       label: `${item.id} - ${item.usuario}`,
       disabled: !item.estado,
-    })) || [];
+    })) ?? [];
 
   const onChangeFoto = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     field: any
   ) => {
-    const files = (e.target as HTMLInputElement).files as FileList;
+    const files = (e.target as HTMLInputElement).files! as FileList;
 
     if (files.length > 0) {
       if (files[0].type !== "image/png") {
@@ -115,11 +115,9 @@ const EmpresaCreateGeneral = () => {
   };
 
   const obtenerDepartamento = async (departamento: string) => {
-    const findDepartamento =
-      listDepartamentos &&
-      listDepartamentos.find(
-        (dtp) => dtp.value === departamento.toUpperCase().trim()
-      );
+    const findDepartamento = listDepartamentos?.find(
+      (dtp) => dtp.value === departamento.toUpperCase().trim()
+    );
 
     const queryDpto = findDepartamento
       ? findDepartamento
@@ -133,11 +131,9 @@ const EmpresaCreateGeneral = () => {
   };
 
   const obtenerProvincia = async (provincia: string) => {
-    const findProvincia =
-      listProvincias &&
-      listProvincias.find(
-        (dtp) => dtp.value === provincia.toUpperCase().trim()
-      );
+    const findProvincia = listProvincias?.find(
+      (dtp) => dtp.value === provincia.toUpperCase().trim()
+    );
 
     const queryPrv = findProvincia ? findProvincia : { value: "-", label: "-" };
 
@@ -149,9 +145,9 @@ const EmpresaCreateGeneral = () => {
   };
 
   const obtenerDistrito = async (distrito: string) => {
-    const findDistrito =
-      listDistritos &&
-      listDistritos.find((dtp) => dtp.value === distrito.toUpperCase().trim());
+    const findDistrito = listDistritos?.find(
+      (dtp) => dtp.value === distrito.toUpperCase().trim()
+    );
 
     const queryDsto = findDistrito ? findDistrito : { value: "-", label: "-" };
 
@@ -220,6 +216,8 @@ const EmpresaCreateGeneral = () => {
     setLoadingRuc(false);
   };
 
+  console.log(valuesWatch);
+
   return (
     <>
       <Grid container spacing={2}>
@@ -246,7 +244,7 @@ const EmpresaCreateGeneral = () => {
                       placeholder="Seleccione usuario"
                       error={!!errors.usuario || isErrorUsers}
                       helperText={
-                        errors.usuario?.message ||
+                        errors.usuario?.message ??
                         errorUsers?.response.data.message
                       }
                       value={listUsuarios.find(
@@ -388,12 +386,9 @@ const EmpresaCreateGeneral = () => {
                     isSearchable={false}
                     isLoading={isLoadingDepartamentos || isLoadingRuc}
                     options={listDepartamentos}
-                    // value={listDepartamentos.find(
-                    //   ({ value }) => value === valuesWatch.departamento?.value
-                    // )}
-                    // onChange={(e: any) =>
-                    //   setValueModel("departamento", e)
-                    // }
+                    value={listDepartamentos.find(
+                      (item) => item.value === valuesWatch.departamento?.value
+                    )}
                   />
                 )}
               />
@@ -418,10 +413,9 @@ const EmpresaCreateGeneral = () => {
                     isSearchable={false}
                     isLoading={isLoadingRuc || isLoadingProvincias}
                     options={listProvincias}
-                    // value={listProvincias.find(
-                    //   ({ value }) => value === valuesWatch.provincia
-                    // )}
-                    // onChange={(e: any) => setValueModel("provincia", e)}
+                    value={listProvincias.find(
+                      ({ value }) => value === valuesWatch.provincia?.value
+                    )}
                   />
                 )}
               />
@@ -446,10 +440,9 @@ const EmpresaCreateGeneral = () => {
                     isSearchable={false}
                     isLoading={isLoadingRuc || isLoadingDistritos}
                     options={listDistritos}
-                    // value={listDistritos.find(
-                    //   ({ value }) => value === valuesWatch.distrito
-                    // )}
-                    // onChange={(e: any) => setValueModel("distrito", e)}
+                    value={listDistritos.find(
+                      ({ value }) => value === valuesWatch.distrito?.value
+                    )}
                   />
                 )}
               />
@@ -508,7 +501,7 @@ const EmpresaCreateGeneral = () => {
                 width: "100%",
               }}
             >
-              {(valuesWatch.logo?.length || 0) > 0 ? (
+              {(valuesWatch.logo?.length ?? 0) > 0 ? (
                 <img
                   src={imagePreview}
                   alt="Logo Preview"

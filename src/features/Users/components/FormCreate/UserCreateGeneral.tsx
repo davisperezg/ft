@@ -2,7 +2,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useRolesAvailables } from "../../../Roles/hooks/useRoles";
 import { useMemo, useEffect } from "react";
 import { useReniec } from "../../../../hooks/useServices";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { FcSearch } from "react-icons/fc";
 import { IUserWithPassword } from "../../../../interfaces/models/user/user.interface";
 //import { Button, Grid, Stack } from "@mui/material";
@@ -83,7 +83,7 @@ const UserCreateGeneral = () => {
               autoFocus
               {...register("role")}
               className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                errors.role || isErrorRoles ? "border-primary" : ""
+                (errors.role ?? isErrorRoles) ? "border-danger" : ""
               }`}
             >
               {isLoadingRoles ? (
@@ -116,7 +116,7 @@ const UserCreateGeneral = () => {
           <select
             {...register("tipDocument")}
             className={`border w-full focus:outline-none pl-1 rounded-sm ${
-              errors.tipDocument ? "border-primary" : ""
+              errors.tipDocument ? "border-danger" : ""
             }`}
           >
             <option value="DNI">DNI</option>
@@ -159,7 +159,7 @@ const UserCreateGeneral = () => {
                   }}
                   disabled={isFetchingPersona}
                   className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                    errors.nroDocument ? "border-primary" : ""
+                    errors.nroDocument ? "border-danger" : ""
                   }`}
                 />
               )}
@@ -199,7 +199,7 @@ const UserCreateGeneral = () => {
                 type="text"
                 disabled={isFetchingPersona}
                 className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                  errors.name ? "border-primary" : ""
+                  errors.name ? "border-danger" : ""
                 }`}
               />
             )}
@@ -226,7 +226,7 @@ const UserCreateGeneral = () => {
                 type="text"
                 disabled={isFetchingPersona}
                 className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                  errors.lastname ? "border-primary" : ""
+                  errors.lastname ? "border-danger" : ""
                 }`}
               />
             )}
@@ -252,7 +252,7 @@ const UserCreateGeneral = () => {
                 {...field}
                 type="text"
                 className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                  errors.email ? "border-primary" : ""
+                  errors.email ? "border-danger" : ""
                 }`}
               />
             )}
@@ -278,7 +278,7 @@ const UserCreateGeneral = () => {
                 {...field}
                 type="text"
                 className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                  errors.username ? "border-primary" : ""
+                  errors.username ? "border-danger" : ""
                 }`}
               />
             )}
@@ -304,7 +304,7 @@ const UserCreateGeneral = () => {
                 {...field}
                 type="text"
                 className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                  errors.password ? "border-primary" : ""
+                  errors.password ? "border-danger" : ""
                 }`}
               />
             )}

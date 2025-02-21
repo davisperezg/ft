@@ -3,14 +3,18 @@ import { IServer } from "../../../interfaces/common/server.interface";
 import { IUserEmpresa } from "../../../interfaces/features/empresa/users_empresa.interface.";
 import { BASE_API } from "../../../config/constants";
 import { IEstablecimiento } from "../../../interfaces/models/establecimiento/establecimiento.interface";
-import { ITipoDoc } from "../../../interfaces/models/tipo-docs-cpe/tipodocs.interface";
+import { ITipoDoc } from "../../../interfaces/features/tipo-docs-cpe/tipo-docs.interface";
+import { IDTOEmpresa } from "../../../interfaces/models/empresa/empresa.interface";
+import { IFeatureEmpresaAsign } from "../../../interfaces/features/empresa/empresa.interface";
 import {
-  IEmpresa,
-  IEmpresaAsign,
-} from "../../../interfaces/models/empresa/empresa.interface";
+  IFormEmpresaCreate,
+  IFormEmpresaUpdate,
+} from "../../../interfaces/forms/empresa/empresa.interface";
 
 export const getEmpresas = async () => {
-  const { data } = await axios.get<IEmpresa[]>(`${BASE_API}/api/v1/empresas`);
+  const { data } = await axios.get<IDTOEmpresa[]>(
+    `${BASE_API}/api/v1/empresas`
+  );
   return data;
 };
 
@@ -41,7 +45,7 @@ export const getUsersEmpresas = async () => {
 };
 
 export const getlistToAsignEmpresasByIdPartner = async (id: string) => {
-  const { data } = await axios.get<IEmpresaAsign[]>(
+  const { data } = await axios.get<IFeatureEmpresaAsign[]>(
     `${BASE_API}/api/v1/users/list-empresas/${id}`
   );
   return data;
@@ -61,8 +65,8 @@ export const enableEmpresa = async (id: number) => {
   return data;
 };
 
-export const postNewEmpresa = async (body: IEmpresa) => {
-  const { data } = await axios.post<IServer<IEmpresa>>(
+export const postNewEmpresa = async (body: IFormEmpresaCreate) => {
+  const { data } = await axios.post<IServer<IDTOEmpresa>>(
     `${BASE_API}/api/v1/empresas`,
     body,
     {
@@ -75,8 +79,8 @@ export const postNewEmpresa = async (body: IEmpresa) => {
   return data;
 };
 
-export const putEmpresa = async (id: number, body: IEmpresa) => {
-  const { data } = await axios.put<IServer<IEmpresa>>(
+export const putEmpresa = async (id: number, body: IFormEmpresaUpdate) => {
+  const { data } = await axios.put<IServer<IDTOEmpresa>>(
     `${BASE_API}/api/v1/empresas/${id}`,
     body
   );

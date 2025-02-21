@@ -1,5 +1,4 @@
-import { ChangeEvent, useContext, useEffect, useMemo, useState } from "react";
-import { ModalContext } from "../../../store/context/dialogContext";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import {
   SubmitHandler,
   useForm,
@@ -20,8 +19,7 @@ import {
   useServicesXuser,
 } from "../../Permisos/hooks/useResources";
 import { TfiReload } from "react-icons/tfi";
-import { toast } from "react-toastify";
-import { toastError } from "../../../components/common/Toast/ToastNotify";
+import { toast } from "sonner";
 import { isError } from "../../../utils/functions.utils";
 import TabsModal from "../../../components/Material/Tabs/TabsModal";
 import TabModal from "../../../components/Material/Tab/TabModal";
@@ -45,7 +43,10 @@ import {
 import { useUserStore } from "../../../store/zustand/user-zustand";
 
 interface Props {
-  data: any;
+  state: {
+    visible: boolean;
+    row: any;
+  };
   closeEdit: () => void;
 }
 
@@ -61,8 +62,7 @@ interface GroupCheckBox {
 }
 
 //#### million-ignore
-const UserEdit = ({ data, closeEdit }: Props) => {
-  const { dispatch, dialogState } = useContext(ModalContext);
+const UserEdit = ({ state, closeEdit }: Props) => {
   const userGlobal = useUserStore((state) => state.userGlobal);
 
   //POST
@@ -114,13 +114,13 @@ const UserEdit = ({ data, closeEdit }: Props) => {
       empresas: [],
     },
     values: {
-      name: data.name,
-      lastname: data.lastname,
-      email: data.email,
-      tipDocument: data.tipDocument,
-      nroDocument: data.nroDocument,
-      role: data.role._id,
-      username: data.username,
+      name: state.row.name,
+      lastname: state.row.lastname,
+      email: state.row.email,
+      tipDocument: state.row.tipDocument,
+      nroDocument: state.row.nroDocument,
+      role: state.row.role._id,
+      username: state.row.username,
       password: "",
       confirm_password: "",
       resources: [],
@@ -129,9 +129,9 @@ const UserEdit = ({ data, closeEdit }: Props) => {
       empresasAsign: dataEmpresasAsign?.map((item) => {
         return {
           ...item,
-          checked: data.empresasAsign.some((a: any) => a.id === item.id),
+          checked: state.row.empresasAsign.some((a: any) => a.id === item.id),
           establecimientos: item.establecimientos.map((est) => {
-            const empresaAsign = data.empresasAsign.find(
+            const empresaAsign = state.row.empresasAsign.find(
               (asign: any) => asign.id === item.id
             ) as any;
             const establecimientoAsignado = empresaAsign?.establecimientos.find(
@@ -179,7 +179,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
     isLoading: isLoadingPermisosUser,
     isRefetching: isRefetching2,
     refetch: refetch2,
-  } = usePermisosXuser(data._id);
+  } = usePermisosXuser(state.row._id);
 
   const {
     data: dataServicesUser,
@@ -188,7 +188,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
     isLoading: isLoadingServicesUser,
     isRefetching: isRefetching3,
     refetch: refetch3,
-  } = useServicesXuser(data._id);
+  } = useServicesXuser(state.row._id);
 
   const [value, setValue] = useState(0);
   const [categorys, setCategorys] = useState<GroupCheckBox[]>([]);
@@ -228,27 +228,30 @@ const UserEdit = ({ data, closeEdit }: Props) => {
     };
 
     try {
-      const response = await mutateEditUser({ id: data._id, body: sendUser });
+      const response = await mutateEditUser({
+        id: state.row._id,
+        body: sendUser,
+      });
       await mutateEditPassword({
         body: {
           password: values.password,
           confirm_password: values.confirm_password,
         },
-        id: data._id,
+        id: state.row._id,
       });
       await mutateEditServices({
-        modules: values.modules as string[],
-        user: data._id,
+        modules: values.modules ?? [],
+        user: state.row._id,
       });
       await mutateEditResources({
-        resources: values.resources as string[],
-        user: data._id,
+        resources: values.resources ?? [],
+        user: state.row._id,
       });
       toast.success(response.message);
       closeModal();
     } catch (e) {
       if (isError(e)) {
-        toastError(e.response.data.message);
+        toast.error(e.response.data.message);
       }
     }
 
@@ -257,7 +260,6 @@ const UserEdit = ({ data, closeEdit }: Props) => {
 
   const closeModal = () => {
     closeEdit();
-    dispatch({ type: "INIT" });
   };
 
   const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -324,7 +326,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
         const categoryChecked =
           permiso.resources.every((a: any) =>
             getValues("resources")?.includes(a.value)
-          ) ?? false;
+          ) || false;
 
         if (categoryChecked) {
           return {
@@ -363,9 +365,9 @@ const UserEdit = ({ data, closeEdit }: Props) => {
 
   return (
     <>
-      <DialogBeta open={dialogState.open && !dialogState.nameDialog}>
+      <DialogBeta open={state.visible}>
         <DialogTitleBeta>{`Editar ${
-          data.name + " " + data.lastname
+          state.row.name + " " + state.row.lastname
         }`}</DialogTitleBeta>
         <IconButton
           aria-label="close"
@@ -414,7 +416,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                           },
                         })}
                         className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                          errors.role || isErrorRoles ? "border-primary" : ""
+                          (errors.role ?? isErrorRoles) ? "border-danger" : ""
                         }`}
                       >
                         {isLoadingRoles ? (
@@ -459,7 +461,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                           },
                         })}
                         className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                          errors.tipDocument ? "border-primary" : ""
+                          errors.tipDocument ? "border-danger" : ""
                         }`}
                       >
                         <option value="DNI">DNI</option>
@@ -505,7 +507,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                           type="text"
                           disabled={isFetchingPersona}
                           className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                            errors.nroDocument ? "border-primary" : ""
+                            errors.nroDocument ? "border-danger" : ""
                           }`}
                         />
                         {errors.nroDocument && (
@@ -554,7 +556,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                         type="text"
                         disabled={isFetchingPersona}
                         className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                          errors.name ? "border-primary" : ""
+                          errors.name ? "border-danger" : ""
                         }`}
                       />
                       {errors.name && (
@@ -590,7 +592,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                         type="text"
                         disabled={isFetchingPersona}
                         className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                          errors.lastname ? "border-primary" : ""
+                          errors.lastname ? "border-danger" : ""
                         }`}
                       />
                       {errors.lastname && (
@@ -614,7 +616,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                         })}
                         type="text"
                         className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                          errors.email ? "border-primary" : ""
+                          errors.email ? "border-danger" : ""
                         }`}
                       />
                       {errors.email && (
@@ -646,7 +648,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                         })}
                         type="text"
                         className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                          errors.username ? "border-primary" : ""
+                          errors.username ? "border-danger" : ""
                         }`}
                       />
                       {errors.username && (
@@ -676,7 +678,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                         })}
                         type="text"
                         className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                          errors.password ? "border-primary" : ""
+                          errors.password ? "border-danger" : ""
                         }`}
                       />
                       {errors.password && (
@@ -705,7 +707,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                         })}
                         type="text"
                         className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                          errors.confirm_password ? "border-primary" : ""
+                          errors.confirm_password ? "border-danger" : ""
                         }`}
                       />
                       {errors.confirm_password && (
@@ -883,7 +885,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                             const categoryChecked =
                               permiso.resources.every((a: any) =>
                                 getValues("resources")?.includes(a.value)
-                              ) ?? false;
+                              ) || false;
 
                             return (
                               <div key={index + 1} className="border">
@@ -916,7 +918,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                                           setValueModel(
                                             "resources",
                                             [
-                                              ...(getValues("resources") || []),
+                                              ...(getValues("resources") ?? []),
                                               ...permiso.resources.map(
                                                 (a: any) => a.value
                                               ),
@@ -939,7 +941,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                                           setValueModel(
                                             "resources",
                                             (
-                                              getValues("resources") || []
+                                              getValues("resources") ?? []
                                             ).filter(
                                               (a: any) =>
                                                 !permiso.resources
@@ -1031,7 +1033,7 @@ const UserEdit = ({ data, closeEdit }: Props) => {
                                                             getValues(
                                                               "resources"
                                                             )?.includes(a.value)
-                                                        ) ?? false;
+                                                        ) || false;
 
                                                       if (findCategoryChecked) {
                                                         const mapCategorys =

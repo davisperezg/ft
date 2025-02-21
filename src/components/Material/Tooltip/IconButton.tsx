@@ -3,13 +3,14 @@ import { Theme } from "@mui/material/styles";
 import { ReactNode } from "react";
 
 interface IExtendsProps extends IconButtonProps {
-  title: ReactNode;
+  titleTooltip: ReactNode;
   sxTooltip?: SxProps<Theme>;
   sxIconButton?: SxProps<Theme>;
 }
 
 const ToolTipIconButton = (props: IExtendsProps) => {
-  const { children, title, sxTooltip, sxIconButton, ...restIcon } = props;
+  const { children, titleTooltip, sxTooltip, sxIconButton, ...restIcon } =
+    props;
 
   const defaultStylesToolTip: SxProps = { marginTop: "-4px" };
 
@@ -30,7 +31,7 @@ const ToolTipIconButton = (props: IExtendsProps) => {
 
   return (
     <Tooltip
-      title={title}
+      title={titleTooltip}
       sx={mergedStylesToolTip}
       placement="top"
       arrow

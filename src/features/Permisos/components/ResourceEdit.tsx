@@ -1,10 +1,8 @@
-import { useContext, useMemo } from "react";
-import { ModalContext } from "../../../store/context/dialogContext";
+import { useMemo } from "react";
 import { useEditResource } from "../hooks/useResources";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { isError } from "../../../utils/functions.utils";
-import { toastError } from "../../../components/common/Toast/ToastNotify";
 import { useGroups } from "../../Grupos/Permisos/hooks/useGroups";
 import { DialogContentBeta } from "../../../components/common/Dialogs/_DialogContent";
 import { DialogTitleBeta } from "../../../components/common/Dialogs/_DialogTitle";
@@ -16,19 +14,19 @@ import Button from "@mui/material/Button";
 import { IPermisos } from "../../../interfaces/models/permisos/permisos.interface";
 
 interface Props {
-  data: any;
+  state: {
+    visible: boolean;
+    row: any;
+  };
   closeEdit: () => void;
 }
 
-const ResourceEdit = ({ data, closeEdit }: Props) => {
-  const { dispatch, dialogState } = useContext(ModalContext);
-
+const ResourceEdit = ({ state, closeEdit }: Props) => {
   const closeModal = () => {
     closeEdit();
-    dispatch({ type: "INIT" });
   };
 
-  const { mutateAsync: mutateResources, isLoading: isLoadingEdit } =
+  const { mutateAsync: mutateResources, isPending: isLoadingEdit } =
     useEditResource();
 
   //GETS
@@ -41,10 +39,10 @@ const ResourceEdit = ({ data, closeEdit }: Props) => {
 
   const methods = useForm<IPermisos>({
     defaultValues: {
-      name: data.name,
-      description: data.description,
-      key: data.key,
-      group_resource: data.group_resource._id,
+      name: state.row.name,
+      description: state.row.description,
+      key: state.row.key,
+      group_resource: state.row.group_resource._id,
     },
     mode: "onChange",
   });
@@ -58,33 +56,33 @@ const ResourceEdit = ({ data, closeEdit }: Props) => {
 
   const memoGroups = useMemo(() => {
     if (dataGroups && dataGroups.length > 0) {
-      setValue("group_resource", data.group_resource._id);
+      setValue("group_resource", state.row.group_resource._id);
       return dataGroups;
     }
 
     return [{ name: "[SELECCIONE CATEGORÍA]", _id: "null" }];
-  }, [data.group_resource._id, dataGroups, setValue]);
+  }, [state.row.group_resource._id, dataGroups, setValue]);
 
   const onSubmit: SubmitHandler<IPermisos> = async (values) => {
     try {
       const response = await mutateResources({
         body: values,
-        id: data._id as string,
+        id: state.row._id as string,
       });
 
       toast.success(response.message);
       closeModal();
     } catch (e) {
       if (isError(e)) {
-        toastError(e.response.data.message);
+        toast.error(e.response.data.message);
       }
     }
   };
 
   return (
     <>
-      <DialogBeta open={dialogState.open && !dialogState.nameDialog}>
-        <DialogTitleBeta>{`Permiso ${data.name}`}</DialogTitleBeta>
+      <DialogBeta open={state.visible}>
+        <DialogTitleBeta>{`Permiso ${state.row.name}`}</DialogTitleBeta>
         <IconButton
           aria-label="close"
           onClick={closeModal}

@@ -1,4 +1,4 @@
-import { IEmpresaAsign } from "../empresa/empresa.interface";
+import { IFeatureEmpresaAsign } from "../../features/empresa/empresa.interface";
 import { IRol } from "../rol/rol.interface";
 
 type IRolWithoutCreator = Omit<IRol, "creator">;
@@ -19,7 +19,7 @@ export interface IUser {
   restoredAt?: Date;
   deletedAt?: Date;
   updatedAt?: Date;
-  empresasAsign?: IEmpresaAsign[];
+  empresasAsign?: IFeatureEmpresaAsign[];
 }
 
 export interface IUserWithPassword extends IUser {
@@ -29,7 +29,16 @@ export interface IUserWithPassword extends IUser {
 
 export interface IUserMysql {
   id?: number;
+  _id?: string;
   nombres: string;
   apellidos: string;
   email: string;
+  username: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IDTOUsuario extends Pick<IUserMysql, "nombres" | "apellidos"> {
+  id_usuario?: number;
+  nombre_completo: string;
 }

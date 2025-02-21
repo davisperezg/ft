@@ -1,9 +1,4 @@
-// interface Props {
-//   open: boolean;
-//   setOpen: any;
-// }
-
-import { cloneElement, useContext, useRef } from "react";
+import { JSX, cloneElement, useContext, useRef } from "react";
 import { ModalContext } from "../../../store/context/dialogContext";
 import Paper, { PaperProps } from "@mui/material/Paper";
 import Draggable from "react-draggable";
@@ -19,7 +14,7 @@ interface Props {
 }
 
 const PaperComponent = (props: PaperProps) => {
-  const nodeRef = useRef(null);
+  const nodeRef = useRef<HTMLDivElement>(null);
 
   const defaultStyles: SxProps<Theme> = {
     backgroundColor: "transparent",
@@ -37,7 +32,7 @@ const PaperComponent = (props: PaperProps) => {
 
   return (
     <Draggable
-      nodeRef={nodeRef}
+      nodeRef={nodeRef as React.RefObject<HTMLElement>}
       handle="#draggable-dialog-title"
       cancel={'[class*="MuiDialogContent-root"]'}
     >

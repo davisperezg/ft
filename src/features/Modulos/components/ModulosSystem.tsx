@@ -1,96 +1,33 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
-import {
-  useDeleteModule,
-  useModules,
-  useRestoreModule,
-} from "../hooks/useModuleS";
+import { useModules } from "../hooks/useModuleS";
 import { IModulosSystem } from "../../../interfaces/features/modulo/modulo_system.interface";
-import IndeterminateCheckbox from "../../../components/common/Inputs/IndeterminateCheckbox";
-import ComponentTable from "../../../components/common/Table/Index";
-import ToastError from "../../../components/common/Toast/ToastError";
+import { DataTable } from "../../../components/common/Table/DataTable";
+import { toast } from "sonner";
 
 interface Props {
-  openEdit: (value: boolean, row: IModulosSystem) => void;
+  onRowClick: (row: IModulosSystem) => void;
+  getItemsRemoves: (items: any[]) => void;
+  getItemsRestores: (items: any[]) => void;
 }
 
-const ModulosSystemList = ({ openEdit }: Props) => {
+const ModulosSystemList = ({
+  onRowClick,
+  getItemsRemoves,
+  getItemsRestores,
+}: Props) => {
   const { data, error, isLoading, isError } = useModules();
-
-  const {
-    mutateAsync: mutateDelete,
-    error: errorDelete,
-    isError: isErrorDelete,
-  } = useDeleteModule();
-
-  const {
-    mutateAsync: mutateRestore,
-    error: errorRestore,
-    isError: isErrorRestore,
-  } = useRestoreModule();
-
-  const loadData = useMemo(() => {
-    if (data) {
-      return data;
-    }
-
-    return [];
-  }, [data]);
 
   const columns = useMemo<ColumnDef<IModulosSystem>[]>(
     () => [
       {
-        id: "select",
-        header: ({ table }) => (
-          <div className="pl-[7px] pt-[5px]">
-            <IndeterminateCheckbox
-              {...{
-                checked: table.getIsAllRowsSelected(),
-                indeterminate: table.getIsSomeRowsSelected(),
-                onChange: table.getToggleAllRowsSelectedHandler(),
-              }}
-            />
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="pl-[7px] pt-[5px]">
-            <IndeterminateCheckbox
-              {...{
-                checked: row.getIsSelected(),
-                disabled: !row.getCanSelect(),
-                indeterminate: row.getIsSomeSelected(),
-                onChange: row.getToggleSelectedHandler(),
-              }}
-            />
-          </div>
-        ),
-        size: 28,
-        minSize: 28,
-      },
-      {
-        accessorKey: "index",
-        id: "index",
-        header: () => {
-          return <div className="p-[5px]  select-none text-center">#</div>;
-        },
-        cell: ({ getValue }) => {
-          return (
-            <div className="p-[4px] pb-[4px]   text-center">
-              {getValue() as any}
-            </div>
-          );
-        },
-        size: 28,
-        minSize: 28,
-      },
-      {
         accessorKey: "name",
         id: "name",
         header: () => {
-          return <div className="p-[5px]  select-none">Nombre</div>;
+          return <div className="w-full select-none">Nombre</div>;
         },
         cell: ({ getValue }) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue() as any}</div>;
+          return <div className="w-full">{getValue() as any}</div>;
         },
         size: 100,
         minSize: 31,
@@ -99,10 +36,10 @@ const ModulosSystemList = ({ openEdit }: Props) => {
         accessorKey: "description",
         id: "description",
         header: () => {
-          return <div className="p-[5px]  select-none">Descripción</div>;
+          return <div className="w-full select-none">Descripción</div>;
         },
         cell: ({ getValue }) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue() as any}</div>;
+          return <div className="w-full">{getValue() as any}</div>;
         },
         size: 100,
         minSize: 31,
@@ -111,11 +48,11 @@ const ModulosSystemList = ({ openEdit }: Props) => {
         accessorKey: "creator",
         id: "creator",
         header: () => {
-          return <div className="p-[5px]  select-none">Creador</div>;
+          return <div className="w-full select-none">Creador</div>;
         },
         cell: ({ getValue }: any) => {
           return (
-            <div className="p-[4px] pb-[4px]  ">
+            <div className="w-full">
               {getValue() === null ? "root" : getValue().email}
             </div>
           );
@@ -127,10 +64,10 @@ const ModulosSystemList = ({ openEdit }: Props) => {
         accessorKey: "deletedAt",
         id: "deletedAt",
         header: () => {
-          return <div className="p-[5px]  select-none">Desactivación</div>;
+          return <div className="w-full select-none">Fecha desactivada</div>;
         },
         cell: ({ getValue }) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue() as any}</div>;
+          return <div className="w-full">{getValue() as any}</div>;
         },
         size: 100,
         minSize: 31,
@@ -139,88 +76,42 @@ const ModulosSystemList = ({ openEdit }: Props) => {
         accessorKey: "restoredAt",
         id: "restoredAt",
         header: () => {
-          return <div className="p-[5px]  select-none">Restauración</div>;
+          return <div className="w-full select-none">Fecha restaurada</div>;
         },
         cell: ({ getValue }) => {
-          return <div className="p-[4px] pb-[4px]  ">{getValue() as any}</div>;
+          return <div className="w-full">{getValue() as any}</div>;
         },
         size: 100,
         minSize: 31,
       },
       {
-        accessorKey: "actions",
+        accessorKey: "show_columns",
         header: () => {
-          return <div className="p-[5px]  select-none text-center">...</div>;
+          return <div className="select-none text-center w-full">...</div>;
         },
         size: 28,
         minSize: 28,
         enableResizing: false,
         enableSorting: false,
+        enableHiding: false,
       },
     ],
     []
   );
 
-  const getItemsRemoves = async (items: any) => {
-    const eliminar = confirm(
-      `Esta seguro que desea eliminar ${items.length} items ?`
-    );
-
-    if (eliminar) {
-      for (let index = 0; index < items.length; index++) {
-        const element = items[index];
-        await mutateDelete({ id: element.original._id });
-      }
-    }
-  };
-
-  const getItemsRestores = async (items: any) => {
-    const restaurar = confirm(
-      `Esta seguro que desea restaurar ${items.length} items ?`
-    );
-
-    if (restaurar) {
-      for (let index = 0; index < items.length; index++) {
-        const element = items[index];
-        await mutateRestore({ id: element.original._id });
-      }
-    }
-  };
-
   return (
     <>
-      <ComponentTable
-        loading={isLoading}
-        data={loadData}
+      <DataTable<IModulosSystem>
+        isLoading={isLoading}
+        data={data || []}
         columns={columns}
         getItemsRemoves={getItemsRemoves}
         getItemsRestores={getItemsRestores}
-        openEdit={openEdit}
+        onRowClick={onRowClick}
+        selects
       />
 
-      {isError && (
-        <ToastError
-          delay={5000}
-          placeholder={isError}
-          message={error?.response.data.message}
-        />
-      )}
-
-      {isErrorDelete && (
-        <ToastError
-          delay={5000}
-          placeholder={isErrorDelete}
-          message={errorDelete?.response.data.message}
-        />
-      )}
-
-      {isErrorRestore && (
-        <ToastError
-          delay={5000}
-          placeholder={isErrorRestore}
-          message={errorRestore?.response.data.message}
-        />
-      )}
+      {isError && toast.error(error?.response.data.message)}
     </>
   );
 };

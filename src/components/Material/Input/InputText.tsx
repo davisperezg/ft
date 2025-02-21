@@ -11,11 +11,11 @@ const InputText = forwardRef(
             width: "100%",
           },
           ".MuiInputBase-root": {
-            height: "28px",
-            border: props.error ? "1px solid #d32f2f" : "none",
+            height: "31px",
+            //border: props.error ? "1px solid #d32f2f" : "none",
           },
           ".MuiInputBase-input": {
-            padding: "4px 8px",
+            padding: "6px 8px",
             minWidth: "43px",
             letterSpacing: "normal",
             fontSize: "14px",
@@ -23,8 +23,22 @@ const InputText = forwardRef(
           ".MuiFormHelperText-root": {
             marginLeft: 0,
           },
+          ".MuiFormHelperText-root.Mui-error": {
+            color: "#FF0000",
+          },
           ".Mui-disabled": {
             cursor: "not-allowed",
+          },
+          ".MuiFilledInput-root": {
+            backgroundColor: "#fff",
+            border: props.error ? "1px solid #d32f2f" : "1px solid #E3E4E6",
+          },
+          ".MuiFilledInput-root:hover": {
+            border: props.error ? "1px solid #d32f2f" : "1px solid #B4B4B4",
+            backgroundColor: "#fff",
+          },
+          ".MuiFilledInput-root-focused": {
+            backgroundColor: "#fff",
           },
         }}
         InputProps={

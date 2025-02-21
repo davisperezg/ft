@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-interface */
 import { TableFeature, Table, RowData, Row } from "@tanstack/react-table";
 
 // define types for our new feature's table options

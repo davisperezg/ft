@@ -24,9 +24,8 @@ import {
 } from "../../Empresa/hooks/useEmpresa";
 import InputText from "../../../components/Material/Input/InputText";
 import { usePostSerie, useSerie } from "../hooks/useSeries";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { isError } from "../../../utils/functions.utils";
-import { toastError } from "../../../components/common/Toast/ToastNotify";
 import { PropsValue, SingleValue } from "react-select";
 import LoadingTotal from "../../../components/common/Loadings/LoadingTotal";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -86,7 +85,7 @@ const SeriesCreate = () => {
     keyName: "uuid",
   });
 
-  const { mutateAsync: mutateSerieAsync, isLoading: isLoadingSerie } =
+  const { mutateAsync: mutateSerieAsync, isPending: isLoadingSerie } =
     usePostSerie();
 
   const onSubmit: SubmitHandler<ISeries> = async (values) => {
@@ -122,7 +121,7 @@ const SeriesCreate = () => {
       dispatch({ type: "INIT" });
     } catch (e) {
       if (isError(e)) {
-        toastError(e.response.data.message);
+        toast.error(e.response.data.message);
       }
     }
   };
@@ -132,7 +131,7 @@ const SeriesCreate = () => {
       value: Number(item.id),
       label: item.razon_social,
       disabled: !item.estado,
-    })) || [];
+    })) ?? [];
 
   const listEstablecimientos =
     dataEstablecimientos?.map((item) => ({
@@ -141,14 +140,14 @@ const SeriesCreate = () => {
         item.denominacion
       }`,
       disabled: !item.estado,
-    })) || [];
+    })) ?? [];
 
   const listDocumentos =
     dataDocumentos?.map((item) => ({
       value: Number(item.id),
       label: item.nombre,
       disabled: !item.estado,
-    })) || [];
+    })) ?? [];
 
   const appendDocumento = async () => {
     // Usa trigger para verificar manualmente los errores del formulario
@@ -214,20 +213,17 @@ const SeriesCreate = () => {
   };
 
   const validarSerieExixtenteXEstablecimiento = (inputSerie: string) => {
-    const establecimientos =
-      dataSeries && dataSeries.establecimientos
-        ? dataSeries.establecimientos.length
-        : 0;
+    const establecimientos = dataSeries?.establecimientos
+      ? dataSeries.establecimientos.length
+      : 0;
 
     let estado = false;
 
     for (let a = 0; a < establecimientos; a++) {
       const establecimiento = dataSeries?.establecimientos?.[a];
       if (establecimiento) {
-        for (let b = 0; b < establecimiento.documentos.length; b++) {
-          const est_documento = establecimiento.documentos[b];
-          for (let c = 0; c < est_documento.series.length; c++) {
-            const doc_serie = est_documento.series[c];
+        for (const est_documento of establecimiento.documentos) {
+          for (const doc_serie of est_documento.series) {
             if (
               doc_serie.serie === inputSerie &&
               getValues("establecimiento") !== establecimiento.id
@@ -303,7 +299,7 @@ const SeriesCreate = () => {
                         isOptionDisabled={(option) => Boolean(option.disabled)}
                         error={!!errors.empresa || isErrorEmpresa}
                         helperText={
-                          errors.empresa?.message ||
+                          errors.empresa?.message ??
                           errorEmpresas?.response.data.message
                         }
                         value={listEmpresas.find(
@@ -351,7 +347,7 @@ const SeriesCreate = () => {
                           !!errors.establecimiento || isErrorEstablecimientos
                         }
                         helperText={
-                          errors.establecimiento?.message ||
+                          errors.establecimiento?.message ??
                           errorEstablecimientos?.response.data.message
                         }
                         value={
@@ -409,7 +405,7 @@ const SeriesCreate = () => {
                         placeholder="Seleccione documento"
                         error={!!errors.documento || isErrorDocumentos}
                         helperText={
-                          errors.documento?.value?.message ||
+                          errors.documento?.value?.message ??
                           errorDocumentos?.response.data.message
                         }
                         value={
@@ -451,7 +447,7 @@ const SeriesCreate = () => {
                 <div className="pt-[2px] w-full flex justify-end">
                   <button
                     onClick={appendDocumento}
-                    className="flex items-center justify-center h-[20px] hover:bg-bgDefault text-center bg-default w-1/3"
+                    className="flex items-center justify-center h-[20px] hover:bg-bgDefault text-center w-1/3"
                     type="button"
                   >
                     Agregar
@@ -496,7 +492,7 @@ const SeriesCreate = () => {
                           {ser.new && (
                             <button
                               onClick={() => removeSerie(item, ser.serie)}
-                              className="w-1/3 text-center border border-primary text-danger h-[30px]"
+                              className="w-1/3 text-center border border-danger text-danger h-[30px]"
                               type="button"
                             >
                               Eliminar

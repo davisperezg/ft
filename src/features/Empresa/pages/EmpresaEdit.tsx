@@ -1,9 +1,12 @@
-import { SubmitHandler, useForm, FormProvider } from "react-hook-form";
-import { useContext, useEffect, useState } from "react";
-import { ModalContext } from "../../../store/context/dialogContext";
-import { toast } from "react-toastify";
+import {
+  SubmitHandler,
+  useForm,
+  FormProvider,
+  Resolver,
+} from "react-hook-form";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { isError } from "../../../utils/functions.utils";
-import { toastError } from "../../../components/common/Toast/ToastNotify";
 import { DialogBeta } from "../../../components/common/Dialogs/DialogBasic";
 import { useEditEmpresa, useEmpresa } from "../hooks/useEmpresa";
 import { DialogTitleBeta } from "../../../components/common/Dialogs/_DialogTitle";
@@ -23,41 +26,91 @@ import Button from "@mui/material/Button";
 import TabModalPanel from "../../../components/Material/Tab/TabModalPanel";
 import { yupResolver } from "@hookform/resolvers/yup";
 import LoadingTotal from "../../../components/common/Loadings/LoadingTotal";
-import { FORM_INITIAL_EMPRESA } from "../../../config/constants";
-import { schemaFormEmpresa } from "../validations/empresa.schema";
-import { IEmpresa } from "../../../interfaces/models/empresa/empresa.interface";
-import { IUser } from "../../../interfaces/models/user/user.interface";
+import { FORM_INITIAL_EMPRESA_UPDATE } from "../../../config/constants";
+import {
+  _schemaFormEmpresaUpdate,
+  schemaFormEmpresaUpdate,
+} from "../validations/empresa.schema";
+import { IFeatureEmpresaUpdate } from "../../../interfaces/features/empresa/empresa.interface";
+import { IFormEmpresaUpdate } from "../../../interfaces/forms/empresa/empresa.interface";
+import { IDTOEmpresa } from "../../../interfaces/models/empresa/empresa.interface";
+import { Option } from "../../../interfaces/common/option.interface";
 
 interface Props {
-  data: IEmpresa;
+  state: {
+    visible: boolean;
+    row: IDTOEmpresa;
+  };
   closeEdit: () => void;
 }
 
-const EmpresaEdit = ({ data, closeEdit }: Props) => {
-  const { dispatch, dialogState } = useContext(ModalContext);
+const EmpresaEdit = ({ state, closeEdit }: Props) => {
   const {
     isLoading: isLoadingGet,
     data: dataGetEmpresa,
     error: errorGetEmpresa,
-  } = useEmpresa(Number(data.id));
+  } = useEmpresa(Number(state.row.id));
   const [value, setValue] = useState(0);
 
-  const methods = useForm<IEmpresa>({
+  const methods = useForm<IFeatureEmpresaUpdate>({
     values: dataGetEmpresa
       ? {
-          ...dataGetEmpresa,
-          usuario: Number((dataGetEmpresa.usuario as IUser).id),
-          establecimientos: dataGetEmpresa.establecimientos,
+          cert: dataGetEmpresa.cert,
+          correo: dataGetEmpresa.correo,
+          cert_password: dataGetEmpresa.cert_password,
+          documentos:
+            dataGetEmpresa.documentos?.map((a) => {
+              return {
+                id: a.id,
+                nombre: a.nombre,
+                estado: a.estado,
+                new: false,
+              };
+            }) ?? [],
+          domicilio_fiscal: dataGetEmpresa.domicilio_fiscal,
+          establecimientos: dataGetEmpresa.establecimientos.map((a) => {
+            return {
+              codigo: a.codigo,
+              denominacion: a.denominacion,
+              direccion: a.direccion,
+              ubigeo: a.ubigeo,
+              estado: a.estado,
+              new: false,
+              logo: a.logo,
+              id: a.id,
+              departamento: a.departamento,
+              distrito: a.distrito,
+              provincia: a.provincia,
+            };
+          }),
+          logo: dataGetEmpresa.logo,
+          modo: dataGetEmpresa.modo,
+          ose_enabled: dataGetEmpresa.ose_enabled,
+          ubigeo: dataGetEmpresa.ubigeo,
+          nombre_comercial: dataGetEmpresa.nombre_comercial,
+          telefono_fijo_1: dataGetEmpresa.telefono_fijo_1,
+          telefono_movil_1: dataGetEmpresa.telefono_movil_1,
+          telefono_fijo_2: dataGetEmpresa.telefono_fijo_2,
+          telefono_movil_2: dataGetEmpresa.telefono_movil_2,
+          urbanizacion: dataGetEmpresa.urbanizacion,
+          web_service: dataGetEmpresa.web_service,
+          usu_secundario_user: dataGetEmpresa.usu_secundario_user,
+          usu_secundario_password: dataGetEmpresa.usu_secundario_password,
+          usu_secundario_ose_password:
+            dataGetEmpresa.usu_secundario_ose_password,
+          usu_secundario_ose_user: dataGetEmpresa.usu_secundario_ose_user,
         }
-      : FORM_INITIAL_EMPRESA,
-    resolver: yupResolver(schemaFormEmpresa),
-    mode: "onTouched",
+      : FORM_INITIAL_EMPRESA_UPDATE,
+    resolver: yupResolver(
+      schemaFormEmpresaUpdate
+    ) as Resolver<_schemaFormEmpresaUpdate>,
+    mode: "onChange",
     resetOptions: {
       keepDirtyValues: true,
     },
   });
 
-  const { mutateAsync: mutateEmpresaAsync, isLoading: isLoadingEmpresa } =
+  const { mutateAsync: mutateEmpresaAsync, isPending: isLoadingEmpresa } =
     useEditEmpresa();
 
   const {
@@ -65,7 +118,7 @@ const EmpresaEdit = ({ data, closeEdit }: Props) => {
     formState: { isDirty, isValid },
   } = methods;
 
-  const onSubmit: SubmitHandler<IEmpresa> = async (values) => {
+  const onSubmit: SubmitHandler<IFeatureEmpresaUpdate> = async (values) => {
     if (dataGetEmpresa?.id) {
       try {
         const formData = new FormData();
@@ -122,7 +175,7 @@ const EmpresaEdit = ({ data, closeEdit }: Props) => {
           }
         }
 
-        const senData = {
+        const senData: IFormEmpresaUpdate = {
           nombre_comercial: values.nombre_comercial,
           domicilio_fiscal: values.domicilio_fiscal,
           ubigeo: values.ubigeo,
@@ -145,9 +198,12 @@ const EmpresaEdit = ({ data, closeEdit }: Props) => {
             values.establecimientos?.map((a) => {
               return {
                 ...a,
+                departamento: a.departamento! as Option,
+                provincia: a.provincia! as Option,
+                distrito: a.distrito! as Option,
                 logo: a.logo?.[0].name,
               };
-            }) || [],
+            }) ?? [],
         };
 
         formData.append("data", JSON.stringify(senData));
@@ -174,7 +230,7 @@ const EmpresaEdit = ({ data, closeEdit }: Props) => {
         }
       } catch (e) {
         if (isError(e)) {
-          toastError(e.response.data.message);
+          toast.error(e.response.data.message);
         }
       }
     }
@@ -185,12 +241,11 @@ const EmpresaEdit = ({ data, closeEdit }: Props) => {
 
   const closeModal = () => {
     closeEdit();
-    dispatch({ type: "INIT" });
   };
 
   useEffect(() => {
     if (errorGetEmpresa) {
-      toastError(errorGetEmpresa.response?.data?.message);
+      toast.error(errorGetEmpresa.response?.data?.message);
     }
   }, [errorGetEmpresa]);
 
@@ -199,8 +254,10 @@ const EmpresaEdit = ({ data, closeEdit }: Props) => {
       {isLoadingGet ? (
         <LoadingTotal fullscreen />
       ) : errorGetEmpresa ? null : (
-        <DialogBeta open={dialogState.open && !dialogState.nameDialog}>
-          <DialogTitleBeta>Edit empresa {data.razon_social}</DialogTitleBeta>
+        <DialogBeta open={state.visible}>
+          <DialogTitleBeta>
+            Edit empresa {state.row.razon_social}
+          </DialogTitleBeta>
           <IconButton
             aria-label="close"
             onClick={closeModal}
@@ -237,7 +294,7 @@ const EmpresaEdit = ({ data, closeEdit }: Props) => {
                     <EmpresaEditGeneral />
                   </TabModalPanel>
                   <TabModalPanel value={value} index={1}>
-                    <EmpresaEditConfiguraciones data={data} />
+                    <EmpresaEditConfiguraciones data={state.row} />
                   </TabModalPanel>
                   <TabModalPanel value={value} index={2}>
                     <EmpresaEditDocumentos />

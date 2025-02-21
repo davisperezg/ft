@@ -1,14 +1,16 @@
-import { ColumnDef } from "@tanstack/react-table";
 import { useSeries } from "../hooks/useSeries";
-import ComponentTable from "../../../components/common/Table/Index";
 import { useMemo } from "react";
 import { ISeries } from "../../../interfaces/models/series/series.interface";
+import { DataTable } from "../../../components/common/Table/DataTable";
+import { ExtendedColumnDef } from "@tanstack/react-table";
 
 interface Props {
-  openEdit: (value: boolean, row: ISeries) => void;
+  onRowClick: (row: ISeries) => void;
+  getItemsRemoves?: (items: any[]) => void;
+  getItemsRestores?: (items: any[]) => void;
 }
 
-const SeriesList = ({ openEdit }: Props) => {
+const SeriesList = ({ onRowClick }: Props) => {
   const {
     data,
     //error: errorSeries,
@@ -16,33 +18,17 @@ const SeriesList = ({ openEdit }: Props) => {
     //isError: isErrorSeries,
   } = useSeries();
 
-  const columns = useMemo<ColumnDef<ISeries>[]>(
+  const columns = useMemo<ExtendedColumnDef<ISeries>[]>(
     () => [
-      {
-        accessorKey: "index",
-        id: "index",
-        header: () => {
-          return <div className="p-[5px]  select-none text-center">#</div>;
-        },
-        cell: ({ getValue }) => {
-          return (
-            <div className="p-[4px] pb-[4px]   text-center">
-              {getValue() as any}
-            </div>
-          );
-        },
-        size: 28,
-        minSize: 28,
-      },
       {
         accessorKey: "empresa",
         id: "empresa",
         header: () => {
-          return <div className="p-[5px]  select-none">Empresa</div>;
+          return <div className="select-none">Empresa</div>;
         },
         cell: ({ getValue }) => {
           return (
-            <div className="p-[4px] pb-[4px]  ">
+            <div className="">
               {/* {getValue().nombre_completo as any} */}
               {getValue() as any}
             </div>
@@ -55,14 +41,14 @@ const SeriesList = ({ openEdit }: Props) => {
         accessorKey: "documentosAsignados",
         id: "documentosAsignados",
         header: () => {
-          return <div className="p-[5px]  select-none">Docs. Asignados</div>;
-        },
-        cell: ({ getValue }) => {
           return (
-            <div className="p-[4px] pb-[4px]  text-center">
-              {getValue() as any}
+            <div className="w-full text-center select-none">
+              Docs. Asignados
             </div>
           );
+        },
+        cell: ({ getValue }) => {
+          return <div className="w-full  text-center">{getValue() as any}</div>;
         },
         size: 100,
         minSize: 31,
@@ -71,11 +57,13 @@ const SeriesList = ({ openEdit }: Props) => {
         accessorKey: "documentos",
         id: "documentos",
         header: () => {
-          return <div className="p-[5px]  select-none">Documentos</div>;
+          return (
+            <div className="w-full text-center select-none">Documentos</div>
+          );
         },
         cell: ({ getValue }) => {
           return (
-            <div className="p-[4px] pb-[4px]  flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1">
               {(getValue() as any).map((item: any, i: number) => {
                 return (
                   <div key={i} className="border pr-1 pl-1">
@@ -94,15 +82,13 @@ const SeriesList = ({ openEdit }: Props) => {
         id: "cantidadEstablecimientos",
         header: () => {
           return (
-            <div className="p-[5px]  select-none">Cant. Establecimientos</div>
+            <div className="w-full text-center select-none">
+              Cant. Establecimientos
+            </div>
           );
         },
         cell: ({ getValue }) => {
-          return (
-            <div className="p-[4px] pb-[4px]  text-center">
-              {getValue() as any}
-            </div>
-          );
+          return <div className="w-full text-center">{getValue() as any}</div>;
         },
         size: 140,
         minSize: 31,
@@ -152,36 +138,27 @@ const SeriesList = ({ openEdit }: Props) => {
         minSize: 31,
       },
       {
-        accessorKey: "actions",
+        accessorKey: "show_columns",
         header: () => {
-          return <div className="p-[5px]  select-none text-center">...</div>;
+          return <div className="select-none text-center w-full">...</div>;
         },
         size: 28,
         minSize: 28,
         enableResizing: false,
         enableSorting: false,
+        enableHiding: false,
       },
     ],
     []
   );
 
-  const loadData = useMemo(() => {
-    if (data) {
-      return data;
-    }
-
-    return [];
-  }, [data]);
-
   return (
     <>
-      <ComponentTable
-        loading={isLoading}
-        data={loadData}
+      <DataTable<ISeries>
+        isLoading={isLoading}
+        data={data || []}
         columns={columns}
-        //getItemsRemoves={getItemsRemoves}
-        //getItemsRestores={getItemsRestores}
-        openEdit={openEdit}
+        onRowClick={onRowClick}
       />
     </>
   );

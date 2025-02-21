@@ -58,7 +58,9 @@ export const usePostResources = () => {
         }
       );
 
-      queryClient.invalidateQueries([KEY]);
+      queryClient.invalidateQueries({
+        queryKey: [KEY],
+      });
     },
   });
 };
@@ -90,7 +92,9 @@ export const useEditResource = () => {
         }
       );
 
-      queryClient.invalidateQueries([KEY]);
+      queryClient.invalidateQueries({
+        queryKey: [KEY],
+      });
     },
   });
 };
@@ -111,7 +115,9 @@ export const useDesactivateResources = () => {
             : prevReso
         );
 
-        queryClient.invalidateQueries([KEY]);
+        queryClient.invalidateQueries({
+          queryKey: [KEY],
+        });
       }
     },
   });
@@ -133,7 +139,9 @@ export const useActivateResources = () => {
             : prevReso;
         });
 
-        queryClient.invalidateQueries([KEY]);
+        queryClient.invalidateQueries({
+          queryKey: [KEY],
+        });
       }
     },
   });

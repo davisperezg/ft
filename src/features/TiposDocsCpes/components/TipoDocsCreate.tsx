@@ -1,9 +1,8 @@
-import { SubmitHandler, useForm } from "react-hook-form";
+import { Resolver, SubmitHandler, useForm } from "react-hook-form";
 import { ModalContext } from "../../../store/context/dialogContext";
 import { useContext } from "react";
 import { isError } from "../../../utils/functions.utils";
-import { toast } from "react-toastify";
-import { toastError } from "../../../components/common/Toast/ToastNotify";
+import { toast } from "sonner";
 import { usePostTipDoc } from "../hooks/useTipoDocs";
 import { DialogTitleBeta } from "../../../components/common/Dialogs/_DialogTitle";
 import IconButton from "@mui/material/IconButton";
@@ -12,7 +11,12 @@ import { DialogContentBeta } from "../../../components/common/Dialogs/_DialogCon
 import { DialogBeta } from "../../../components/common/Dialogs/DialogBasic";
 import { DialogActionsBeta } from "../../../components/common/Dialogs/_DialogActions";
 import Button from "@mui/material/Button";
-import { ITipoDoc } from "../../../interfaces/models/tipo-docs-cpe/tipodocs.interface";
+import { yupResolver } from "@hookform/resolvers/yup";
+import {
+  TypeFormTypeDocCpe,
+  schemaFormTypeDocCpe,
+} from "../validations/type-doc-cps.schema";
+import { IFormCPEType } from "../../../interfaces/forms/type-doc-cpe/type-doc-cpe.interface";
 
 const TipoDocsCreate = () => {
   const { dispatch, dialogState } = useContext(ModalContext);
@@ -21,25 +25,26 @@ const TipoDocsCreate = () => {
     handleSubmit,
     register,
     formState: { errors, isDirty, isValid },
-  } = useForm<ITipoDoc>({
+  } = useForm<IFormCPEType>({
     defaultValues: {
       nombre: "",
       abreviado: "",
       codigo: "",
     },
+    resolver: yupResolver(schemaFormTypeDocCpe) as Resolver<TypeFormTypeDocCpe>,
   });
 
-  const { mutateAsync: mutateTipoDoc, isLoading: isLoadingTipoDoc } =
+  const { mutateAsync: mutateTipoDoc, isPending: isLoadingTipoDoc } =
     usePostTipDoc();
 
-  const onSubmit: SubmitHandler<ITipoDoc> = async (values) => {
+  const onSubmit: SubmitHandler<IFormCPEType> = async (values) => {
     try {
       const response = await mutateTipoDoc(values);
       dispatch({ type: "INIT" });
       toast.success(response.message);
     } catch (e) {
       if (isError(e)) {
-        toastError(e.response.data.message);
+        toast.error(e.response.data.message);
       }
     }
   };
@@ -74,15 +79,10 @@ const TipoDocsCreate = () => {
               </div>
               <div className="w-1/3">
                 <input
-                  {...register("nombre", {
-                    required: {
-                      value: true,
-                      message: "Ingrese nombre",
-                    },
-                  })}
+                  {...register("nombre")}
                   type="text"
                   className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                    errors.nombre ? "border-primary" : ""
+                    errors.nombre ? "border-danger" : ""
                   }`}
                 />
                 {errors.nombre && (
@@ -98,15 +98,10 @@ const TipoDocsCreate = () => {
               </div>
               <div className="w-1/3">
                 <input
-                  {...register("abreviado", {
-                    required: {
-                      value: true,
-                      message: "Ingrese abreviado",
-                    },
-                  })}
+                  {...register("abreviado")}
                   type="text"
                   className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                    errors.abreviado ? "border-primary" : ""
+                    errors.abreviado ? "border-danger" : ""
                   }`}
                 />
                 {errors.abreviado && (
@@ -124,15 +119,10 @@ const TipoDocsCreate = () => {
               </div>
               <div className="w-1/3">
                 <input
-                  {...register("codigo", {
-                    required: {
-                      value: true,
-                      message: "Ingrese codigo",
-                    },
-                  })}
+                  {...register("codigo")}
                   type="text"
                   className={`border w-full focus:outline-none pl-1 rounded-sm ${
-                    errors.codigo ? "border-primary" : ""
+                    errors.codigo ? "border-danger" : ""
                   }`}
                 />
                 {errors.codigo && (

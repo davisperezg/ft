@@ -15,13 +15,11 @@ const SeriesScreen = () => {
     row: {},
   });
 
-  const openEdit = (value: boolean, row: ISeries) => {
-    setState({ visible: value, row });
+  const onRowClick = (row: ISeries) => {
+    setState({ visible: true, row });
   };
 
-  const closeEdit = () => {
-    setState({ visible: false, row: {} });
-  };
+  const closeEdit = () => setState({ visible: false, row: {} });
 
   return (
     <>
@@ -31,9 +29,9 @@ const SeriesScreen = () => {
         <SeriesMigrate />
       )}
 
-      {state.visible && <SeriesEdit data={state.row} closeEdit={closeEdit} />}
+      {state.visible && <SeriesEdit state={state} closeEdit={closeEdit} />}
 
-      <SeriesList openEdit={openEdit} />
+      <SeriesList onRowClick={onRowClick} />
     </>
   );
 };

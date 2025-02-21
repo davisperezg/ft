@@ -90,21 +90,6 @@ h1 {
   content: "\1F5D9";
 }
 
-.Toastify__toast-theme--colored.Toastify__toast--success {
-  background-color: #327021 !important;
-}
-
-.Toastify__toast-theme--colored.Toastify__toast--error {
-  background-color: #cc0000 !important;
-}
-
-.Toastify__progress-bar-theme--colored.Toastify__progress-bar--info,
-.Toastify__progress-bar-theme--colored.Toastify__progress-bar--success,
-.Toastify__progress-bar-theme--colored.Toastify__progress-bar--warning,
-.Toastify__progress-bar-theme--colored.Toastify__progress-bar--error {
-  background-color: transparent !important;
-}
-
 .MuiGrid-root {
   padding-top: 8px !important;
 }

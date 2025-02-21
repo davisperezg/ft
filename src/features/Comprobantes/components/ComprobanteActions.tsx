@@ -1,11 +1,4 @@
-import {
-  MouseEvent,
-  memo,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import { MouseEvent, useCallback, useEffect, useState } from "react";
 import { MenuDropdown } from "../../../components/Material/Menu/MenuList";
 import { Alert, Button, MenuItem } from "@mui/material";
 import { Row } from "@tanstack/react-table";
@@ -25,15 +18,13 @@ import CloseIcon from "@mui/icons-material/Close";
 import { DialogContentBeta } from "../../../components/common/Dialogs/_DialogContent";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { toast } from "react-toastify";
-import { ModalContext } from "../../../store/context/dialogContext";
-import { IConfigEstablecimiento } from "../../../interfaces/models/configurations/config_establecimiento.interface";
+import { toast } from "sonner";
 import { schemaFormComuBaja } from "../validations/comunicacion-baja.schema";
-import { IInvoice } from "../../../interfaces/models/invoices/invoice.interface";
+import { IQueryInvoiceList } from "../../../interfaces/models/invoices/invoice.interface";
 import { useUserStore } from "../../../store/zustand/user-zustand";
 
 interface CPEAcctionListProps {
-  row: Row<IInvoice>;
+  row: Row<IQueryInvoiceList>;
   comunicatBaja?: (serie: string, correlativo: string, motivo: string) => void;
 }
 
@@ -64,8 +55,8 @@ const CPEAcctionList = ({ row, comunicatBaja }: CPEAcctionListProps) => {
   const { socket } = useSocketInvoice();
   const [notify, setNotify] = useState(initialNotify);
   const userGlobal = useUserStore((state) => state.userGlobal);
-  const configuracionesEstablecimiento = userGlobal?.empresaActual
-    ?.establecimiento?.configuraciones as IConfigEstablecimiento[];
+  const configuracionesEstablecimiento =
+    userGlobal?.empresaActual?.establecimiento?.configuraciones ?? [];
 
   const ENVIA_DIRECTO_SUNAT = configuracionesEstablecimiento.some(
     (config) => config.enviar_inmediatamente_a_sunat
@@ -113,12 +104,13 @@ const CPEAcctionList = ({ row, comunicatBaja }: CPEAcctionListProps) => {
   const onSubmit: SubmitHandler<IComuBaja> = useCallback(
     async (values) => {
       setNotify((prev) => ({ ...prev, loading: true }));
-      // comunicatBaja &&
-      //   comunicatBaja(
-      //     String(row.original.serie),
-      //     String(row.original.correlativo),
-      //     values.motivo
-      //   );
+      if (comunicatBaja) {
+        comunicatBaja(
+          String(row.original.serie),
+          String(row.original.correlativo),
+          values.motivo
+        );
+      }
     },
     [comunicatBaja, row.original.serie, row.original.correlativo]
   );
@@ -136,14 +128,14 @@ const CPEAcctionList = ({ row, comunicatBaja }: CPEAcctionListProps) => {
           data.estado === "success" &&
           data.correlativo === row.original.correlativo
         ) {
-          toast.success(data.mensaje);
+          toast.success(`${data.correlativo}-${data.mensaje}`);
         }
 
         if (
           data.estado === "successfull" &&
           data.correlativo === row.original.correlativo
         ) {
-          toast.success(data.mensaje);
+          toast.success(`${data.correlativo}-${data.mensaje}`);
           handleCloseMotivo();
         }
 
@@ -151,7 +143,14 @@ const CPEAcctionList = ({ row, comunicatBaja }: CPEAcctionListProps) => {
           data.estado === "warning" &&
           data.correlativo === row.original.correlativo
         ) {
-          toast.error(data.mensaje);
+          toast.error(`${data.correlativo}-${data.mensaje}`);
+        }
+
+        if (
+          data.estado === "excepcion" &&
+          data.correlativo === row.original.correlativo
+        ) {
+          toast.error(`${data.correlativo}-${data.mensaje}`);
         }
       };
 
@@ -283,11 +282,11 @@ const CPEAcctionList = ({ row, comunicatBaja }: CPEAcctionListProps) => {
                   </div>
                 </Alert>
 
-                {(errors.motivo ||
-                  notify.estado === "error" ||
-                  notify.estado === "excepcion") && (
+                {(errors.motivo ??
+                  (notify.estado === "error" ||
+                    notify.estado === "excepcion")) && (
                   <Alert severity="error">
-                    {errors?.motivo?.message || notify.mensaje}
+                    {errors?.motivo?.message ?? notify.mensaje}
                   </Alert>
                 )}
 

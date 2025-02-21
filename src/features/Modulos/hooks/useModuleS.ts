@@ -42,7 +42,9 @@ export const usePostModule = () => {
           prevModulos ? [...prevModulos, response] : [response]
       );
 
-      queryClient.invalidateQueries([KEY]);
+      queryClient.invalidateQueries({
+        queryKey: [KEY],
+      });
     },
   });
 };
@@ -74,7 +76,9 @@ export const useEditModule = () => {
         }
       );
 
-      queryClient.invalidateQueries([KEY]);
+      queryClient.invalidateQueries({
+        queryKey: [KEY],
+      });
     },
   });
 };
@@ -97,7 +101,9 @@ export const useDeleteModule = () => {
               : prevModulos
         );
 
-        queryClient.invalidateQueries([KEY]);
+        queryClient.invalidateQueries({
+          queryKey: [KEY],
+        });
       }
     },
   });
@@ -122,7 +128,9 @@ export const useRestoreModule = () => {
           }
         );
 
-        queryClient.invalidateQueries([KEY]);
+        queryClient.invalidateQueries({
+          queryKey: [KEY],
+        });
       }
     },
   });

@@ -5,6 +5,12 @@ import ResourceList from "../components/ResourceList";
 import { ModalContext } from "../../../store/context/dialogContext";
 import { DialogEnum } from "../../../types/enums/dialog.enum";
 import { IPermisos } from "../../../interfaces/models/permisos/permisos.interface";
+import { isError } from "../../../utils/functions.utils";
+import { toast } from "sonner";
+import {
+  useActivateResources,
+  useDesactivateResources,
+} from "../hooks/useResources";
 
 const PermisosScreen = () => {
   const { dialogState } = useContext(ModalContext);
@@ -14,13 +20,50 @@ const PermisosScreen = () => {
     row: {},
   });
 
-  const openEdit = (value: boolean, row: IPermisos) => {
-    setState({ visible: value, row });
+  const { mutateAsync: mutateDesact } = useDesactivateResources();
+  const { mutateAsync: mutateAct } = useActivateResources();
+
+  const getItemsRemoves = async (items: any[]) => {
+    const eliminar = confirm(
+      `Esta seguro que desea eliminar ${items.length} items ?`
+    );
+
+    if (eliminar) {
+      for (const item of items) {
+        try {
+          await mutateDesact({ id: item.original._id });
+        } catch (e) {
+          if (isError(e)) {
+            toast.error(e.response.data.message);
+          }
+        }
+      }
+    }
   };
 
-  const closeEdit = () => {
-    setState({ visible: false, row: {} });
+  const getItemsRestores = async (items: any[]) => {
+    const restaurar = confirm(
+      `Esta seguro que desea restaurar ${items.length} items ?`
+    );
+
+    if (restaurar) {
+      for (const item of items) {
+        try {
+          await mutateAct({ id: item.original._id });
+        } catch (e) {
+          if (isError(e)) {
+            toast.error(e.response.data.message);
+          }
+        }
+      }
+    }
   };
+
+  const onRowClick = (row: IPermisos) => {
+    setState({ visible: true, row });
+  };
+
+  const closeEdit = () => setState({ visible: false, row: {} });
 
   return (
     <>
@@ -28,9 +71,13 @@ const PermisosScreen = () => {
         <ResourceCreate />
       )}
 
-      {state.visible && <ResourceEdit data={state.row} closeEdit={closeEdit} />}
+      {state.visible && <ResourceEdit state={state} closeEdit={closeEdit} />}
 
-      <ResourceList openEdit={openEdit} />
+      <ResourceList
+        onRowClick={onRowClick}
+        getItemsRemoves={getItemsRemoves}
+        getItemsRestores={getItemsRestores}
+      />
     </>
   );
 };

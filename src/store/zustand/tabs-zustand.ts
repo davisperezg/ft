@@ -3,12 +3,12 @@ import { ITabItem } from "../../interfaces/components/tab-top/tab.interface";
 import { devtools } from "zustand/middleware";
 import { INITIAL_VALUE_TAB } from "../../config/constants";
 
-type TabStoreState = {
+interface TabStoreState {
   tabs: ITabItem[];
   menuSelected: string;
-};
+}
 
-type TabStoreActions = {
+interface TabStoreActions {
   setTabs: (
     currentTab:
       | TabStoreState["tabs"]
@@ -21,7 +21,7 @@ type TabStoreActions = {
           currentMenu: TabStoreState["menuSelected"]
         ) => TabStoreState["menuSelected"])
   ) => void;
-};
+}
 
 type TabStore = TabStoreState & TabStoreActions;
 
