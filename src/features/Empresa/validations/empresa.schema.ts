@@ -10,6 +10,7 @@ import {
   IValidationCPETypeEmpresaUpate,
 } from "../../../interfaces/validations/type-doc-cpe/type-doc-cpe.interface";
 import { IValidationEstablecimientoEmpresaUpdate } from "../../../interfaces/validations/establecimiento/establecimiento.interface";
+import { IValidationPOSEmpresaUpdate } from "../../../interfaces/validations/pos/pos.interface";
 
 const schemaFormEmpresaSelectOption = yup
   .object()
@@ -167,6 +168,34 @@ type TypeFormEmpresaEstablecimientosUpdate = Infer<
 const SchemaFormEmpresaEstablecimientosUpdate =
   schemaFormEmpresaEstablecimientosUpdate as yup.Schema<TypeFormEmpresaEstablecimientosUpdate>;
 
+const schemaFormPOSEstablecimientosUpdate = yup
+  .object()
+  .shape<Shape<IValidationPOSEmpresaUpdate, true>>({
+    id: yup.number().optional(),
+    codigo: yup
+      .string()
+      .required("Ingrese código.")
+      .min(3, "Mínimo 3 caracteres."),
+    nombre: yup
+      .string()
+      .required("Ingrese nombre.")
+      .min(3, "Mínimo 3 caracteres."),
+    establecimiento: yup
+      .object({
+        id: yup.number().required(),
+        codigo: yup.string().required("Campo obligatorio."),
+        denominacion: yup.string().required("Campo obligatorio."),
+      })
+      .optional(),
+    new: yup.boolean().optional(),
+    estado: yup.boolean().required(),
+  });
+type TypeFormPOSEstablecimientosUpdate = Infer<
+  typeof schemaFormPOSEstablecimientosUpdate
+>;
+const SchemaFormPOSEstablecimientosUpdate =
+  schemaFormPOSEstablecimientosUpdate as yup.Schema<TypeFormPOSEstablecimientosUpdate>;
+
 export const schemaFormEmpresaUpdate = yup
   .object()
   .shape<Shape<IFeatureEmpresaUpdate, true>>({
@@ -251,6 +280,7 @@ export const schemaFormEmpresaUpdate = yup
       .array()
       .of(SchemaFormEmpresaEstablecimientosUpdate)
       .required(),
+    pos: yup.array().of(SchemaFormPOSEstablecimientosUpdate).required(),
   });
 
 export type _schemaFormEmpresaUpdate = Infer<typeof schemaFormEmpresaUpdate>;

@@ -1,4 +1,5 @@
 import { IDTOEstablecimiento } from "../establecimiento/establecimiento.interface";
+import { IDTOPos } from "../pos/pos.interface";
 import { IDTOCPEType } from "../tipo-docs-cpe/tipo-docs.interface";
 import { IDTOUsuario, IUserMysql } from "../user/user.interface";
 
@@ -106,4 +107,5 @@ export interface IDTOEmpresaDetail
   usu_secundario_password?: string;
   usu_secundario_ose_user?: string;
   usu_secundario_ose_password?: string;
+  pos: IDTOPos[];
 }

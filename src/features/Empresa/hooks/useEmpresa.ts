@@ -179,12 +179,20 @@ export const useEditEmpresa = () => {
         exact: true,
         refetchType: "inactive",
       });
+
       await queryClient.invalidateQueries({
         queryKey: [KEY],
       });
+
       await queryClient.invalidateQueries({
         queryKey: [KEY_GET_EMPRESA, response?.id],
         exact: true,
+      });
+
+      await queryClient.invalidateQueries({
+        queryKey: [KEY_ESTABLECIMIENTO, response?.id],
+        exact: true,
+        refetchType: "inactive",
       });
     },
   });

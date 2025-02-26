@@ -164,6 +164,7 @@ export const FORM_INITIAL_EMPRESA_UPDATE: IFeatureEmpresaUpdate = {
   telefono_fijo_2: "",
   telefono_movil_2: "",
   establecimientos: [],
+  pos: [],
 };
 
 export const FORM_MODAL_PRODUCT_INVOICE: IValidationInvoiceDetails = {

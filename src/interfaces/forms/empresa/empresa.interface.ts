@@ -1,5 +1,6 @@
 import { IEmpresa } from "../../models/empresa/empresa.interface";
 import { IFormEstablecimiento } from "../establecimiento/establecimiento.interface";
+import { IFormPOS } from "../pos/pos.interface";
 import {
   IFormCPETypeEmpresaCreate,
   IFormCPETypeEmpresaUpdate,
@@ -32,4 +33,5 @@ export interface IFormEmpresaUpdate
   cert?: any;
   documentos: IFormCPETypeEmpresaUpdate[];
   establecimientos: IFormEstablecimiento[];
+  pos: IFormPOS[];
 }

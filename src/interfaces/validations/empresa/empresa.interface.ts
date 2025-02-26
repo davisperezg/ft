@@ -1,5 +1,6 @@
 import { IFormEmpresaCreate } from "../../forms/empresa/empresa.interface";
 import { IValidationEstablecimientoEmpresaUpdate } from "../establecimiento/establecimiento.interface";
+import { IValidationPOSEmpresaUpdate } from "../pos/pos.interface";
 import {
   IValidationCPETypeEmpresaCreate,
   IValidationCPETypeEmpresaUpate,
@@ -52,4 +53,5 @@ export interface IValidationEmpresaUpdate
   cert: any | undefined;
   documentos: IValidationCPETypeEmpresaUpate[];
   establecimientos: IValidationEstablecimientoEmpresaUpdate[];
+  pos: IValidationPOSEmpresaUpdate[];
 }

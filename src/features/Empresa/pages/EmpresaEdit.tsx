@@ -35,6 +35,7 @@ import { IFeatureEmpresaUpdate } from "../../../interfaces/features/empresa/empr
 import { IFormEmpresaUpdate } from "../../../interfaces/forms/empresa/empresa.interface";
 import { IDTOEmpresa } from "../../../interfaces/models/empresa/empresa.interface";
 import { Option } from "../../../interfaces/common/option.interface";
+import EmpresaEditPOS from "../components/FormEdit/EmpresaEditPOS";
 
 interface Props {
   state: {
@@ -68,6 +69,20 @@ const EmpresaEdit = ({ state, closeEdit }: Props) => {
               };
             }) ?? [],
           domicilio_fiscal: dataGetEmpresa.domicilio_fiscal,
+          pos: dataGetEmpresa.pos.map((p) => {
+            return {
+              id: p.id,
+              codigo: p.codigo,
+              establecimiento: {
+                id: p.establecimiento.id,
+                codigo: p.establecimiento.codigo,
+                denominacion: p.establecimiento.denominacion,
+              },
+              estado: p.estado,
+              nombre: p.nombre,
+              new: false,
+            };
+          }),
           establecimientos: dataGetEmpresa.establecimientos.map((a) => {
             return {
               codigo: a.codigo,
@@ -204,6 +219,15 @@ const EmpresaEdit = ({ state, closeEdit }: Props) => {
                 logo: a.logo?.[0].name,
               };
             }) ?? [],
+          pos: values.pos.map((p) => {
+            return {
+              id: p.id,
+              codigo: p.codigo,
+              nombre: p.nombre,
+              estado: p.estado,
+              establecimiento: Number(p.establecimiento?.id),
+            };
+          }),
         };
 
         formData.append("data", JSON.stringify(senData));
@@ -284,6 +308,7 @@ const EmpresaEdit = ({ state, closeEdit }: Props) => {
             <TabModal label="Documentos" index={2} />
             <TabModal label="Contacto" index={3} />
             <TabModal label="Establecimientos" index={4} />
+            <TabModal label="POS" index={5} />
           </TabsModal>
 
           <DialogContentBeta>
@@ -304,6 +329,9 @@ const EmpresaEdit = ({ state, closeEdit }: Props) => {
                   </TabModalPanel>
                   <TabModalPanel value={value} index={4}>
                     <EmpresaEditEstablecimientos />
+                  </TabModalPanel>
+                  <TabModalPanel value={value} index={5}>
+                    <EmpresaEditPOS id={Number(state.row.id)} />
                   </TabModalPanel>
                 </form>
               </FormProvider>
