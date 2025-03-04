@@ -58,16 +58,30 @@ const UserCreateAsignarEmpresa = ({ isLoading, error }: Props) => {
                                     `empresasAsign.${indexEmpresa}.establecimientos.${0}.checked`,
                                     true
                                   );
+                                  setValue(
+                                    `empresasAsign.${indexEmpresa}.establecimientos.${0}.pos.${0}.checked`,
+                                    true
+                                  );
                                 } else {
                                   //Si la empresa esta desmarcada, se desmarcan todos los establecimientos
                                   const establecimientosEmpresa = getValues(
                                     `empresasAsign.${indexEmpresa}.establecimientos`
                                   );
                                   establecimientosEmpresa.forEach(
-                                    (_, indexChecked) => {
+                                    (establecimiento, indexChecked) => {
                                       setValue(
                                         `empresasAsign.${indexEmpresa}.establecimientos.${indexChecked}.checked`,
                                         false
+                                      );
+
+                                      //Si la empresa esta desmarcada, se desmarcan todos los POS
+                                      establecimiento.pos.forEach(
+                                        (_, indexPos) => {
+                                          setValue(
+                                            `empresasAsign.${indexEmpresa}.establecimientos.${indexChecked}.pos.${indexPos}.checked`,
+                                            false
+                                          );
+                                        }
                                       );
                                     }
                                   );
@@ -81,55 +95,143 @@ const UserCreateAsignarEmpresa = ({ isLoading, error }: Props) => {
                       {empresa.establecimientos?.map(
                         (establecimiento, indexEstablecimiento) => {
                           return (
-                            <label
-                              key={establecimiento.id}
-                              className="ml-5 flex gap-[2px] text-[11px] cursor-pointer items-center"
-                            >
-                              <Controller
-                                name={`empresasAsign.${indexEmpresa}.establecimientos.${indexEstablecimiento}.checked`}
-                                control={control}
-                                render={({ field }) => (
-                                  <InputCheckBox
-                                    {...field}
-                                    disabled={
-                                      !empresa.estado || !establecimiento.estado
-                                    }
-                                    onChange={(e) => {
-                                      const checked = e.target.checked;
-                                      field.onChange(checked);
-                                      //Si un establecimiento esta marcado se debe marcar por defecto la empresa
-                                      if (checked) {
-                                        setValue(
-                                          `empresasAsign.${indexEmpresa}.checked`,
-                                          true
-                                        );
-                                      } else {
-                                        //Si todos los establecimentos estan desmarcados, se desmarca la empresa
-                                        const establecimientosEmpresa =
-                                          getValues(
-                                            `empresasAsign.${indexEmpresa}.establecimientos`
-                                          );
-                                        const establecimientosCheckedsFiltered =
-                                          establecimientosEmpresa.filter(
-                                            (est) => est.checked === true
-                                          );
-
-                                        if (
-                                          establecimientosCheckedsFiltered.length ===
-                                          0
-                                        ) {
+                            <div key={establecimiento.id}>
+                              <label
+                                key={establecimiento.id}
+                                className="ml-5 flex gap-[2px] text-[11px] cursor-pointer items-center"
+                              >
+                                <Controller
+                                  name={`empresasAsign.${indexEmpresa}.establecimientos.${indexEstablecimiento}.checked`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <InputCheckBox
+                                      {...field}
+                                      disabled={
+                                        !empresa.estado ||
+                                        !establecimiento.estado
+                                      }
+                                      onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        field.onChange(checked);
+                                        //Si un establecimiento esta marcado se debe marcar por defecto la empresa
+                                        if (checked) {
                                           setValue(
                                             `empresasAsign.${indexEmpresa}.checked`,
-                                            false
+                                            true
                                           );
+
+                                          // Si marcamos un establecimiento se debe marca por defecto el primer POS
+                                          if (establecimiento.pos.length > 0) {
+                                            setValue(
+                                              `empresasAsign.${indexEmpresa}.establecimientos.${indexEstablecimiento}.pos.${Number(0)}.checked`,
+                                              true
+                                            );
+                                          }
+                                        } else {
+                                          //Si todos los establecimentos estan desmarcados, se desmarca la empresa
+                                          const establecimientosEmpresa =
+                                            getValues(
+                                              `empresasAsign.${indexEmpresa}.establecimientos`
+                                            );
+                                          const establecimientosCheckedsFiltered =
+                                            establecimientosEmpresa.filter(
+                                              (est) => est.checked === true
+                                            );
+
+                                          //Si todos los establecimentos estan desmarcados, se desmarca la empresa
+                                          if (
+                                            establecimientosCheckedsFiltered.length ===
+                                            0
+                                          ) {
+                                            setValue(
+                                              `empresasAsign.${indexEmpresa}.checked`,
+                                              false
+                                            );
+                                          }
+
+                                          //Si desmarcamos un establecimiento, se desmarcan todos los POS
+                                          if (establecimiento.pos.length > 0) {
+                                            establecimiento.pos.forEach(
+                                              (_, indexPos) => {
+                                                setValue(
+                                                  `empresasAsign.${indexEmpresa}.establecimientos.${indexEstablecimiento}.pos.${indexPos}.checked`,
+                                                  false
+                                                );
+                                              }
+                                            );
+                                          }
                                         }
-                                      }
-                                    }}
-                                  />
-                                )}
-                              />
-                              {`${establecimiento.codigo} - ${establecimiento.denominacion}`}
-                            </label>
+                                      }}
+                                    />
+                                  )}
+                                />
+                                {`${establecimiento.codigo} - ${establecimiento.denominacion}`}
+                              </label>
+                              {establecimiento.pos?.map((pos, indexPos) => {
+                                return (
+                                  <label
+                                    key={pos.id}
+                                    className="ml-10 flex gap-[2px] text-[11px] cursor-pointer"
+                                  >
+                                    <Controller
+                                      name={`empresasAsign.${indexEmpresa}.establecimientos.${indexEstablecimiento}.pos.${indexPos}.checked`}
+                                      control={control}
+                                      render={({ field }) => (
+                                        <InputCheckBox
+                                          {...field}
+                                          disabled={
+                                            !empresa.estado ||
+                                            !establecimiento.estado ||
+                                            !pos.estado
+                                          }
+                                          onChange={(e) => {
+                                            const checked = e.target.checked;
+                                            field.onChange(checked);
+                                            //Si un POS esta marcado se debe marcar por defecto el establecimiento y la empresa
+                                            if (checked) {
+                                              setValue(
+                                                `empresasAsign.${indexEmpresa}.establecimientos.${indexEstablecimiento}.checked`,
+                                                true
+                                              );
+                                              setValue(
+                                                `empresasAsign.${indexEmpresa}.checked`,
+                                                true
+                                              );
+                                            } else {
+                                              //Si todos los POS estan desmarcados, se desmarca el establecimiento
+                                              const posEstablecimiento =
+                                                getValues(
+                                                  `empresasAsign.${indexEmpresa}.establecimientos.${indexEstablecimiento}.pos`
+                                                );
+                                              const posCheckedsFiltered =
+                                                posEstablecimiento.filter(
+                                                  (pos) => pos.checked === true
+                                                );
+
+                                              //Si todos los POS estan desmarcados, se desmarca el establecimiento
+                                              if (
+                                                posCheckedsFiltered.length === 0
+                                              ) {
+                                                setValue(
+                                                  `empresasAsign.${indexEmpresa}.establecimientos.${indexEstablecimiento}.checked`,
+                                                  false
+                                                );
+                                                setValue(
+                                                  `empresasAsign.${indexEmpresa}.checked`,
+                                                  false
+                                                );
+                                              }
+                                            }
+                                          }}
+                                        />
+                                      )}
+                                    />
+
+                                    {`${pos.codigo} - ${pos.nombre}`}
+                                  </label>
+                                );
+                              })}
+                            </div>
                           );
                         }
                       )}

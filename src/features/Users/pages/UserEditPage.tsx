@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import {
   SubmitHandler,
   useForm,
@@ -146,6 +146,17 @@ const UserEdit = ({ state, closeEdit }: Props) => {
               checked: establecimientoAsignado
                 ? establecimientoAsignado.checked
                 : false,
+              pos: est.pos.map((item) => {
+                const posAsignado = establecimientoAsignado?.pos.find(
+                  (pos: any) => pos.id === item.id
+                );
+
+                return {
+                  ...item,
+                  idEntidad: posAsignado ? posAsignado.idEntidad : null,
+                  checked: posAsignado ? posAsignado.checked : false,
+                };
+              }),
             };
           }),
         };
@@ -266,29 +277,13 @@ const UserEdit = ({ state, closeEdit }: Props) => {
     setValue(newValue);
   };
 
-  const memoModulos = useMemo(() => {
-    if (dataModules) {
-      return dataModules;
-    }
+  const memoModulos = dataModules || [];
 
-    return [];
-  }, [dataModules]);
+  const memoPermisos = dataPermisos || [];
 
-  const memoPermisos = useMemo(() => {
-    if (dataPermisos) {
-      return dataPermisos;
-    }
-
-    return [];
-  }, [dataPermisos]);
-
-  const memoRoles = useMemo(() => {
-    if (dataRoles && dataRoles.length > 0) {
-      return dataRoles;
-    }
-
-    return [{ name: "[SELECCIONE ROL]", _id: "null" }];
-  }, [dataRoles]);
+  const memoRoles = dataRoles?.length
+    ? dataRoles
+    : [{ name: "[SELECCIONE ROL]", _id: "null" }];
 
   useEffect(() => {
     if (isErrorPersona) {
@@ -419,6 +414,9 @@ const UserEdit = ({ state, closeEdit }: Props) => {
                           (errors.role ?? isErrorRoles) ? "border-danger" : ""
                         }`}
                       >
+                        <option value="null" disabled>
+                          [SELECCIONE ROL]
+                        </option>
                         {isLoadingRoles ? (
                           <option>Cargando...</option>
                         ) : (

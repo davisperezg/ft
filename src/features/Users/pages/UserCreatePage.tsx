@@ -37,8 +37,6 @@ const UserCreate = () => {
     isLoading: isLoadingAsignEmpresas,
   } = useAsignEmpresasByIdPartner(String(userGlobal?.id));
 
-  console.log(data);
-
   const methods = useForm<IUserWithPassword>({
     defaultValues: FORM_INITIAL_USER,
     values: {
@@ -49,6 +47,7 @@ const UserCreate = () => {
         establecimientos: item.establecimientos.map((est) => ({
           ...est,
           checked: false,
+          pos: est.pos.map((pos) => ({ ...pos, checked: false })),
         })),
       })),
     },

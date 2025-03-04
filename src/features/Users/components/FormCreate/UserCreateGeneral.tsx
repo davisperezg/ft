@@ -1,6 +1,6 @@
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useRolesAvailables } from "../../../Roles/hooks/useRoles";
-import { useMemo, useEffect } from "react";
+import { useEffect } from "react";
 import { useReniec } from "../../../../hooks/useServices";
 import { toast } from "sonner";
 import { FcSearch } from "react-icons/fc";
@@ -12,10 +12,13 @@ const UserCreateGeneral = () => {
     getValues,
     setValue: setValueModel,
     register,
-    watch,
     formState: { errors },
     control,
   } = useFormContext<IUserWithPassword>();
+
+  const watch = useWatch({
+    control,
+  });
 
   const {
     data: dataRoles,
@@ -24,13 +27,9 @@ const UserCreateGeneral = () => {
     isError: isErrorRoles,
   } = useRolesAvailables();
 
-  const memoRoles = useMemo(() => {
-    if (dataRoles && dataRoles.length > 0) {
-      return dataRoles;
-    }
-
-    return [{ name: "[SELECCIONE ROL]", _id: "null" }];
-  }, [dataRoles]);
+  const memoRoles = dataRoles?.length
+    ? dataRoles
+    : [{ name: "[SELECCIONE ROL]", _id: "null" }];
 
   const {
     data: dataPersona,
@@ -38,7 +37,7 @@ const UserCreateGeneral = () => {
     error: errorPersona,
     isError: isErrorPersona,
     refetch,
-  } = useReniec(watch("tipDocument"), watch("nroDocument"));
+  } = useReniec(String(watch.tipDocument), String(watch.nroDocument));
 
   useEffect(() => {
     if (isErrorPersona) {
@@ -63,8 +62,6 @@ const UserCreateGeneral = () => {
     setValueModel,
   ]);
 
-  console.log(watch());
-
   return (
     <>
       <div className="w-full flex flex-row">
@@ -86,6 +83,9 @@ const UserCreateGeneral = () => {
                 (errors.role ?? isErrorRoles) ? "border-danger" : ""
               }`}
             >
+              <option value="null" disabled>
+                [SELECCIONE ROL]
+              </option>
               {isLoadingRoles ? (
                 <option>Cargando...</option>
               ) : (
@@ -146,8 +146,8 @@ const UserCreateGeneral = () => {
                   //validate: validateOption,
                   type="text"
                   onChange={(e) => {
-                    field.onChange(e);
                     const value: string = e.target.value;
+                    field.onChange(value);
                     const maxLength = value.slice(0, 8);
                     if (value.length > 8) {
                       return setValueModel("nroDocument", maxLength);
