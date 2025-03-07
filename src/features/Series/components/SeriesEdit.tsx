@@ -8,13 +8,17 @@ import {
   useForm,
   Controller,
   useFieldArray,
+  useWatch,
 } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import {
   IOption,
   SelectSimple,
 } from "../../../components/common/Selects/SelectSimple";
-import { useDocumentosByEmpresa } from "../../Empresa/hooks/useEmpresa";
+import {
+  useDocumentosByEmpresa,
+  usePosByEstablishment,
+} from "../../Empresa/hooks/useEmpresa";
 import {
   useDisableSerie,
   useEnableSerie,
@@ -29,7 +33,6 @@ import { toast } from "sonner";
 import { isError } from "../../../utils/functions.utils";
 import CheckIcon from "@mui/icons-material/Check";
 import RemoveIcon from "@mui/icons-material/Remove";
-import { useQueryClient } from "@tanstack/react-query";
 import { ISeries } from "../../../interfaces/models/series/series.interface";
 import { schemaFormSeries } from "../validations/serie.schema";
 
@@ -42,8 +45,6 @@ interface Props {
 }
 
 const SeriesEdit = ({ state, closeEdit }: Props) => {
-  const queryClient = useQueryClient();
-
   const closeModal = () => {
     closeEdit();
   };
@@ -63,8 +64,12 @@ const SeriesEdit = ({ state, closeEdit }: Props) => {
         value: "",
         label: "",
       },
+      pos: {
+        value: "",
+        label: "",
+      },
       serie: "",
-      documentos: [],
+      items: [],
     },
     resolver: yupResolver(schemaFormSeries),
     mode: "all",
@@ -79,6 +84,10 @@ const SeriesEdit = ({ state, closeEdit }: Props) => {
     trigger,
   } = methods;
 
+  const watch = useWatch({
+    control,
+  });
+
   const {
     data: dataDocumentos,
     isLoading: isLoadingDocumentos,
@@ -86,20 +95,44 @@ const SeriesEdit = ({ state, closeEdit }: Props) => {
     isError: isErrorDocumentos,
   } = useDocumentosByEmpresa(Number(state.row.id));
 
+  const {
+    data: dataPos,
+    isLoading: isLoadingPos,
+    error: errorPos,
+    isError: isErrorPos,
+  } = usePosByEstablishment(Number(watch.establecimiento));
+
   const { fields, append, update, remove } = useFieldArray({
     control,
-    name: "documentos",
+    name: "items",
     keyName: "uuid",
   });
 
   const listEstablecimientos =
-    dataSeries?.establecimientos?.map((item) => ({
-      value: Number(item.id),
-      label: `${item.codigo === "0000" ? "PRINCIPAL" : item.codigo} - ${
-        item.denominacion
-      }`,
-      disabled: !item.estado,
-    })) ?? [];
+    dataSeries?.establecimientos?.map((item) => {
+      const establishmentCode =
+        item.codigo === "0000" ? "PRINCIPAL" : item.codigo;
+
+      return {
+        value: Number(item.id),
+        label: `[${establishmentCode}]:${item.denominacion}`,
+        disabled: !item.estado,
+      };
+    }) ?? [];
+
+  const listPos =
+    dataPos?.map((item) => {
+      const establishment =
+        item.establecimiento.codigo === "0000"
+          ? "PRINCIPAL"
+          : item.establecimiento.codigo;
+
+      return {
+        value: Number(item.id),
+        label: `[${establishment}]:[${item.codigo}]: ${item.nombre}`,
+        disabled: !item.estado,
+      };
+    }) ?? [];
 
   const listDocumentos =
     dataDocumentos?.map((item) => ({
@@ -116,33 +149,34 @@ const SeriesEdit = ({ state, closeEdit }: Props) => {
   const { mutateAsync: mutateEnable } = useEnableSerie();
 
   const onSubmit: SubmitHandler<ISeries> = async (values) => {
-    const { documentos, empresa, establecimiento } = values;
+    const { items, empresa, establecimiento } = values;
 
-    const mapDocuments = documentos?.reduce((acc, item) => {
-      if (item.series.length > 0) {
-        const series = item.series
-          .filter((serie: any) => serie.new)
-          .map((item: any) => item.serie);
+    const sendDataItems =
+      items?.map((item: any) => {
+        return {
+          ...item.pos,
+          documentos: item.documentos.map((item: any) => {
+            return {
+              ...item,
+              series: item.series.map((item: any) => {
+                return {
+                  serie: item.serie,
+                  id: item.id,
+                };
+              }),
+            };
+          }),
+        };
+      }) || [];
 
-        if (series.length > 0) {
-          return {
-            ...acc,
-            [item.id]: series,
-          };
-        }
-      }
-
-      return acc;
-    }, {});
-
-    const isEmpty = Object.keys(mapDocuments).length === 0;
-    if (isEmpty) return alert("No hay series para agregar.");
+    if (sendDataItems.length === 0)
+      return toast.error("No hay series para agregar.");
 
     try {
       const res = await mutateSerieAsync({
         empresa,
         establecimiento,
-        documentos: mapDocuments,
+        pos: sendDataItems,
       });
       toast.success(res.message);
       closeModal();
@@ -154,89 +188,135 @@ const SeriesEdit = ({ state, closeEdit }: Props) => {
   };
 
   const appendDocumento = async () => {
-    // Usa trigger para verificar manualmente los errores del formulario
+    // Verifica los errores del formulario
     const formIsValid = await trigger();
-
     if (!formIsValid) return;
 
+    // Obtener valores del formulario
     const serie = getValues("serie");
     const documento = getValues("documento");
+    const pos = getValues("pos");
 
-    //Validamos si la serie que se estan ingresando pertecene a otro establecimiento de la empresa
-    const existSerieEstablecimiento =
-      validarSerieExixtenteXEstablecimiento(serie);
-    if (existSerieEstablecimiento) return;
+    if (!documento || !pos) return toast.error("Documento o POS no válidos");
 
-    const existDocumento = fields.find((item) => item.id === documento?.value);
+    // Validar si la serie ya existe en CUALQUIER establecimiento (POS)
+    const serieExistente = fields.some((posItem) =>
+      posItem.documentos.some((doc: any) =>
+        doc.series.some((s: any) => s.serie === serie)
+      )
+    );
 
-    //Si agrega el mismo documento debe validar que no exista la serie para que la agregue
-    if (existDocumento) {
-      const existSerieIngresada = existDocumento.series.find(
-        (item: any) => item.serie === serie
+    if (serieExistente) {
+      return toast.error(
+        "Esta serie ya está agregada en otro establecimiento."
       );
-      if (existSerieIngresada) {
-        return alert("Ya existe la serie.");
-      }
-
-      const index = fields.findIndex(
-        (item: any) => item.id === documento?.value
-      );
-      return update(index, {
-        ...existDocumento,
-        series: [...existDocumento.series, { new: true, serie }],
-      });
     }
 
-    return append({
-      id: getValues("documento")?.value,
-      nombre: getValues("documento")?.label,
-      series: [
-        {
-          serie: getValues("serie"),
-          new: true,
-        },
-      ],
-    });
-  };
+    // Validar si la serie pertenece a otro establecimiento de la empresa
+    if (validarSerieExixtenteXEstablecimiento(serie)) return;
 
-  const removeSerie = (item: any, serie: string) => {
-    const documento = item;
-    const existDocumento = fields.find((item) => item.id === documento.id);
+    // Buscar si ya existe el POS en `fields`
+    const existPos = fields.find((item) => item.pos.id === pos.value);
 
-    if (existDocumento) {
-      const index = fields.findIndex((item: any) => item.id === documento.id);
-
-      const newSeries = existDocumento.series.filter(
-        (item: any) => item.serie !== serie
+    if (existPos) {
+      // Verificar si el documento ya está en ese POS
+      const existDocumento = existPos.documentos?.find(
+        (doc: any) => doc.id === documento.value
       );
 
-      return update(index, {
-        ...existDocumento,
-        series: newSeries,
+      if (existDocumento) {
+        // Verificar si la serie ya existe dentro del documento
+        if (existDocumento.series.some((item: any) => item.serie === serie)) {
+          return toast.error("Ya existe la serie.");
+        }
+
+        // Agregar la nueva serie al documento existente
+        existDocumento.series.push({ new: true, serie });
+      } else {
+        // Agregar un nuevo documento dentro del POS existente
+        existPos.documentos.push({
+          id: documento.value,
+          nombre: documento.label,
+          series: [{ serie, new: true }],
+        });
+      }
+
+      // Actualizar la lista de documentos
+      return update(fields.indexOf(existPos), { ...existPos });
+    }
+
+    // Si no existe el POS, agregarlo con el nuevo documento
+    const item = {
+      pos: {
+        id: pos.value,
+        nombre: pos.label,
+      },
+      documentos: [
+        {
+          id: documento.value,
+          nombre: documento.label,
+          series: [{ serie, new: true }],
+        },
+      ],
+    };
+
+    return append(item);
+  };
+
+  const removeSerie = (posIndex: number, docIndex: number, serie: string) => {
+    const posItem = fields[posIndex]; // Obtener el POS
+    const docItem = posItem.documentos[docIndex]; // Obtener el documento dentro del POS
+
+    // Filtrar las series, eliminando la que coincide con el valor
+    const updatedSeries = docItem.series.filter((s: any) => s.serie !== serie);
+
+    if (updatedSeries.length > 0) {
+      // Si el documento aún tiene series, actualizamos solo las series
+      update(posIndex, {
+        ...posItem,
+        documentos: posItem.documentos.map((doc: any, i: number) =>
+          i === docIndex ? { ...doc, series: updatedSeries } : doc
+        ),
       });
+    } else {
+      // Si el documento se queda sin series, lo eliminamos del POS
+      const updatedDocuments = posItem.documentos.filter(
+        (_: any, i: number) => i !== docIndex
+      );
+
+      if (updatedDocuments.length > 0) {
+        // Si el POS aún tiene documentos, lo actualizamos
+        update(posIndex, {
+          ...posItem,
+          documentos: updatedDocuments,
+        });
+      } else {
+        // Si el POS se queda sin documentos, lo eliminamos completamente
+        remove(posIndex);
+      }
     }
   };
 
   const validarSerieExixtenteXEstablecimiento = (inputSerie: string) => {
-    const establecimientos = dataSeries?.establecimientos
-      ? dataSeries.establecimientos.length
-      : 0;
+    const establecimientos = dataSeries?.establecimientos || [];
 
     let estado = false;
 
-    for (let a = 0; a < establecimientos; a++) {
-      const establecimiento = dataSeries?.establecimientos?.[a];
-      if (establecimiento) {
-        for (const est_documento of establecimiento.documentos) {
-          for (const doc_serie of est_documento.series) {
-            if (
-              doc_serie.serie === inputSerie &&
-              getValues("establecimiento") !== establecimiento.id
-            ) {
-              estado = true;
-              alert(
-                "La serie ya existe en otro establecimiento de la empresa. Si quieres que pertenezca a este establecimiento debes migrar la serie."
-              );
+    for (let index = 0; index < establecimientos.length; index++) {
+      const establishment = establecimientos[index];
+      if (establishment) {
+        for (const pos of establishment.pos) {
+          for (const document of pos.documentos) {
+            for (const serie of document.series) {
+              if (
+                serie.serie === inputSerie &&
+                getValues("establecimiento") !== establishment.id
+              ) {
+                estado = true;
+                toast.error(
+                  "La serie ya existe en otro establecimiento de la empresa. Si quieres que pertenezca a este establecimiento debes migrar la serie."
+                );
+              }
             }
           }
         }
@@ -247,78 +327,84 @@ const SeriesEdit = ({ state, closeEdit }: Props) => {
   };
 
   const obtenerSeriesXEstablecimiento = (establecimiento: number) => {
-    const listDocs = dataSeries?.establecimientos?.find(
+    const listEstablishment = dataSeries?.establecimientos?.find(
       (item) => item.id === establecimiento
     );
-    return listDocs?.documentos?.map((docs: any) => {
+
+    return listEstablishment?.pos?.map((pos) => {
       return {
-        id: docs.id,
-        nombre: docs.nombre,
-        series: docs.series,
+        pos: {
+          id: pos.id,
+          nombre: pos.nombre,
+        },
+        documentos: pos.documentos.map((doc) => {
+          return {
+            id: doc.id,
+            nombre: doc.nombre,
+            series: doc.series,
+          };
+        }),
       };
     });
   };
 
-  const obtenerQueryDocumentosByEstablecimiento = () => {
-    const listDocs: ISeries | undefined = queryClient.getQueryData([
-      "series",
-      getValues("empresa"),
-    ]);
-
-    if (listDocs) {
-      return listDocs.establecimientos?.find(
-        (est: any) => est.id === getValues("establecimiento")
-      );
-      //documentos.find((doc: any) => doc.id === idDocumento);
-    }
-    return null;
-  };
-
-  const activar = async (idSerie: number, documento: any) => {
+  const activar = async (
+    posIndex: number,
+    docIndex: number,
+    serieId: number
+  ) => {
     try {
-      await mutateEnable({ id: idSerie });
-      const query = obtenerQueryDocumentosByEstablecimiento();
-      const indexQuery = query?.documentos.findIndex(
-        (item: any) => item.id === documento.id
-      );
-      const queryDocumento = query?.documentos.find(
-        (doc: any) => doc.id === documento.id
-      );
+      await mutateEnable({ id: serieId });
 
-      return update(Number(indexQuery), {
-        ...documento,
-        series: queryDocumento?.series,
+      // Deshabilitar la serie en la estructura de datos
+      return update(posIndex, {
+        ...fields[posIndex],
+        documentos: fields[posIndex]?.documentos.map((doc: any, i: number) =>
+          i === docIndex
+            ? {
+                ...doc,
+                series: doc.series.map((s: any) =>
+                  s.id === serieId ? { ...s, estado: true } : s
+                ),
+              }
+            : doc
+        ),
       });
     } catch (e) {
       if (isError(e)) {
-        toast.error(e.response.data.message);
+        toast.error(e.response?.data?.message || "Ocurrió un error inesperado");
       }
     }
   };
 
-  const desactivar = async (idSerie: number, documento: any) => {
-    //console.log(obtenerSeriesXEstablecimiento(establecimiento));
+  const desactivar = async (
+    posIndex: number,
+    docIndex: number,
+    serieId: number
+  ) => {
     try {
-      await mutateDisable({ id: idSerie });
-      const query = obtenerQueryDocumentosByEstablecimiento();
-      const indexQuery = query?.documentos.findIndex(
-        (item: any) => item.id === documento.id
-      );
-      const queryDocumento = query?.documentos.find(
-        (doc: any) => doc.id === documento.id
-      );
+      await mutateDisable({ id: serieId });
 
-      return update(Number(indexQuery), {
-        ...documento,
-        series: queryDocumento?.series,
+      // Deshabilitar la serie en la estructura de datos
+      return update(posIndex, {
+        ...fields[posIndex],
+        documentos: fields[posIndex]?.documentos.map((doc: any, i: number) =>
+          i === docIndex
+            ? {
+                ...doc,
+                series: doc.series.map((s: any) =>
+                  s.id === serieId ? { ...s, estado: false } : s
+                ),
+              }
+            : doc
+        ),
       });
     } catch (e) {
       if (isError(e)) {
-        toast.error(e.response.data.message);
+        toast.error(e.response?.data?.message || "Ocurrió un error inesperado");
       }
     }
   };
-  //console.log(dataSeries);
 
   return (
     <DialogBeta open={state.visible}>
@@ -396,11 +482,52 @@ const SeriesEdit = ({ state, closeEdit }: Props) => {
                                 field.onChange(value);
                                 remove();
                                 setValue("serie", "");
+                                setValue("pos", {
+                                  label: "",
+                                  value: "",
+                                });
                                 if (series) append(series);
                               }
                             }
                           }
                         }}
+                      />
+                    );
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Controller
+                  name="pos"
+                  control={control}
+                  render={({ field }) => {
+                    const option = field.value;
+                    return (
+                      <SelectSimple
+                        {...field}
+                        className="pos-single"
+                        classNamePrefix="select"
+                        isSearchable={false}
+                        isLoading={isLoadingPos}
+                        options={listPos}
+                        isOptionDisabled={(option) => Boolean(option.disabled)}
+                        placeholder="Seleccione POS"
+                        error={!!errors.pos || isErrorPos}
+                        helperText={
+                          errors.pos?.value?.message ??
+                          errorPos?.response.data.message
+                        }
+                        value={
+                          option?.value === ""
+                            ? ""
+                            : (listPos.find(
+                                ({ value }) =>
+                                  Number(value) === Number(option?.value)
+                              ) as PropsValue<any>)
+                        }
+                        noOptionsMessage={() =>
+                          "Probablemente el establecimiento no cuenta con POS disponibles."
+                        }
                       />
                     );
                   }}
@@ -490,33 +617,43 @@ const SeriesEdit = ({ state, closeEdit }: Props) => {
           {isLoadingSeries ? (
             <LoadingTotal />
           ) : (
-            fields.map((item, index) => {
-              return (
-                <div
-                  key={item.uuid}
-                  className={`flex ${
-                    index === 0 ? "mt-5 py-2 border-t" : "py-2"
-                  } gap-5 border-b`}
-                >
-                  <div className="w-1/3 text-center flex justify-center items-center">
-                    Tipo: {String(item.nombre).toUpperCase()}
-                  </div>
-                  <div className="w-2/3 flex flex-col justify-center items-center gap-1">
-                    {item.series?.map((ser: any, i: number) => {
-                      return (
-                        <div key={i} className="w-full flex gap-2">
+            fields.map((posItem, posIndex) => (
+              <div key={posItem.pos.id} className="mt-5 border-t py-2">
+                {/* Renderizar el POS una sola vez */}
+                <div className="w-full text-center font-bold py-2">
+                  {posItem.pos.nombre}
+                </div>
+
+                {/* Renderizar los documentos dentro del POS */}
+                {posItem.documentos.map((docItem: any, docIndex: number) => (
+                  <div
+                    key={docItem.id}
+                    className={`flex ${docIndex === 0 ? "py-2" : "pt-2"} gap-5 border-b`}
+                  >
+                    <div className="w-1/3 text-center flex justify-center items-center">
+                      Tipo: {String(docItem.nombre).toUpperCase()}
+                    </div>
+
+                    {/* Renderizar las series dentro del documento */}
+                    <div className="w-2/3 flex flex-col justify-center items-center gap-1">
+                      {docItem.series?.map((ser: any, serieIndex: number) => (
+                        <div key={serieIndex} className="w-full flex gap-2">
                           <div className="w-2/3 flex flex-col justify-center items-center">
                             Serie: {ser.serie}
                           </div>
                           <div className="flex flex-1 text-center justify-center">
                             {ser.estado ? (
                               <CheckIcon
-                                onClick={() => desactivar(Number(ser.id), item)}
+                                onClick={() =>
+                                  desactivar(posIndex, docIndex, Number(ser.id))
+                                }
                                 className="w-full h-8 text-green-700 cursor-pointer"
                               />
                             ) : ser.new ? (
                               <button
-                                onClick={() => removeSerie(item, ser.serie)}
+                                onClick={() =>
+                                  removeSerie(posIndex, docIndex, ser.serie)
+                                }
                                 className="w-full text-center border border-danger text-danger h-[30px]"
                                 type="button"
                               >
@@ -524,18 +661,20 @@ const SeriesEdit = ({ state, closeEdit }: Props) => {
                               </button>
                             ) : (
                               <RemoveIcon
-                                onClick={() => activar(Number(ser.id), item)}
+                                onClick={() =>
+                                  activar(posIndex, docIndex, Number(ser.id))
+                                }
                                 className="w-full h-8 text-danger cursor-pointer"
                               />
                             )}
                           </div>
                         </div>
-                      );
-                    })}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              );
-            })
+                ))}
+              </div>
+            ))
           )}
         </Box>
       </DialogContentBeta>

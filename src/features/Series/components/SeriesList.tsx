@@ -114,14 +114,22 @@ const SeriesList = ({ onRowClick }: Props) => {
                         <strong>Nombre:</strong> {item.denominacion}
                       </small>
                     </div>
-                    {item.documentos.map((doc: any, b: number) => {
+                    {item.pos.map((pos: any, b: number) => {
                       return (
                         <div key={b} className="ml-[10px]">
-                          {a + 1}.{b + 1}.- {doc.nombre}
-                          {doc.series.map((ser: any, c: number) => {
+                          {a + 1}.{b + 1}.- {pos.nombre}
+                          {pos.documentos.map((doc: any, c: number) => {
                             return (
                               <div key={c} className="ml-[10px]">
-                                {a + 1}.{b + 1}.{c + 1}.- {ser.serie}
+                                {a + 1}.{b + 1}.{c + 1}.- {doc.nombre}
+                                {doc.series.map((serie: any, d: number) => {
+                                  return (
+                                    <div key={d} className="ml-[10px]">
+                                      {a + 1}.{b + 1}.{c + 1}.{d + 1}.-
+                                      {serie.serie}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             );
                           })}

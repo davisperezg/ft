@@ -10,6 +10,7 @@ import {
   IFormEmpresaCreate,
   IFormEmpresaUpdate,
 } from "../../../interfaces/forms/empresa/empresa.interface";
+import { IPos } from "../../../interfaces/models/pos/pos.interface";
 
 export const getEmpresas = async () => {
   const { data } = await axios.get<IDTOEmpresa[]>(
@@ -33,6 +34,13 @@ export const getEstablecimientosByEmpresa = async (id: number) => {
 export const getDocumentosByEmpresa = async (id: number) => {
   const { data } = await axios.get<ITipoDoc[]>(
     `${BASE_API}/api/v1/empresas/${id}/documentos`
+  );
+  return data;
+};
+
+export const getPosByEstablishmentId = async (establishmentId: number) => {
+  const { data } = await axios.get<IPos[]>(
+    `${BASE_API}/api/v1/empresas/establecimientos/${establishmentId}/pos`
   );
   return data;
 };

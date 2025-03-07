@@ -13,6 +13,14 @@ export const schemaFormSeriesMigrate = yup.object({
     .number()
     .positive("Seleccione un establecimiento destino.")
     .required("El establecimiento destino es requerido."),
+  pos_origen: yup
+    .number()
+    .positive("Seleccione un POS origen.")
+    .required("El POS origen es requerido."),
+  pos_destino: yup
+    .number()
+    .positive("Seleccione un POS destino.")
+    .required("El POS destino es requerido."),
   documentos: yup
     .array()
     .of(

@@ -9,6 +9,7 @@ import {
   getEmpresa,
   getEmpresas,
   getEstablecimientosByEmpresa,
+  getPosByEstablishmentId,
   getUsersEmpresas,
   getlistToAsignEmpresasByIdPartner,
   postNewEmpresa,
@@ -23,12 +24,14 @@ import { IEstablecimiento } from "../../../interfaces/models/establecimiento/est
 import { ITipoDoc } from "../../../interfaces/features/tipo-docs-cpe/tipo-docs.interface";
 import { IFeatureEmpresaAsign } from "../../../interfaces/features/empresa/empresa.interface";
 import { IFormEmpresaUpdate } from "../../../interfaces/forms/empresa/empresa.interface";
+import { IPos } from "../../../interfaces/models/pos/pos.interface";
 
 const KEY = "empresas";
 const KEY_GET_EMPRESA = "get_empresa";
 const KEY_USERS_EMPRESA = "users_empresas";
 const KEY_ESTABLECIMIENTO = "get_empresa_establecimientos";
 const KEY_DOCUMENTO = "get_empresa_documentos";
+const KEY_POS = "get_establishment_pos";
 const KEY_ASIGN = "get_empresa_asign";
 
 export const useEmpresas = () => {
@@ -58,6 +61,14 @@ export const useDocumentosByEmpresa = (id: number) => {
   return useQuery<ITipoDoc[], IError>({
     queryKey: [KEY_DOCUMENTO, id],
     queryFn: async () => await getDocumentosByEmpresa(id),
+    enabled: !!id,
+  });
+};
+
+export const usePosByEstablishment = (id: number) => {
+  return useQuery<IPos[], IError>({
+    queryKey: [KEY_POS, id],
+    queryFn: async () => await getPosByEstablishmentId(id),
     enabled: !!id,
   });
 };

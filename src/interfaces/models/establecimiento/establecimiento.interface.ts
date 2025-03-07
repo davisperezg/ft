@@ -1,5 +1,6 @@
 import { Option } from "../../common/option.interface";
 import { ITipoDocsExtentido } from "../../features/tipo-docs-cpe/tipo-docs.interface";
+import { IPos } from "../pos/pos.interface";
 
 export interface IEstablecimiento {
   id?: number;
@@ -16,7 +17,11 @@ export interface IEstablecimiento {
 
 export interface IEstablecimientoExtendida
   extends Pick<IEstablecimiento, "id" | "codigo" | "denominacion" | "estado"> {
-  documentos: ITipoDocsExtentido[];
+  pos: Array<
+    Required<Pick<IPos, "id" | "nombre">> & {
+      documentos: ITipoDocsExtentido[];
+    }
+  >;
 }
 
 export interface IDTOEstablecimiento

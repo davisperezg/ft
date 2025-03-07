@@ -5,7 +5,7 @@ import { ModalContext } from "../../../store/context/dialogContext";
 import { Box, Button, Grid, IconButton } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { DialogContentBeta } from "../../../components/common/Dialogs/_DialogContent";
-import { SubmitHandler, useForm, Controller } from "react-hook-form";
+import { SubmitHandler, useForm, Controller, useWatch } from "react-hook-form";
 import {
   IOption,
   SelectSimple,
@@ -14,6 +14,7 @@ import { DialogActionsBeta } from "../../../components/common/Dialogs/_DialogAct
 import {
   useEmpresas,
   useEstablecimientosByEmpresa,
+  usePosByEstablishment,
 } from "../../Empresa/hooks/useEmpresa";
 import { PropsValue, SingleValue } from "react-select";
 
@@ -53,8 +54,11 @@ const SeriesMigrate = () => {
     handleSubmit,
     formState: { isDirty, isValid, errors },
     trigger,
-    watch,
   } = methods;
+
+  const watch = useWatch({
+    control,
+  });
 
   const {
     data: dataEmpresas,
@@ -70,20 +74,61 @@ const SeriesMigrate = () => {
     isError: isErrorEstablecimientos,
     refetch: refetchEstablecimientos,
     isRefetching: isRefetchingEstablecimientos,
-  } = useEstablecimientosByEmpresa(getValues("empresa"));
+  } = useEstablecimientosByEmpresa(Number(watch.empresa));
 
   const {
     data: dataSeries,
     isLoading: isLoadingSeries,
     error: errorSeries,
     isError: isErrorSeries,
-  } = useSerie(getValues("empresa"));
+  } = useSerie(Number(watch.empresa));
 
   const { mutateAsync: mutateSerieAsync, isPending: isLoadingSerie } =
     useMigrateSerie();
 
+  const {
+    data: dataPosOrigen,
+    isLoading: isLoadingPosOrigen,
+    error: errorPosOrigen,
+    isError: isErrorPosOrigen,
+  } = usePosByEstablishment(Number(watch.establecimiento));
+
+  const {
+    data: dataPosDestino,
+    isLoading: isLoadingPosDestino,
+    error: errorPosDestino,
+    isError: isErrorPosDestino,
+  } = usePosByEstablishment(Number(watch.establecimiento_destino));
+
+  const listPosOrigen =
+    dataPosOrigen?.map((item) => {
+      const establishment =
+        item.establecimiento.codigo === "0000"
+          ? "PRINCIPAL"
+          : item.establecimiento.codigo;
+      return {
+        value: Number(item.id),
+        label: `[${establishment}]:[${item.codigo}]: ${item.nombre}`,
+        disabled: !item.estado,
+      };
+    }) ?? [];
+
+  const listPosDestino =
+    dataPosDestino?.map((item) => {
+      const establishment =
+        item.establecimiento.codigo === "0000"
+          ? "PRINCIPAL"
+          : item.establecimiento.codigo;
+      return {
+        value: Number(item.id),
+        label: `[${establishment}]:[${item.codigo}]: ${item.nombre}`,
+        disabled: !item.estado,
+      };
+    }) ?? [];
+
   const onSubmit: SubmitHandler<ISeriesMigrate> = async (values) => {
-    const { empresa, documentos, establecimiento_destino } = values;
+    const { empresa, documentos, establecimiento_destino, pos_destino } =
+      values;
     const mapDocuments = documentos?.reduce((acc, item) => {
       const groupDocs = documentos.filter(
         (doc) => doc.idDocumento === item.idDocumento
@@ -99,12 +144,15 @@ const SeriesMigrate = () => {
       return acc;
     }, {});
 
+    const sendData = {
+      empresa: empresa,
+      establecimiento: establecimiento_destino,
+      documentos: mapDocuments,
+      pos_destino: pos_destino,
+    };
+
     try {
-      const res = await mutateSerieAsync({
-        empresa,
-        establecimiento: establecimiento_destino,
-        documentos: mapDocuments,
-      });
+      const res = await mutateSerieAsync(sendData);
       toast.success(res.message);
       dispatch({ type: "INIT" });
     } catch (e) {
@@ -131,25 +179,32 @@ const SeriesMigrate = () => {
     })) ?? [];
 
   const obtenerDocumentosXEstablecimiento = (
-    establecimiento: number
+    establishmentId: number
   ): ITipoDocsExtentido[] => {
-    const listDocs = dataSeries?.establecimientos?.find(
-      (item) => item.id === establecimiento
+    const establishment = dataSeries?.establecimientos?.find(
+      (item) => item.id === establishmentId
+    );
+
+    const establishmentCode =
+      establishment?.codigo === "0000" ? "PRINCIPAL" : establishment?.codigo;
+
+    const posItem = establishment?.pos.find(
+      (item) => item.id === Number(watch.pos_origen)
     );
 
     return (
-      listDocs?.documentos?.map((doc) => {
+      posItem?.documentos?.map((doc) => {
         return {
           id: doc.id,
           nombre: doc.nombre,
           estado: !doc.estado,
-          codigo: listDocs?.codigo, // Add the missing 'codigo' property
-          series: doc.series.map((item) => {
+          codigo: String(establishment?.codigo),
+          series: doc.series.map((serie) => {
             return {
-              id: item.id,
-              serie: item.serie,
-              aliasEstablecimiento:
-                listDocs?.codigo === "0000" ? "PRINCIPAL" : listDocs?.codigo,
+              id: serie.id,
+              serie: serie.serie,
+              estado: !serie.estado,
+              aliasEstablecimiento: establishmentCode,
             };
           }),
         };
@@ -158,11 +213,11 @@ const SeriesMigrate = () => {
   };
 
   const establecimientosOrigenDisponibles = listEstablecimientos.filter(
-    (item) => item.value !== watch("establecimiento_destino")
+    (item) => item.value !== Number(watch.establecimiento_destino)
   );
 
   const establecimientosDestinoDisponibles = listEstablecimientos.filter(
-    (item) => item.value !== watch("establecimiento")
+    (item) => item.value !== Number(watch.establecimiento)
     //&& !item.label.toString().startsWith("PRINCIPAL")
   );
 
@@ -171,6 +226,8 @@ const SeriesMigrate = () => {
     refetchEstablecimientos();
     setValue("establecimiento", 0);
     setValue("establecimiento_destino", 0);
+    setValue("pos_origen", 0);
+    setValue("pos_destino", 0);
     setSeriesOf(initialCard);
   };
 
@@ -242,7 +299,7 @@ const SeriesMigrate = () => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={6}>
                 <label className="text-[11px]">
                   Establecimiento origen:{" "}
                   <CachedIcon
@@ -293,7 +350,7 @@ const SeriesMigrate = () => {
                         }
                         onChange={(e) => {
                           const value = (e as SingleValue<IOption>)?.value ?? 0;
-
+                          setValue("pos_origen", 0);
                           setSeriesOf(initialCard);
                           field.onChange(value);
                         }}
@@ -302,7 +359,45 @@ const SeriesMigrate = () => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={6}>
+                <label className="text-[11px]">POS origen: </label>
+                <Controller
+                  name="pos_origen"
+                  control={control}
+                  render={({ field }) => {
+                    return (
+                      <SelectSimple
+                        {...field}
+                        className="pos-origen"
+                        classNamePrefix="select"
+                        isSearchable={false}
+                        isLoading={isLoadingPosOrigen}
+                        options={listPosOrigen}
+                        isOptionDisabled={(option) => Boolean(option.disabled)}
+                        placeholder="Seleccione pos origen"
+                        error={!!errors.pos_origen || isErrorPosOrigen}
+                        helperText={
+                          errors.pos_origen?.message ??
+                          errorPosOrigen?.response.data.message
+                        }
+                        value={
+                          field.value === 0
+                            ? ""
+                            : (listPosOrigen.find(
+                                ({ value }) => Number(value) === field.value
+                              ) as PropsValue<any>)
+                        }
+                        onChange={(e) => {
+                          const value = (e as SingleValue<IOption>)?.value ?? 0;
+                          field.onChange(value);
+                          setSeriesOf(initialCard);
+                        }}
+                      />
+                    );
+                  }}
+                />
+              </Grid>
+              <Grid item xs={6}>
                 <label className="text-[11px] text-green-800">
                   Establecimiento destino:
                 </label>
@@ -342,6 +437,47 @@ const SeriesMigrate = () => {
                         }
                         onChange={(e) => {
                           const value = (e as SingleValue<IOption>)?.value ?? 0;
+                          setValue("pos_destino", 0);
+                          field.onChange(value);
+                        }}
+                      />
+                    );
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={6}>
+                <label className="text-[11px] text-green-800">
+                  POS destino:{" "}
+                </label>
+                <Controller
+                  name="pos_destino"
+                  control={control}
+                  render={({ field }) => {
+                    return (
+                      <SelectSimple
+                        {...field}
+                        className="pos-destino"
+                        classNamePrefix="select"
+                        isSearchable={false}
+                        isLoading={isLoadingPosDestino}
+                        options={listPosDestino}
+                        isOptionDisabled={(option) => Boolean(option.disabled)}
+                        placeholder="Seleccione pos origen"
+                        error={!!errors.pos_destino || isErrorPosDestino}
+                        helperText={
+                          errors.pos_destino?.message ??
+                          errorPosDestino?.response.data.message
+                        }
+                        value={
+                          field.value === 0
+                            ? ""
+                            : (listPosDestino.find(
+                                ({ value }) => Number(value) === field.value
+                              ) as PropsValue<any>)
+                        }
+                        onChange={(e) => {
+                          const value = (e as SingleValue<IOption>)?.value ?? 0;
                           field.onChange(value);
                         }}
                       />
@@ -374,7 +510,7 @@ const SeriesMigrate = () => {
                     )}
                     <ul>
                       {obtenerDocumentosXEstablecimiento(
-                        getValues("establecimiento")
+                        Number(watch.establecimiento)
                       )?.map((doc) => {
                         return (
                           <li key={doc.id}>
@@ -390,6 +526,7 @@ const SeriesMigrate = () => {
                                  * en el estado seriesOf
                                  */
                                 const documentos = getValues("documentos");
+                                console.log(documentos);
                                 if (documentos?.length > 0) {
                                   const seriesLibresOrigen = doc.series.filter(
                                     (item1: any) =>

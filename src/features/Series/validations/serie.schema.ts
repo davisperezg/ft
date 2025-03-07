@@ -9,6 +9,22 @@ export const schemaFormSeries = yup.object({
     .number()
     .positive("Seleccione un establecimiento.")
     .required("El establecimiento es requerido."),
+  pos: yup.object().shape({
+    label: yup.string().required("El POS es requerido."),
+    value: yup.lazy((value) =>
+      typeof value === "string"
+        ? yup
+            .string()
+            .required("El POS es requerido.")
+            .typeError("El POS es requerido.")
+        : typeof value === "number"
+          ? yup
+              .number()
+              .positive("Seleccione un POS.")
+              .required("El POS es requerido.")
+          : yup.boolean().required("El POS es requerido.")
+    ),
+  }),
   documento: yup.object().shape({
     label: yup.string().required("El documento es requerido."),
     value: yup.lazy((value) =>

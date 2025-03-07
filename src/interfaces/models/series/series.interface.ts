@@ -6,9 +6,10 @@ export interface ISeries {
   empresa: number;
   establecimiento: number;
   establecimientos?: IEstablecimientoExtendida[];
-  documentos?: any[];
+  items?: any[];
   serie: string;
   documento: Pick<IOption, "label" | "value">;
+  pos: Pick<IOption, "label" | "value">;
   estado?: boolean;
 }
 
@@ -16,6 +17,8 @@ export interface ISeriesMigrate {
   empresa: number;
   establecimiento: number;
   establecimiento_destino: number;
+  pos_origen: number;
+  pos_destino: number;
   documentos: {
     establecimiento: string;
     idDocumento: number;

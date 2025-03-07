@@ -127,6 +127,7 @@ const TransferList = ({ seriesOf, isReset, control, setValue }: Props) => {
               key={value.serie}
               role="listitem"
               component={"button"}
+              type="button"
               onClick={handleToggle(value)}
             >
               <ListItemIcon>
