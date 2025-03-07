@@ -152,22 +152,28 @@ const SeriesEdit = ({ state, closeEdit }: Props) => {
     const { items, empresa, establecimiento } = values;
 
     const sendDataItems =
-      items?.map((item: any) => {
-        return {
-          ...item.pos,
-          documentos: item.documentos.map((item: any) => {
-            return {
-              ...item,
-              series: item.series.map((item: any) => {
+      items
+        ?.map((item: any) => {
+          return {
+            ...item.pos,
+            documentos: item.documentos
+              .map((item: any) => {
                 return {
-                  serie: item.serie,
-                  id: item.id,
+                  ...item,
+                  series: item.series
+                    .map((item: any) => {
+                      return {
+                        serie: item.serie,
+                        id: item.id,
+                      };
+                    })
+                    .filter((item: any) => !Boolean(item.id)),
                 };
-              }),
-            };
-          }),
-        };
-      }) || [];
+              })
+              .filter((item: any) => item.series.length > 0),
+          };
+        })
+        .filter((item: any) => item.documentos.length > 0) || [];
 
     if (sendDataItems.length === 0)
       return toast.error("No hay series para agregar.");

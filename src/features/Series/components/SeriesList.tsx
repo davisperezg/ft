@@ -117,7 +117,9 @@ const SeriesList = ({ onRowClick }: Props) => {
                     {item.pos.map((pos: any, b: number) => {
                       return (
                         <div key={b} className="ml-[10px]">
-                          {a + 1}.{b + 1}.- {pos.nombre}
+                          <strong>
+                            {a + 1}.{b + 1}.- {pos.nombre}
+                          </strong>
                           {pos.documentos.map((doc: any, c: number) => {
                             return (
                               <div key={c} className="ml-[10px]">
