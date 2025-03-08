@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, Fragment, useEffect, useRef, useState } from "react";
 import logo from "../assets/images/logo_systemfact.png";
 import { storage } from "../utils/storage.utils";
 import { PageEnum } from "../types/enums/page.enum";
@@ -6,6 +6,7 @@ import {
   IAuthEmpresa,
   IAuthEmpresas,
   IAuthEstablecimiento,
+  IAuthPOS,
   IAuthPayload,
 } from "../interfaces/models/auth/auth.interface";
 import { useUserStore } from "../store/zustand/user-zustand";
@@ -23,8 +24,7 @@ const Header = ({ result }: IHeader) => {
   const labelRef = useRef<HTMLLabelElement>(null);
   const [selectedOption, setSelectedOption] = useState("");
   //const [empresaActual, setEmpresaActual] = useState<IAuthEmpresa | null>(null);
-  //const [establecimientoActual, setEstablecimientoActual] =
-  useState<IAuthEstablecimiento | null>(null);
+  //const [establecimientoActual, setEstablecimientoActual] = useState<IAuthEstablecimiento | null>(null);
   const [EMPRESAS_ASIGNADAS, setEmpresasAsignadas] = useState<IAuthEmpresas[]>(
     []
   );
@@ -37,6 +37,8 @@ const Header = ({ result }: IHeader) => {
   const [ESTABLECIMIENTOS_INACTIVOS, setEstablecimientosInactivos] = useState<
     boolean | null
   >(null);
+
+  const [POS_INACTIVOS, setPosInactivos] = useState<boolean | null>(null);
 
   const closeApp = () => {
     storage.clear("SESSION");
@@ -100,7 +102,7 @@ const Header = ({ result }: IHeader) => {
 
           if (!selectedOption) {
             setSelectedOption(
-              `idEmpresa:${id},idEstablecimiento:${establecimiento?.id}`
+              `idEmpresa:${id},idEstablecimiento:${establecimiento?.id},idPos:${establecimiento?.pos?.id}`
             );
           }
 
@@ -145,11 +147,26 @@ const Header = ({ result }: IHeader) => {
           }
           // Fin Si un establecimiento esta desactivado tomara uno por defecto
 
+          const posSeleccionado = establecimientoSeleccionado?.pos;
+
+          if (!posSeleccionado) {
+            setPosInactivos(true);
+            sessionStorage.removeItem("empresaActual");
+            return;
+          }
+
+          const posData = (establecimientoData?.pos as any).find(
+            (pos: any) => pos.id === posSeleccionado?.id
+          )!;
+
           setUserGlobal({
             ...result,
             empresaActual: {
               ...empresaSeleccion,
-              establecimiento: establecimientoData,
+              establecimiento: {
+                ...establecimientoData,
+                pos: posData,
+              },
             },
           });
 
@@ -157,17 +174,21 @@ const Header = ({ result }: IHeader) => {
             "empresaActual",
             JSON.stringify({
               ...empresaSeleccion,
-              establecimiento: establecimientoData,
+              establecimiento: {
+                ...establecimientoData,
+                pos: posData,
+              },
             })
           );
         } else {
           // Si no existe una empresa por defecto, se asignara una
           if (result.empresaActual) {
             const empresaDefault = result.empresaActual as IAuthEmpresa;
+            console.log(result);
             //setEmpresaActual(empresaDefault);
 
             setSelectedOption(
-              `idEmpresa:${empresaDefault?.id},idEstablecimiento:${empresaDefault?.establecimiento?.id}`
+              `idEmpresa:${empresaDefault?.id},idEstablecimiento:${empresaDefault?.establecimiento?.id},idPos:${empresaDefault?.establecimiento?.pos?.id}`
             );
 
             sessionStorage.setItem(
@@ -207,8 +228,10 @@ const Header = ({ result }: IHeader) => {
     const selectedValue = event.target.value;
 
     const valores = obtenerValoresSelect(selectedValue);
+
     const idEmpresa = valores.idEmpresa;
     const idEstablecimiento = valores.idEstablecimiento;
+    const idPos = valores.idPos;
 
     const getEmpresa = EMPRESAS_ASIGNADAS?.find(
       (empresa: any) => empresa.id === idEmpresa
@@ -218,15 +241,22 @@ const Header = ({ result }: IHeader) => {
       (est: any) => est.id === idEstablecimiento
     );
 
+    const getPos = getEstablecimiento?.pos?.find(
+      (pos: any) => pos.id === idPos
+    );
+
     if (getEmpresa) {
       const { establecimientos: _, ...rest } = getEmpresa;
 
       const empresaNueva = {
         ...rest,
-        establecimiento: getEstablecimiento,
+        establecimiento: {
+          ...getEstablecimiento,
+          pos: getPos,
+        },
       };
 
-      const cambiar = confirm("Estas seguro que quieres cambiar de sucursal?");
+      const cambiar = confirm("Estas seguro que quieres cambiar de POS?");
       if (cambiar) {
         setSelectedOption(selectedValue);
         sessionStorage.setItem("empresaActual", JSON.stringify(empresaNueva));
@@ -266,11 +296,18 @@ const Header = ({ result }: IHeader) => {
                   Tus empresas estan inactivas.
                 </span>
               </div>
+            ) : ESTABLECIMIENTOS_INACTIVOS ? (
+              <div className="mr-[20px]">
+                <span className="text-danger font-medium">
+                  Tus establecimientos estan inactivos.
+                </span>
+              </div>
             ) : (
-              ESTABLECIMIENTOS_INACTIVOS && (
+              POS_INACTIVOS &&
+              POS_INACTIVOS !== null && (
                 <div className="mr-[20px]">
                   <span className="text-danger font-medium">
-                    Tus establecimientos estan inactivos.
+                    No cuentas con POS activos.
                   </span>
                 </div>
               )
@@ -278,7 +315,8 @@ const Header = ({ result }: IHeader) => {
 
             {!EMPRESAS_ASIGNADAS ||
               EMPRESAS_ASIGNADAS?.length === 0 ||
-              hasInactives || (
+              hasInactives ||
+              (POS_INACTIVOS && POS_INACTIVOS !== null) || (
                 <>
                   <div className="mr-[20px] w-[150px]">
                     <select
@@ -287,27 +325,41 @@ const Header = ({ result }: IHeader) => {
                       value={selectedOption}
                     >
                       {EMPRESAS_ASIGNADAS?.map((item) => {
+                        const companyStatus = item.estado ? "🟢" : "🔴";
+                        const companyLabel = `${companyStatus}${item.nombre_comercial}`;
                         return (
                           <optgroup
-                            key={item.ruc}
-                            label={`${item.nombre_comercial} - ${
-                              item.estado ? "Activo" : "Inactivo"
-                            }`}
+                            key={`emp-${item.ruc}`}
+                            label={companyLabel}
                           >
                             {item.establecimientos?.map((est) => {
+                              const establishmentStatus = item.estado
+                                ? "🟢"
+                                : "🔴";
+                              const establishmentLabel = `${establishmentStatus}[EST]:[${est.codigo}]:${est.denominacion}`;
                               return (
-                                <option
-                                  key={est.id}
-                                  disabled={!est.estado || !item.estado}
-                                  value={`idEmpresa:${item.id},idEstablecimiento:${est.id}`}
-                                >
-                                  {`${est.codigo} - ${est.denominacion} -
-                                ${
-                                  item.estado && est.estado
-                                    ? "Activo"
-                                    : "Inactivo"
-                                }`}
-                                </option>
+                                <Fragment key={`est-${est.id}-${est.codigo}`}>
+                                  <option disabled>{establishmentLabel}</option>
+                                  {/* Lista de POS dentro del establecimiento */}
+                                  {est.pos?.map((pos) => {
+                                    const posCode = `${pos.estado ? "🟢" : "🔴"}`;
+                                    const posLabel = `${posCode}[POS]:[${pos.codigo}]:${pos.nombre}`;
+                                    return (
+                                      <option
+                                        key={pos.codigo}
+                                        value={`idEmpresa:${item.id},idEstablecimiento:${est.id},idPos:${pos.id}`}
+                                        disabled={
+                                          !est.estado ||
+                                          !item.estado ||
+                                          !pos.estado
+                                        } // Deshabilitar si el establecimiento, empresa o pos están inactivos
+                                      >
+                                        &nbsp;&nbsp;&nbsp;
+                                        {posLabel}
+                                      </option>
+                                    );
+                                  })}
+                                </Fragment>
                               );
                             })}
                           </optgroup>

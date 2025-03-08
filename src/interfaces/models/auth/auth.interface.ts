@@ -5,6 +5,7 @@ import { IEmpresa } from "../empresa/empresa.interface";
 import { IEstablecimiento } from "../establecimiento/establecimiento.interface";
 import { ISeries } from "../series/series.interface";
 import { ITipoDoc } from "../../features/tipo-docs-cpe/tipo-docs.interface";
+import { IPos } from "../pos/pos.interface";
 
 interface IAuthSeries extends Pick<ISeries, "estado" | "id" | "serie"> {
   numero?: string;
@@ -14,6 +15,11 @@ interface IAuthSeries extends Pick<ISeries, "estado" | "id" | "serie"> {
 interface IAuthTipoDocs extends Pick<ITipoDoc, "id" | "nombre" | "codigo"> {
   estado: boolean;
   series: IAuthSeries[];
+}
+
+export interface IAuthPOS extends Pick<IPos, "id" | "nombre" | "codigo"> {
+  estado: boolean;
+  documentos?: IAuthTipoDocs[];
 }
 
 export interface IAuthEstablecimiento
@@ -31,7 +37,7 @@ export interface IAuthEstablecimiento
       | "logo"
     >
   > {
-  documentos?: IAuthTipoDocs[];
+  pos?: IAuthPOS;
   configuraciones?: IConfigEstablecimiento[];
 }
 
@@ -54,7 +60,9 @@ export interface IAuthEmpresa
 }
 
 export interface IAuthEmpresas extends Omit<IAuthEmpresa, "establecimiento"> {
-  establecimientos?: IAuthEstablecimiento[];
+  establecimientos?: (Omit<IAuthEstablecimiento, "pos"> & {
+    pos?: IAuthPOS[];
+  })[];
 }
 
 export interface IAuthPayload {
