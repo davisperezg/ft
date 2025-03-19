@@ -36,7 +36,7 @@ const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
   const setMenuSelected = useTabStore((state) => state.setMenuSelected);
 
   const documentos =
-    (userGlobal?.empresaActual?.establecimiento
+    (userGlobal?.empresaActual?.establecimiento?.pos
       ?.documentos as ITipoDocsExtentido[]) ?? [];
 
   const loadMenu = () => {

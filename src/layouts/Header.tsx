@@ -112,7 +112,7 @@ const Header = ({ result }: IHeader) => {
           //setEmpresaActual(empresaData);
 
           const establecimientosAsignadas =
-            (empresaData.establecimientos! as IAuthEstablecimiento[]) ?? [];
+            (empresaData?.establecimientos! as IAuthEstablecimiento[]) ?? [];
           //setEstablecimientosAsignadas(establecimientosAsignadas);
 
           const hayEstablecimientosInactivas = establecimientosAsignadas?.every(
@@ -307,7 +307,7 @@ const Header = ({ result }: IHeader) => {
               POS_INACTIVOS !== null && (
                 <div className="mr-[20px]">
                   <span className="text-danger font-medium">
-                    No cuentas con POS activos.
+                    POS inactivos o sin serie asignada.
                   </span>
                 </div>
               )
