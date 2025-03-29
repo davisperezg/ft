@@ -18,4 +18,5 @@ export interface IFormInvoice
   moneda: string;
   details: IFormInvoiceDetail[];
   observaciones?: string[];
+  pos: number;
 }

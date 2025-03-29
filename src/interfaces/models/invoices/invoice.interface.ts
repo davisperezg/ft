@@ -9,6 +9,7 @@ import {
   IInvoiceDetails,
   IQueryDetailsInvoice,
 } from "./invoice-details.interface";
+import { IPos } from "../pos/pos.interface";
 
 export interface IInvoice {
   id?: number;
@@ -48,6 +49,7 @@ export interface IInvoice {
   updatedAt?: Date;
   borrador?: boolean;
   invoices_details: IInvoiceDetails[];
+  pos: IPos;
 }
 
 export interface IQueryInvoice {

@@ -17,8 +17,9 @@ interface IAuthTipoDocs extends Pick<ITipoDoc, "id" | "nombre" | "codigo"> {
   series: IAuthSeries[];
 }
 
-export interface IAuthPOS extends Pick<IPos, "id" | "nombre" | "codigo"> {
-  estado: boolean;
+export interface IAuthPOS
+  extends Partial<Pick<IPos, "id" | "nombre" | "codigo">> {
+  estado?: boolean;
   documentos?: IAuthTipoDocs[];
 }
 

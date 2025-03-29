@@ -110,8 +110,8 @@ const FacturaScreen = () => {
     }
   };
 
-  //const [format, setFormat] = useState<string | undefined>("");
-  const CPE = userGlobal?.empresaActual?.establecimiento?.documentos?.find(
+  console.log(userGlobal?.empresaActual?.establecimiento);
+  const CPE = userGlobal?.empresaActual?.establecimiento?.pos?.documentos?.find(
     (doc) => String(doc.nombre).toUpperCase() === "FACTURA"
   );
 
@@ -446,6 +446,7 @@ const FacturaScreen = () => {
       establecimiento: Number(userGlobal?.empresaActual?.establecimiento?.id),
       borrador: borrador,
       id: values.id,
+      pos: Number(userGlobal?.empresaActual?.establecimiento?.pos?.id),
     };
 
     console.log(data);
@@ -483,32 +484,35 @@ const FacturaScreen = () => {
             ...userGlobal?.empresaActual,
             establecimiento: {
               ...userGlobal?.empresaActual?.establecimiento,
-              documentos:
-                userGlobal?.empresaActual?.establecimiento?.documentos?.map(
-                  (doc) => {
-                    if (doc.nombre === CPE?.nombre) {
-                      return {
-                        ...doc,
-                        series: doc.series.map((item) => {
-                          if (item.serie === serie?.serie) {
+              pos: {
+                ...userGlobal?.empresaActual?.establecimiento?.pos,
+                documentos:
+                  userGlobal?.empresaActual?.establecimiento?.pos?.documentos?.map(
+                    (doc) => {
+                      if (doc.nombre === CPE?.nombre) {
+                        return {
+                          ...doc,
+                          series: doc.series.map((item) => {
+                            if (item.serie === serie?.serie) {
+                              return {
+                                ...item,
+                                numero: data.numero,
+                                numeroConCeros: data.numeroConCeros,
+                              };
+                            }
                             return {
                               ...item,
-                              numero: data.numero,
-                              numeroConCeros: data.numeroConCeros,
                             };
-                          }
-                          return {
-                            ...item,
-                          };
-                        }),
-                      };
-                    } else {
-                      return {
-                        ...doc,
-                      };
+                          }),
+                        };
+                      } else {
+                        return {
+                          ...doc,
+                        };
+                      }
                     }
-                  }
-                ),
+                  ),
+              },
             },
           };
 
