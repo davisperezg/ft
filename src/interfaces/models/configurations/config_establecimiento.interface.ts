@@ -1,3 +1,4 @@
 export interface IConfigEstablecimiento {
-  enviar_inmediatamente_a_sunat: boolean;
+  envio_sunat_modo: string;
+  envio_sunat_job: boolean;
 }

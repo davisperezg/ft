@@ -25,18 +25,12 @@ const Header = ({ result }: IHeader) => {
   const [selectedOption, setSelectedOption] = useState("");
   //const [empresaActual, setEmpresaActual] = useState<IAuthEmpresa | null>(null);
   //const [establecimientoActual, setEstablecimientoActual] = useState<IAuthEstablecimiento | null>(null);
-  const [EMPRESAS_ASIGNADAS, setEmpresasAsignadas] = useState<IAuthEmpresas[]>(
-    []
-  );
-  const [EMPRESAS_INACTIVAS, setEmpresasInactivas] = useState<boolean | null>(
-    null
-  );
+  const [EMPRESAS_ASIGNADAS, setEmpresasAsignadas] = useState<IAuthEmpresas[]>([]);
+  const [EMPRESAS_INACTIVAS, setEmpresasInactivas] = useState<boolean | null>(null);
   // const [ESTABLECIMIENTOS_ASIGNADOS, setEstablecimientosAsignadas] = useState<
   //   IAuthEstablecimiento[]
   // >([]);
-  const [ESTABLECIMIENTOS_INACTIVOS, setEstablecimientosInactivos] = useState<
-    boolean | null
-  >(null);
+  const [ESTABLECIMIENTOS_INACTIVOS, setEstablecimientosInactivos] = useState<boolean | null>(null);
 
   const [POS_INACTIVOS, setPosInactivos] = useState<boolean | null>(null);
 
@@ -85,18 +79,13 @@ const Header = ({ result }: IHeader) => {
       if (empresasAsignadas && empresasAsignadas?.length > 0) {
         setEmpresasAsignadas(empresasAsignadas);
 
-        const hayEmpresasInactivas = empresasAsignadas.every(
-          (emp) => !emp.estado
-        );
+        const hayEmpresasInactivas = empresasAsignadas.every((emp) => !emp.estado);
         setEmpresasInactivas(hayEmpresasInactivas);
-
         const empresaStorage = sessionStorage.getItem("empresaActual");
 
         // Si ya existe una empresa seleccionada por defecto
         if (empresaStorage) {
-          const empresaSeleccion = JSON.parse(
-            String(empresaStorage)
-          ) as IAuthEmpresa;
+          const empresaSeleccion = JSON.parse(String(empresaStorage)) as IAuthEmpresa;
 
           const { id, establecimiento } = empresaSeleccion;
 
@@ -106,18 +95,13 @@ const Header = ({ result }: IHeader) => {
             );
           }
 
-          const empresaData = empresasAsignadas.find(
-            (emp) => emp.id === empresaSeleccion.id
-          )!;
+          const empresaData = empresasAsignadas.find((emp) => emp.id === empresaSeleccion.id)!;
           //setEmpresaActual(empresaData);
 
-          const establecimientosAsignadas =
-            (empresaData?.establecimientos! as IAuthEstablecimiento[]) ?? [];
+          const establecimientosAsignadas = (empresaData?.establecimientos! as IAuthEstablecimiento[]) ?? [];
           //setEstablecimientosAsignadas(establecimientosAsignadas);
 
-          const hayEstablecimientosInactivas = establecimientosAsignadas?.every(
-            (emp) => !emp.estado
-          );
+          const hayEstablecimientosInactivas = establecimientosAsignadas?.every((emp) => !emp.estado);
           setEstablecimientosInactivos(Boolean(hayEstablecimientosInactivas));
 
           // Si un establecimiento esta desactivado tomara uno por defecto
@@ -131,6 +115,7 @@ const Header = ({ result }: IHeader) => {
           const establecimientoData = establecimientosAsignadas.find(
             (est) => est.id === establecimientoSeleccionado.id
           )!;
+
           //setEstablecimientoActual(establecimientoData);
 
           // Si todos los establecimientos estan desactivados
@@ -139,7 +124,7 @@ const Header = ({ result }: IHeader) => {
             return;
           } else {
             // Buscara otro establecimiendo con estado activo y lo tomara por defecto
-            if (!establecimientoData.estado) {
+            if (!establecimientoData?.estado) {
               sessionStorage.removeItem("empresaActual");
               window.location.reload();
               return;
@@ -155,9 +140,7 @@ const Header = ({ result }: IHeader) => {
             return;
           }
 
-          const posData = (establecimientoData?.pos as any).find(
-            (pos: any) => pos.id === posSeleccionado?.id
-          )!;
+          const posData = (establecimientoData?.pos as any).find((pos: any) => pos.id === posSeleccionado?.id)!;
 
           setUserGlobal({
             ...result,
@@ -184,22 +167,21 @@ const Header = ({ result }: IHeader) => {
           // Si no existe una empresa por defecto, se asignara una
           if (result.empresaActual) {
             const empresaDefault = result.empresaActual as IAuthEmpresa;
-            console.log(result);
+
             //setEmpresaActual(empresaDefault);
 
             setSelectedOption(
               `idEmpresa:${empresaDefault?.id},idEstablecimiento:${empresaDefault?.establecimiento?.id},idPos:${empresaDefault?.establecimiento?.pos?.id}`
             );
 
-            sessionStorage.setItem(
-              "empresaActual",
-              JSON.stringify(empresaDefault)
-            );
+            sessionStorage.setItem("empresaActual", JSON.stringify(empresaDefault));
           }
           // else {
           //   setEmpresaActual(null);
           // }
         }
+      } else {
+        sessionStorage.removeItem("empresaActual");
       }
     }
   }, [result, selectedOption, setUserGlobal]);
@@ -233,17 +215,11 @@ const Header = ({ result }: IHeader) => {
     const idEstablecimiento = valores.idEstablecimiento;
     const idPos = valores.idPos;
 
-    const getEmpresa = EMPRESAS_ASIGNADAS?.find(
-      (empresa: any) => empresa.id === idEmpresa
-    );
+    const getEmpresa = EMPRESAS_ASIGNADAS?.find((empresa: any) => empresa.id === idEmpresa);
 
-    const getEstablecimiento = getEmpresa?.establecimientos?.find(
-      (est: any) => est.id === idEstablecimiento
-    );
+    const getEstablecimiento = getEmpresa?.establecimientos?.find((est: any) => est.id === idEstablecimiento);
 
-    const getPos = getEstablecimiento?.pos?.find(
-      (pos: any) => pos.id === idPos
-    );
+    const getPos = getEstablecimiento?.pos?.find((pos: any) => pos.id === idPos);
 
     if (getEmpresa) {
       const { establecimientos: _, ...rest } = getEmpresa;
@@ -272,9 +248,7 @@ const Header = ({ result }: IHeader) => {
       {/* absolute */}
       <header
         className={`bg-white w-full flex h-[60px] p-[10px] dark:bg-gray-700 ${
-          page.pageComplete && page.namePage === PageEnum.SCREEN_FACTURA
-            ? "shadow-lg z-[1] fixed"
-            : "relative"
+          page.pageComplete && page.namePage === PageEnum.SCREEN_FACTURA ? "shadow-lg z-[1] fixed" : "relative"
         }`}
       >
         <div className={`w-full flex justify-between`}>
@@ -285,30 +259,22 @@ const Header = ({ result }: IHeader) => {
             {EMPRESAS_ASIGNADAS?.length === 0 ? (
               (!userGlobal?.empresas && !userGlobal?.empresaActual) || (
                 <div className="mr-[20px]">
-                  <span className="text-danger font-medium">
-                    Usted no pertenece a ninguna empresa.
-                  </span>
+                  <span className="text-danger font-medium">Usted no pertenece a ninguna empresa.</span>
                 </div>
               )
             ) : EMPRESAS_INACTIVAS ? (
               <div className="mr-[20px]">
-                <span className="text-danger font-medium">
-                  Tus empresas estan inactivas.
-                </span>
+                <span className="text-danger font-medium">Tus empresas estan inactivas.</span>
               </div>
             ) : ESTABLECIMIENTOS_INACTIVOS ? (
               <div className="mr-[20px]">
-                <span className="text-danger font-medium">
-                  Tus establecimientos estan inactivos.
-                </span>
+                <span className="text-danger font-medium">Tus establecimientos estan inactivos.</span>
               </div>
             ) : (
               POS_INACTIVOS &&
               POS_INACTIVOS !== null && (
                 <div className="mr-[20px]">
-                  <span className="text-danger font-medium">
-                    POS inactivos o sin serie asignada.
-                  </span>
+                  <span className="text-danger font-medium">POS inactivos o sin serie asignada.</span>
                 </div>
               )
             )}
@@ -328,14 +294,9 @@ const Header = ({ result }: IHeader) => {
                         const companyStatus = item.estado ? "🟢" : "🔴";
                         const companyLabel = `${companyStatus}${item.nombre_comercial}`;
                         return (
-                          <optgroup
-                            key={`emp-${item.ruc}`}
-                            label={companyLabel}
-                          >
+                          <optgroup key={`emp-${item.ruc}`} label={companyLabel}>
                             {item.establecimientos?.map((est) => {
-                              const establishmentStatus = item.estado
-                                ? "🟢"
-                                : "🔴";
+                              const establishmentStatus = item.estado ? "🟢" : "🔴";
                               const establishmentLabel = `${establishmentStatus}[EST]:[${est.codigo}]:${est.denominacion}`;
                               return (
                                 <Fragment key={`est-${est.id}-${est.codigo}`}>
@@ -348,11 +309,7 @@ const Header = ({ result }: IHeader) => {
                                       <option
                                         key={pos.codigo}
                                         value={`idEmpresa:${item.id},idEstablecimiento:${est.id},idPos:${pos.id}`}
-                                        disabled={
-                                          !est.estado ||
-                                          !item.estado ||
-                                          !pos.estado
-                                        } // Deshabilitar si el establecimiento, empresa o pos están inactivos
+                                        disabled={!est.estado || !item.estado || !pos.estado} // Deshabilitar si el establecimiento, empresa o pos están inactivos
                                       >
                                         &nbsp;&nbsp;&nbsp;
                                         {posLabel}
@@ -371,9 +328,7 @@ const Header = ({ result }: IHeader) => {
               )}
 
             <div>
-              <label className="mr-[10px] dark:text-white font-bold">
-                17:52:46 (-5)
-              </label>
+              <label className="mr-[10px] dark:text-white font-bold">17:52:46 (-5)</label>
             </div>
             <div>
               <label
@@ -388,13 +343,8 @@ const Header = ({ result }: IHeader) => {
           {isDropdown && (
             <div className="bg-white absolute whitespace-nowrap min-w-[150px] w-auto right-[20px] top-[30px] shadow-[0_4px_8px_rgba(0,0,0,.3)] z-[2]">
               <ul className="mt-1 mb-1 select-none">
-                <li className="p-1 pl-2 pr-2 hover:bg-bgDefault cursor-pointer">
-                  Configuración de usuario
-                </li>
-                <li
-                  onClick={closeApp}
-                  className="p-1 pl-2 pr-2 hover:bg-bgDefault cursor-pointer border-t"
-                >
+                <li className="p-1 pl-2 pr-2 hover:bg-bgDefault cursor-pointer">Configuración de usuario</li>
+                <li onClick={closeApp} className="p-1 pl-2 pr-2 hover:bg-bgDefault cursor-pointer border-t">
                   Logout
                 </li>
               </ul>

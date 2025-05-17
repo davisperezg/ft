@@ -9,13 +9,7 @@ import { FaTrashAlt } from "react-icons/fa";
 import Button from "@mui/material/Button";
 import ButtonSimple from "../../../components/Material/Button/ButtonSimple";
 import Alert from "@mui/material/Alert";
-import {
-  useForm,
-  Controller,
-  useFieldArray,
-  FormProvider,
-  Resolver,
-} from "react-hook-form";
+import { useForm, Controller, useFieldArray, FormProvider, Resolver } from "react-hook-form";
 import dayjs from "dayjs";
 import ModalObservacion from "../components/Factura/FacturaModalObservacion";
 import ModalProductos from "../components/Factura/FacturaModalProducto";
@@ -47,24 +41,31 @@ import { usePageStore } from "../../../store/zustand/page-zustand";
 import Grid from "@mui/material/Grid2";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { IFormInvoice } from "../../../interfaces/forms/invoices/invoice.interface";
-import {
-  IFeatureInvoice,
-  IFeatureInvoiceProductTable,
-} from "../../../interfaces/features/invoices/invoice.interface";
-import {
-  FORM_INITIAL_INVOICE,
-  FORM_MODAL_PRODUCT_INVOICE,
-} from "../../../config/constants";
-import {
-  _schemaTypeFormInvoice,
-  schemaFormInvoice,
-} from "../validations/invoice.schema";
+import { IFeatureInvoice, IFeatureInvoiceProductTable } from "../../../interfaces/features/invoices/invoice.interface";
+import { FORM_INITIAL_INVOICE, FORM_MODAL_PRODUCT_INVOICE } from "../../../config/constants";
+import { _schemaTypeFormInvoice, schemaFormInvoice } from "../validations/invoice.schema";
+import { SendModeSunat } from "../../../types/enums/send_mode_sunat.enum";
+import { StatusInvoice } from "../../../interfaces/components/invoices/status-invoices.interface";
 //import { DevTool } from "@hookform/devtools";
 
-const initialOptions = {
+const OPTIONS_INITIAL = {
   whatsapp: false,
   correo: false,
   correoPersonalizado: false,
+};
+
+const STATUS_INITIAL: StatusInvoice = {
+  codigo_estado: 0,
+  nombre_estado: "GENERANDO",
+  mensaje: "Generando documento...",
+  invoiceId: 0,
+  loading: false,
+  codigo: "",
+  otros: "",
+  sendMode: "",
+  xml: undefined,
+  cdr: undefined,
+  pdfA4: undefined,
 };
 
 const FacturaScreen = () => {
@@ -82,14 +83,12 @@ const FacturaScreen = () => {
   const [openBackdrop, setBackdrop] = useState(false);
   const [confirmDialog, setConfigDialog] = useState(false);
   const [isDraft, setDraft] = useState(false);
-  const [invoiceRegistered, setInvoiceRegistered] =
-    useState<IDTOQueryInvoiceRegistered | null>(null);
-  const [options, setOptions] = useState(initialOptions);
+  const [invoiceRegistered, setInvoiceRegistered] = useState<IDTOQueryInvoiceRegistered | null>(null);
+  const [options, setOptions] = useState(OPTIONS_INITIAL);
   const [nroWsp, setNroWsp] = useState("");
   const imgRef = useRef<HTMLImageElement | null>(null);
-  const [objectFit, setObjectFit] = useState<"object-cover" | "object-fill">(
-    "object-cover"
-  );
+  const [objectFit, setObjectFit] = useState<"object-cover" | "object-fill">("object-cover");
+  const [statusInvoice, setStatusInvoice] = useState<StatusInvoice | null>(STATUS_INITIAL || null);
 
   const handleCloseBackdrop = () => setBackdrop(false);
   const handleOpenBackdrop = (e: any) => {
@@ -110,13 +109,12 @@ const FacturaScreen = () => {
     }
   };
 
-  console.log(userGlobal?.empresaActual?.establecimiento);
   const CPE = userGlobal?.empresaActual?.establecimiento?.pos?.documentos?.find(
     (doc) => String(doc.nombre).toUpperCase() === "FACTURA"
   );
 
-  const configuracionesEstablecimiento =
-    userGlobal?.empresaActual?.establecimiento?.configuraciones;
+  const configEstablishment = userGlobal?.empresaActual?.establecimiento?.configuraciones?.[0];
+  const sendModeSunat = configEstablishment?.envio_sunat_modo;
 
   const CPE_SERIES = useMemo(() => {
     return CPE?.series.filter((serie) => serie.estado) || [];
@@ -134,9 +132,7 @@ const FacturaScreen = () => {
       numero: CPE_SERIES?.[0]?.numero || "",
       numeroConCeros: CPE_SERIES?.[0]?.numeroConCeros || "",
     },
-    resolver: yupResolver(
-      schemaFormInvoice
-    ) as Resolver<_schemaTypeFormInvoice>,
+    resolver: yupResolver(schemaFormInvoice) as Resolver<_schemaTypeFormInvoice>,
     context: {
       isModalOpen: isActiveModalProductos,
       isModalObsOpen: isActiveModalObs,
@@ -199,10 +195,7 @@ const FacturaScreen = () => {
   };
 
   const actualizarProducto = (posicionTabla: number) => {
-    updateProducts(
-      posicionTabla,
-      getValues("producto") ?? FORM_MODAL_PRODUCT_INVOICE
-    );
+    updateProducts(posicionTabla, getValues("producto") ?? FORM_MODAL_PRODUCT_INVOICE);
     handleCloseProductos();
   };
 
@@ -242,8 +235,7 @@ const FacturaScreen = () => {
         });
         prev.operacion_gravada += round(mtoValorUnitario * cantidad);
         prev.igv += round(igv * cantidad);
-        prev.operacion_total +=
-          round(mtoValorUnitario * cantidad) + round(igv * cantidad);
+        prev.operacion_total += round(mtoValorUnitario * cantidad) + round(igv * cantidad);
       }
 
       //exonerado onerosa
@@ -251,10 +243,7 @@ const FacturaScreen = () => {
         const mtoValorUnitario = round(Number(curr.mtoValorUnitario), DECIMAL);
         const cantidad = Number(curr.cantidad);
         const precioUnitario = mtoValorUnitario + 0;
-        const totalItem = round(
-          Number((mtoValorUnitario + 0) * cantidad),
-          DECIMAL
-        );
+        const totalItem = round(Number((mtoValorUnitario + 0) * cantidad), DECIMAL);
 
         prev.items.push({
           ...curr,
@@ -271,10 +260,7 @@ const FacturaScreen = () => {
         const mtoValorUnitario = round(Number(curr.mtoValorUnitario), DECIMAL);
         const cantidad = Number(curr.cantidad);
         const precioUnitario = mtoValorUnitario + 0;
-        const totalItem = round(
-          Number((mtoValorUnitario + 0) * cantidad),
-          DECIMAL
-        );
+        const totalItem = round(Number((mtoValorUnitario + 0) * cantidad), DECIMAL);
 
         prev.items.push({
           ...curr,
@@ -288,23 +274,9 @@ const FacturaScreen = () => {
 
       //gratuitas gravadas("11", "12", "13", "14", "15", "16", "17"), inafectas("31", "32", "33", "34", "35", "36", "37") e exonorado transfe gratuitas(21)
       if (
-        [
-          "11",
-          "12",
-          "13",
-          "14",
-          "15",
-          "16",
-          "17",
-          "21",
-          "31",
-          "32",
-          "33",
-          "34",
-          "35",
-          "36",
-          "37",
-        ].includes(curr.tipAfeIgv)
+        ["11", "12", "13", "14", "15", "16", "17", "21", "31", "32", "33", "34", "35", "36", "37"].includes(
+          curr.tipAfeIgv
+        )
       ) {
         const mtoValorUnitario = round(Number(curr.mtoValorUnitario), DECIMAL);
         const cantidad = Number(curr.cantidad);
@@ -348,10 +320,7 @@ const FacturaScreen = () => {
 
     if (ruc.length > 0) {
       //filtrar por ruc
-      result =
-        dataEntidades?.filter((item) =>
-          item.numero_documento.toLowerCase().includes(ruc)
-        ) ?? [];
+      result = dataEntidades?.filter((item) => item.numero_documento.toLowerCase().includes(ruc)) ?? [];
     }
 
     return result;
@@ -372,12 +341,7 @@ const FacturaScreen = () => {
         return;
       }
 
-      const {
-        apenomdenunciado,
-        desdepartamento,
-        desprovincia,
-        direstablecimiento,
-      } = entidad.lista[0];
+      const { apenomdenunciado, desdepartamento, desprovincia, direstablecimiento } = entidad.lista[0];
 
       const departamento = String(desdepartamento).toUpperCase().trim();
       const provincia = String(desprovincia).toUpperCase().trim();
@@ -396,16 +360,14 @@ const FacturaScreen = () => {
 
   const monedas =
     dataMonedas?.map((item) => {
-      const abreviado =
-        item.abreviado.charAt(0).toUpperCase() + item.abreviado.slice(1);
+      const abreviado = item.abreviado.charAt(0).toUpperCase() + item.abreviado.slice(1);
       return {
         label: `${item.abrstandar} - (${item.simbolo}) ${abreviado}`,
         value: item.abrstandar,
       };
     }) ?? [];
 
-  const { data: dataFormaPagos, isLoading: isLoadingFormaPagos } =
-    useFormaPago();
+  const { data: dataFormaPagos, isLoading: isLoadingFormaPagos } = useFormaPago();
 
   const formaPagos =
     dataFormaPagos?.map((item) => {
@@ -417,15 +379,19 @@ const FacturaScreen = () => {
 
   const { socket, reconnecting } = useSocketInvoice();
 
+  const handleNewFactura = () => {
+    setSuccess(false);
+    setStatusInvoice(STATUS_INITIAL);
+    setInvoiceRegistered(null);
+  };
+
   const onSubmit = async (values: IFeatureInvoice, borrador: boolean) => {
     setLoading(true);
 
     const { fecha_emision, fecha_vencimiento } = values;
 
     const fechaEmision = dayjs(fecha_emision).toDate();
-    const fechaVencimiento = fecha_vencimiento
-      ? dayjs(fecha_vencimiento).toDate()
-      : undefined;
+    const fechaVencimiento = fecha_vencimiento ? dayjs(fecha_vencimiento).toDate() : undefined;
 
     const data: IFormInvoice = {
       tipo_documento: values.tipo_documento,
@@ -448,14 +414,8 @@ const FacturaScreen = () => {
       id: values.id,
       pos: Number(userGlobal?.empresaActual?.establecimiento?.pos?.id),
     };
-
-    console.log(data);
     // return;
     socket?.volatile.emit("client::newInvoice", data);
-
-    // setTimeout(() => {
-    //   setLoading(false);
-    // }, 5000);
   };
 
   const handleIdInvoice = useCallback(
@@ -486,32 +446,29 @@ const FacturaScreen = () => {
               ...userGlobal?.empresaActual?.establecimiento,
               pos: {
                 ...userGlobal?.empresaActual?.establecimiento?.pos,
-                documentos:
-                  userGlobal?.empresaActual?.establecimiento?.pos?.documentos?.map(
-                    (doc) => {
-                      if (doc.nombre === CPE?.nombre) {
+                documentos: userGlobal?.empresaActual?.establecimiento?.pos?.documentos?.map((doc) => {
+                  if (doc.nombre === CPE?.nombre) {
+                    return {
+                      ...doc,
+                      series: doc.series.map((item) => {
+                        if (item.serie === serie?.serie) {
+                          return {
+                            ...item,
+                            numero: data.numero,
+                            numeroConCeros: data.numeroConCeros,
+                          };
+                        }
                         return {
-                          ...doc,
-                          series: doc.series.map((item) => {
-                            if (item.serie === serie?.serie) {
-                              return {
-                                ...item,
-                                numero: data.numero,
-                                numeroConCeros: data.numeroConCeros,
-                              };
-                            }
-                            return {
-                              ...item,
-                            };
-                          }),
+                          ...item,
                         };
-                      } else {
-                        return {
-                          ...doc,
-                        };
-                      }
-                    }
-                  ),
+                      }),
+                    };
+                  } else {
+                    return {
+                      ...doc,
+                    };
+                  }
+                }),
               },
             },
           };
@@ -524,28 +481,40 @@ const FacturaScreen = () => {
             };
           });
           // sessionStorage.setItem("empresaActual", JSON.stringify(updateSerie));
-          setLoading(data.loading);
+          setLoading(false);
           handleCloseBackdrop();
           break;
         }
 
         case "error": {
-          setLoading(data.loading);
+          setLoading(false);
           handleCloseBackdrop();
           break;
         }
       }
     },
-    [
-      setUserGlobal,
-      setPage,
-      userGlobal,
-      reset,
-      setValue,
-      CPE_SERIES,
-      CPE?.nombre,
-    ]
+    [setUserGlobal, setPage, userGlobal, reset, setValue, CPE_SERIES, CPE?.nombre]
   );
+
+  const handleStatusInvoice = (data: any) => {
+    setStatusInvoice(data);
+    setInvoiceRegistered((old) => {
+      if (old) {
+        return {
+          ...old,
+          enviada_sunat: data.codigo_estado,
+          aceptada_sunat: data.nombre_estado,
+          mensaje_sunat: data.mensaje,
+          codigo_sunat: data?.codigo,
+          otros_sunat: data?.otros,
+          xml: data?.xml,
+          cdr: data?.cdr,
+          pdfA4: data?.pdfA4,
+        };
+      }
+      return null;
+    });
+  };
 
   useEffect(() => {
     const handleOutsideClick = (event: any) => {
@@ -567,6 +536,7 @@ const FacturaScreen = () => {
   useEffect(() => {
     if (socket) {
       socket.on("server::getIdInvoice", handleIdInvoice);
+      socket.on("server::statusInvoice", handleStatusInvoice);
 
       socket.on("exception", (data: any) => {
         toast.error(data.message);
@@ -576,10 +546,11 @@ const FacturaScreen = () => {
       return () => {
         socket.off("error");
         socket.off("server::getIdInvoice", handleIdInvoice);
+        socket.off("server::statusInvoice", handleStatusInvoice);
         socket.off("exception");
       };
     }
-  }, [handleIdInvoice, socket]);
+  }, [handleIdInvoice, socket, handleStatusInvoice]);
 
   useEffect(() => {
     const imgElement = imgRef.current;
@@ -605,8 +576,6 @@ const FacturaScreen = () => {
     };
   }, []);
 
-  console.log(invoiceRegistered);
-
   return (
     <>
       <div className="flex flex-col flex-1 w-full">
@@ -623,20 +592,10 @@ const FacturaScreen = () => {
               </DialogContentText>
 
               <div className="flex gap-2 flex-col mt-3">
-                <Button
-                  fullWidth
-                  color="error"
-                  variant="contained"
-                  onClick={handleCloseConfirmDialog}
-                >
+                <Button fullWidth color="error" variant="contained" onClick={handleCloseConfirmDialog}>
                   Cancelar
                 </Button>
-                <Button
-                  fullWidth
-                  color="success"
-                  variant="contained"
-                  onClick={handleOpenBackdrop}
-                >
+                <Button fullWidth color="success" variant="contained" onClick={handleOpenBackdrop}>
                   Confirmar
                 </Button>
               </div>
@@ -646,10 +605,11 @@ const FacturaScreen = () => {
 
         {loading ? (
           <Backdrop
-            sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+            sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1, display: "flex", flexDirection: "column" }}
             open={openBackdrop}
           >
             <CircularProgress color="inherit" />
+            <label>{statusInvoice?.mensaje}</label>
           </Backdrop>
         ) : (
           success && (
@@ -662,7 +622,7 @@ const FacturaScreen = () => {
                 <Alert
                   icon={false}
                   severity={
-                    invoiceRegistered?.aceptada_sunat === "RECHAZADA" ||
+                    invoiceRegistered?.aceptada_sunat === "RECHAZADO" ||
                     invoiceRegistered?.aceptada_sunat === "ERROR_CONTRIBUYENTE"
                       ? "error"
                       : "success"
@@ -672,34 +632,24 @@ const FacturaScreen = () => {
                   {invoiceRegistered?.borrador
                     ? "Guardado. Los borradores no se envian a SUNAT."
                     : `${
-                        configuracionesEstablecimiento?.find(
-                          (config) => config.enviar_inmediatamente_a_sunat
-                        )
-                          ? invoiceRegistered?.aceptada_sunat === "RECHAZADA"
+                        sendModeSunat !== SendModeSunat.NO_ENVIA
+                          ? invoiceRegistered?.aceptada_sunat === "RECHAZADO"
                             ? "Generado con rechazo."
-                            : invoiceRegistered?.aceptada_sunat ===
-                                "ERROR_CONTRIBUYENTE"
-                              ? "Hubo una excepcion del documento por SUNAT"
+                            : invoiceRegistered?.aceptada_sunat === "ERROR_CONTRIBUYENTE"
+                              ? "Estimado contribuyente SUNAT encontró una excepción en el documento"
                               : "Generado con éxito."
                           : "Generado con éxito. Segun configuraciones este documento no envia a SUNAT."
                       }`}
                 </Alert>
               </DialogTitle>
               <DialogContent>
-                <h3 className="flex justify-center items-center text-[24px] mt-2">
-                  {invoiceRegistered?.documento}
-                </h3>
+                <h3 className="flex justify-center items-center text-[24px] mt-2">{invoiceRegistered?.documento}</h3>
                 <h4 className="flex justify-center items-center text-[24px]">
-                  {invoiceRegistered?.serie}-
-                  {invoiceRegistered?.correlativo_registrado}
+                  {invoiceRegistered?.serie}-{invoiceRegistered?.correlativo_registrado}
                 </h4>
-                <h4 className="flex justify-center items-center text-[24px]">
-                  TOTAL: {invoiceRegistered?.total}
-                </h4>
-                {(!invoiceRegistered?.aceptada_sunat &&
-                  invoiceRegistered?.borrador) ||
-                  invoiceRegistered?.aceptada_sunat === "ERROR_CONTRIBUYENTE" ||
-                  invoiceRegistered?.aceptada_sunat === "RECHAZADA" || (
+                <h4 className="flex justify-center items-center text-[24px]">TOTAL: {invoiceRegistered?.total}</h4>
+                {invoiceRegistered?.aceptada_sunat === "ERROR" ||
+                  invoiceRegistered?.aceptada_sunat === "ERROR_CONTRIBUYENTE" || (
                     <div className="w-full border py-3 px-5 flex justify-center items-center mt-2">
                       <Button
                         className="hover:text-white"
@@ -715,10 +665,8 @@ const FacturaScreen = () => {
                     </div>
                   )}
 
-                {(!invoiceRegistered?.aceptada_sunat &&
-                  invoiceRegistered?.borrador) ||
-                  invoiceRegistered?.aceptada_sunat === "ERROR_CONTRIBUYENTE" ||
-                  invoiceRegistered?.aceptada_sunat === "RECHAZADA" || (
+                {invoiceRegistered?.aceptada_sunat === "ERROR" ||
+                  invoiceRegistered?.aceptada_sunat === "ERROR_CONTRIBUYENTE" || (
                     <div className="w-full border py-3 px-5 flex gap-2 justify-center items-center mt-2">
                       <Button
                         component="a"
@@ -737,50 +685,41 @@ const FacturaScreen = () => {
                       {/* 1000 a 1999	Excepciones	Contribuyente Corregir y volver a enviar la factura */}
                       {/* 2000 a 3999	Errores (Rechazo)	Emitir una nueva factura */}
                       {/* >4000	Observaciones	Corregir en futuras facturas */}
-                      {invoiceRegistered?.aceptada_sunat ===
-                        "ERROR_CONTRIBUYENTE" ||
-                        invoiceRegistered?.aceptada_sunat ===
-                          "ERROR_EXCEPCION" ||
-                        invoiceRegistered?.aceptada_sunat === "ERROR" ||
-                        invoiceRegistered?.aceptada_sunat === null ||
-                        !configuracionesEstablecimiento?.some(
-                          (config) => config.enviar_inmediatamente_a_sunat
-                        ) || (
-                          <>
-                            <Button
-                              component="a"
-                              href={invoiceRegistered?.xml}
-                              variant="contained"
-                              color="success"
-                              className="hover:text-white"
-                            >
-                              DESCARGAR XML
-                            </Button>
-                            <Button
-                              component="a"
-                              href={invoiceRegistered?.cdr}
-                              variant="contained"
-                              color="primary"
-                              className="hover:text-white"
-                            >
-                              DESCARGAR CDR
-                            </Button>
-                          </>
-                        )}
+                      {(invoiceRegistered?.aceptada_sunat === "ACEPTADO" ||
+                        invoiceRegistered?.aceptada_sunat === "RECHAZADO") && (
+                        <>
+                          <Button
+                            component="a"
+                            href={invoiceRegistered?.xml}
+                            variant="contained"
+                            color="success"
+                            className="hover:text-white"
+                          >
+                            DESCARGAR XML
+                          </Button>
+                          <Button
+                            component="a"
+                            href={invoiceRegistered?.cdr}
+                            variant="contained"
+                            color="primary"
+                            className="hover:text-white"
+                          >
+                            DESCARGAR CDR
+                          </Button>
+                        </>
+                      )}
                     </div>
                   )}
 
                 <div className="w-full border py-3 px-5 gap-2 flex flex-col justify-center items-center mt-2 cursor-pointer">
-                  {invoiceRegistered?.aceptada_sunat === "RECHAZADA" ||
-                    invoiceRegistered?.aceptada_sunat ===
-                      "ERROR_CONTRIBUYENTE" ||
-                    (!invoiceRegistered?.aceptada_sunat &&
-                      invoiceRegistered?.borrador) || (
+                  {invoiceRegistered?.aceptada_sunat === "RECHAZADO" ||
+                    invoiceRegistered?.aceptada_sunat === "ERROR_CONTRIBUYENTE" ||
+                    invoiceRegistered?.borrador || (
                       <>
                         <a
                           onClick={() =>
                             setOptions({
-                              ...initialOptions,
+                              ...OPTIONS_INITIAL,
                               whatsapp: true,
                             })
                           }
@@ -828,7 +767,7 @@ const FacturaScreen = () => {
                         <a
                           onClick={() =>
                             setOptions({
-                              ...initialOptions,
+                              ...OPTIONS_INITIAL,
                               correo: true,
                             })
                           }
@@ -849,9 +788,7 @@ const FacturaScreen = () => {
                                   onChange={(e) => setNroWsp(e.target.value)}
                                 />
                               </label>
-                              <button className="border px-2 hover:bg-bordersAux">
-                                Enviar
-                              </button>
+                              <button className="border px-2 hover:bg-bordersAux">Enviar</button>
                             </div>
                           </div>
                         )}
@@ -859,7 +796,7 @@ const FacturaScreen = () => {
                         <a
                           onClick={() =>
                             setOptions({
-                              ...initialOptions,
+                              ...OPTIONS_INITIAL,
                               correoPersonalizado: true,
                             })
                           }
@@ -879,25 +816,19 @@ const FacturaScreen = () => {
                                   onChange={(e) => setNroWsp(e.target.value)}
                                 />
                               </label>
-                              <button className="border px-2 hover:bg-bordersAux">
-                                Enviar
-                              </button>
+                              <button className="border px-2 hover:bg-bordersAux">Enviar</button>
                             </div>
                           </div>
                         )}
                       </>
                     )}
 
-                  <a onClick={() => setSuccess(false)}>Generar otra FACTURA</a>
-                  <a onClick={() => setSuccess(false)}>
-                    Enviar otra BOLETA DE VENTA
-                  </a>
-                  <a onClick={() => alert("ver cmoprobantes")}>
-                    Ver comprobantes
-                  </a>
+                  <a onClick={handleNewFactura}>Generar otra FACTURA</a>
+                  <a onClick={() => setSuccess(false)}>Enviar otra BOLETA DE VENTA</a>
+                  <a onClick={() => alert("ver cmoprobantes")}>Ver comprobantes</a>
                 </div>
                 {invoiceRegistered?.aceptada_sunat === "ERROR_CONTRIBUYENTE" ||
-                  invoiceRegistered?.aceptada_sunat === "RECHAZADA" || (
+                  invoiceRegistered?.aceptada_sunat === "RECHAZADO" || (
                     <div className="w-full border py-3 px-5 flex justify-center items-center mt-2">
                       <Button variant="contained" color="error" fullWidth>
                         ANULAR o comunicar de baja
@@ -906,11 +837,7 @@ const FacturaScreen = () => {
                   )}
 
                 {invoiceRegistered?.borrador ? (
-                  <Alert
-                    icon={false}
-                    severity="error"
-                    className="text-center flex justify-center mt-2"
-                  >
+                  <Alert icon={false} severity="error" className="text-center flex justify-center mt-2">
                     Guardado. Los borradores no se envian a sunat.
                   </Alert>
                 ) : null}
@@ -918,50 +845,37 @@ const FacturaScreen = () => {
                   className={`flex w-full border py-3 px-5 flex-col gap-2 mt-2 ${invoiceRegistered?.borrador || invoiceRegistered?.aceptada_sunat === "ERROR_CONTRIBUYENTE" ? "text-red-600" : "text-green-700"}`}
                 >
                   <strong className="flex items-center">
-                    Enviada a la Sunat?:&nbsp;
-                    {invoiceRegistered?.enviada_sunat === 2 ? (
+                    Enviada a la SUNAT ?:&nbsp;
+                    {invoiceRegistered?.aceptada_sunat === "ACEPTADO" ? (
                       <FaCheck />
-                    ) : invoiceRegistered?.aceptada_sunat ===
-                        "ERROR_EXCEPCION" ||
-                      invoiceRegistered?.aceptada_sunat === null ||
-                      (invoiceRegistered?.aceptada_sunat === "ERROR" &&
-                        !invoiceRegistered?.borrador) ? (
+                    ) : (statusInvoice?.sendMode === SendModeSunat.INMEDIATO && !invoiceRegistered?.borrador) ||
+                      invoiceRegistered?.aceptada_sunat === "ERROR_EXCEPCION" ||
+                      invoiceRegistered?.aceptada_sunat === "EN ESPERA" ||
+                      invoiceRegistered?.aceptada_sunat === "ENVIANDO" ? (
                       <FaCloudUploadAlt />
-                    ) : invoiceRegistered?.aceptada_sunat === "RECHAZADA" ? (
+                    ) : invoiceRegistered?.aceptada_sunat === "RECHAZADO" ? (
                       <FaCheck />
                     ) : (
                       <MdOutlineClose />
                     )}
                   </strong>
                   <strong className="flex items-center">
-                    Aceptada por la Sunat?:&nbsp;
-                    {invoiceRegistered?.aceptada_sunat === "ACEPTADA" ? ( //cpe aceptado
+                    Aceptada por la SUNAT ?:&nbsp;
+                    {invoiceRegistered?.aceptada_sunat === "ACEPTADO" ? (
                       <FaCheck />
-                    ) : (!invoiceRegistered?.aceptada_sunat &&
-                        invoiceRegistered?.borrador) ||
-                      (invoiceRegistered?.aceptada_sunat === "ERROR" &&
-                        invoiceRegistered?.borrador) ? ( //borrador
-                      <MdOutlineClose />
-                    ) : invoiceRegistered?.aceptada_sunat === "RECHAZADA" ? ( //errones generan rechazo de sunat comprobante invalido
-                      "RECHAZADA"
-                    ) : invoiceRegistered?.aceptada_sunat ===
-                        "ERROR_EXCEPCION" ||
-                      invoiceRegistered?.aceptada_sunat === null ||
-                      invoiceRegistered?.aceptada_sunat === "ERROR" ? (
-                      `Tu Factura ${invoiceRegistered?.serie}-${invoiceRegistered?.correlativo_registradoConCeros} ha sido emitida e informada a SUNAT` //Errores de sunat 0100-999 se mostraran como exito y luego seran enviados hasta que sunat los acepte
+                    ) : (statusInvoice?.sendMode === SendModeSunat.INMEDIATO && !invoiceRegistered?.borrador) ||
+                      invoiceRegistered?.aceptada_sunat === "ERROR_EXCEPCION" ||
+                      invoiceRegistered?.aceptada_sunat === "EN ESPERA" ||
+                      invoiceRegistered?.aceptada_sunat === "ENVIANDO" ||
+                      invoiceRegistered?.aceptada_sunat === "RECHAZADO" ? (
+                      invoiceRegistered?.aceptada_sunat
                     ) : (
-                      invoiceRegistered?.aceptada_sunat // Otros errores
+                      <MdOutlineClose />
                     )}
                   </strong>
-                  <strong className="flex items-center">
-                    Código: {invoiceRegistered?.codigo_sunat}
-                  </strong>
-                  <strong className="flex items-center">
-                    Descripción: {invoiceRegistered?.mensaje_sunat}
-                  </strong>
-                  <strong className="flex items-center">
-                    Otros: {invoiceRegistered?.otros_sunat}
-                  </strong>
+                  <strong className="flex items-center">Código: {invoiceRegistered?.codigo_sunat}</strong>
+                  <strong className="flex items-center">Descripción: {invoiceRegistered?.mensaje_sunat}</strong>
+                  <strong className="flex items-center">Otros: {invoiceRegistered?.otros_sunat}</strong>
                 </div>
               </DialogContent>
             </Dialog>
@@ -973,8 +887,8 @@ const FacturaScreen = () => {
             {reconnecting && (
               <Alert severity="error">
                 <strong>
-                  Se produjo un error en el servidor. Estamos trabajando para
-                  solucionarlo. Por favor, inténtalo de nuevo más tarde.
+                  Se produjo un error en el servidor. Estamos trabajando para solucionarlo. Por favor, inténtalo de
+                  nuevo más tarde.
                 </strong>
               </Alert>
             )}
@@ -1033,39 +947,24 @@ const FacturaScreen = () => {
                         ref={imgRef}
                         className={`w-[130px] h-[130px] ${objectFit}`}
                         alt="Logo Empresa"
-                        src={String(
-                          userGlobal?.empresaActual?.establecimiento?.logo
-                        )}
+                        src={String(userGlobal?.empresaActual?.establecimiento?.logo)}
                       />
                     </div>
                   </Grid>
                   <Grid size={8}>
                     <div className="gap-2 flex flex-col justify-start items-start h-full">
                       <span className="text-[22px]">
-                        <strong>
-                          {userGlobal?.empresaActual?.razon_social ??
-                            "Razón social"}
-                        </strong>
+                        <strong>{userGlobal?.empresaActual?.razon_social ?? "Razón social"}</strong>
                       </span>
 
                       <span className="text-[14px]">
-                        {userGlobal?.empresaActual?.establecimiento
-                          ?.direccion ?? "S/A"}
+                        {userGlobal?.empresaActual?.establecimiento?.direccion ?? "S/A"}
                       </span>
 
                       <span className="text-[14px]">
-                        {String(
-                          userGlobal?.empresaActual?.establecimiento
-                            ?.distrito ?? "-"
-                        )}{" "}
-                        {String(
-                          userGlobal?.empresaActual?.establecimiento
-                            ?.provincia ?? "-"
-                        )}{" "}
-                        {String(
-                          userGlobal?.empresaActual?.establecimiento
-                            ?.departamento ?? "-"
-                        )}
+                        {String(userGlobal?.empresaActual?.establecimiento?.distrito ?? "-")}{" "}
+                        {String(userGlobal?.empresaActual?.establecimiento?.provincia ?? "-")}{" "}
+                        {String(userGlobal?.empresaActual?.establecimiento?.departamento ?? "-")}
                       </span>
                     </div>
                   </Grid>
@@ -1087,10 +986,7 @@ const FacturaScreen = () => {
                               const value = e.target.value;
                               const serie = obtenerSerie(value);
                               setValue("numero", String(serie?.numero));
-                              setValue(
-                                "numeroConCeros",
-                                String(serie?.numeroConCeros)
-                              );
+                              setValue("numeroConCeros", String(serie?.numeroConCeros));
                             },
                           })}
                           className="border w-5/12 h-full outline-none cursor-pointer px-[6px] py-[8px]"
@@ -1103,9 +999,7 @@ const FacturaScreen = () => {
                             );
                           })}
                         </select>
-                        <span className="w-2/12 flex justify-center items-center">
-                          -
-                        </span>
+                        <span className="w-2/12 flex justify-center items-center">-</span>
                         <label className="w-5/12 border h-full flex justify-center items-center px-[6px] py-[8px]">
                           {watch("numeroConCeros")}
                         </label>
@@ -1148,10 +1042,7 @@ const FacturaScreen = () => {
                             }
                           }}
                           onClick={() => {
-                            if (
-                              (dataEntidades && dataEntidades?.length > 0) ||
-                              isLoadingEntidades
-                            ) {
+                            if ((dataEntidades && dataEntidades?.length > 0) || isLoadingEntidades) {
                               setOpenSearch(true);
                             }
                           }}
@@ -1167,10 +1058,7 @@ const FacturaScreen = () => {
                     </button>
                     {isOpenSearch && memoEntidades.length > 0 && (
                       <>
-                        <div
-                          className="absolute bg-white w-full z-[1] bottom-[-2px]"
-                          ref={rucSelect}
-                        >
+                        <div className="absolute bg-white w-full z-[1] bottom-[-2px]" ref={rucSelect}>
                           <div className="absolute h-auto max-h-[130px] bg-white w-full border p-1 overflow-y-auto">
                             {isLoadingEntidades ? (
                               <>
@@ -1182,9 +1070,7 @@ const FacturaScreen = () => {
                                   <div
                                     key={item.id}
                                     className={`px-2 py-2 rounded-[6px] hover:bg-primary hover:text-white cursor-pointer ${
-                                      ruc === item.numero_documento
-                                        ? "bg-primary text-white"
-                                        : ""
+                                      ruc === item.numero_documento ? "bg-primary text-white" : ""
                                     }`}
                                     onClick={async () => {
                                       setValue("ruc", item.numero_documento);
@@ -1229,12 +1115,7 @@ const FacturaScreen = () => {
                       name="direccion"
                       control={control}
                       render={({ field }) => (
-                        <InputText
-                          {...field}
-                          hiddenLabel
-                          variant="filled"
-                          placeholder="Dirección (opcional)"
-                        />
+                        <InputText {...field} hiddenLabel variant="filled" placeholder="Dirección (opcional)" />
                       )}
                     />
                   </div>
@@ -1316,17 +1197,13 @@ const FacturaScreen = () => {
                           isSearchable={false}
                           value={[
                             {
-                              label:
-                                "0101 - Venta Interna (productos/servicios)",
+                              label: "0101 - Venta Interna (productos/servicios)",
                               value: "0101",
                             },
-                          ].find(
-                            ({ value }) => Number(value) === Number(field.value)
-                          )}
+                          ].find(({ value }) => Number(value) === Number(field.value))}
                           options={[
                             {
-                              label:
-                                "0101 - Venta Interna (productos/servicios)",
+                              label: "0101 - Venta Interna (productos/servicios)",
                               value: "0101",
                             },
                           ]}
@@ -1349,9 +1226,7 @@ const FacturaScreen = () => {
                           isLoading={isLoadingMonedas}
                           isSearchable={false}
                           placeholder="Moneda"
-                          value={monedas.find(
-                            ({ value }) => String(value) === String(field.value)
-                          )}
+                          value={monedas.find(({ value }) => String(value) === String(field.value))}
                           options={monedas}
                           onChange={(e: any) => {
                             field.onChange(e.value);
@@ -1389,11 +1264,7 @@ const FacturaScreen = () => {
                             return (
                               <tr key={item.uuid}>
                                 <td className="text-right w-[80px]">
-                                  <div
-                                    className={`border border-bordersAux ${
-                                      i === 0 ? "mt-2 mb-1" : "my-1"
-                                    } mr-2`}
-                                  >
+                                  <div className={`border border-bordersAux ${i === 0 ? "mt-2 mb-1" : "my-1"} mr-2`}>
                                     <input
                                       className="w-[80px] px-3 py-2 text-textDisabled text-shadow-disabled cursor-not-allowed"
                                       disabled
@@ -1402,11 +1273,7 @@ const FacturaScreen = () => {
                                   </div>
                                 </td>
                                 <td className="text-left">
-                                  <div
-                                    className={`border border-bordersAux ${
-                                      i === 0 ? "mt-2 mb-1" : "my-1"
-                                    } mr-2`}
-                                  >
+                                  <div className={`border border-bordersAux ${i === 0 ? "mt-2 mb-1" : "my-1"} mr-2`}>
                                     <input
                                       className="w-[120px] px-3 py-2 text-textDisabled text-shadow-disabled cursor-not-allowed"
                                       disabled
@@ -1415,11 +1282,7 @@ const FacturaScreen = () => {
                                   </div>
                                 </td>
                                 <td>
-                                  <div
-                                    className={`border border-bordersAux ${
-                                      i === 0 ? "mt-2 mb-1" : "my-1"
-                                    } mr-2`}
-                                  >
+                                  <div className={`border border-bordersAux ${i === 0 ? "mt-2 mb-1" : "my-1"} mr-2`}>
                                     <input
                                       className="px-3 py-2 w-full text-textDisabled text-shadow-disabled cursor-not-allowed"
                                       disabled
@@ -1428,11 +1291,7 @@ const FacturaScreen = () => {
                                   </div>
                                 </td>
                                 <td className="text-right">
-                                  <div
-                                    className={`border border-bordersAux ${
-                                      i === 0 ? "mt-2 mb-1" : "my-1"
-                                    } mr-2`}
-                                  >
+                                  <div className={`border border-bordersAux ${i === 0 ? "mt-2 mb-1" : "my-1"} mr-2`}>
                                     <input
                                       className="w-[140px] px-3 py-2 text-right text-textDisabled text-shadow-disabled cursor-not-allowed"
                                       disabled
@@ -1441,11 +1300,7 @@ const FacturaScreen = () => {
                                   </div>
                                 </td>
                                 <td className="text-right">
-                                  <div
-                                    className={`border border-bordersAux ${
-                                      i === 0 ? "mt-2 mb-1" : "my-1"
-                                    } mr-2`}
-                                  >
+                                  <div className={`border border-bordersAux ${i === 0 ? "mt-2 mb-1" : "my-1"} mr-2`}>
                                     <input
                                       className="w-[140px] px-3 py-2 text-right text-textDisabled text-shadow-disabled cursor-not-allowed"
                                       disabled
@@ -1524,34 +1379,26 @@ const FacturaScreen = () => {
                 <div className="flex mb-[20px] flex-col gap-2">
                   <div className="flex justify-end w-full h-auto items-center flex-col gap-2">
                     <div className="flex justify-end w-full h-auto items-center">
-                      <div className="px-[5px] text-right block flex-[0_0_16%]">
-                        Ope. Gravada
-                      </div>
+                      <div className="px-[5px] text-right block flex-[0_0_16%]">Ope. Gravada</div>
                       <div className="px-[5px]">
                         <input
                           className="w-[175px] text-right border p-[4px_8px] text-textDisabled text-shadow-disabled cursor-not-allowed"
                           disabled
                           placeholder="0.00"
-                          value={operacionesProductos.operacion_gravada.toFixed(
-                            2
-                          )}
+                          value={operacionesProductos.operacion_gravada.toFixed(2)}
                         />
                       </div>
                     </div>
                     {operacionesProductos.operacion_exonerada > 0 && (
                       <>
                         <div className="flex justify-end w-full h-auto items-center">
-                          <div className="px-[5px] text-right block flex-[0_0_16%]">
-                            Ope. Exonerada
-                          </div>
+                          <div className="px-[5px] text-right block flex-[0_0_16%]">Ope. Exonerada</div>
                           <div className="px-[5px]">
                             <input
                               className="w-[175px] text-right border p-[4px_8px] text-textDisabled text-shadow-disabled cursor-not-allowed"
                               disabled
                               placeholder="0.00"
-                              value={operacionesProductos.operacion_exonerada.toFixed(
-                                2
-                              )}
+                              value={operacionesProductos.operacion_exonerada.toFixed(2)}
                             />
                           </div>
                         </div>
@@ -1560,17 +1407,13 @@ const FacturaScreen = () => {
                     {operacionesProductos.operacion_inafecta > 0 && (
                       <>
                         <div className="flex justify-end w-full h-auto items-center">
-                          <div className="px-[5px] text-right block flex-[0_0_16%]">
-                            Ope. Inafecta
-                          </div>
+                          <div className="px-[5px] text-right block flex-[0_0_16%]">Ope. Inafecta</div>
                           <div className="px-[5px]">
                             <input
                               className="w-[175px] text-right border p-[4px_8px] text-textDisabled text-shadow-disabled cursor-not-allowed"
                               disabled
                               placeholder="0.00"
-                              value={operacionesProductos.operacion_inafecta.toFixed(
-                                2
-                              )}
+                              value={operacionesProductos.operacion_inafecta.toFixed(2)}
                             />
                           </div>
                         </div>
@@ -1579,17 +1422,13 @@ const FacturaScreen = () => {
                     {operacionesProductos.operacion_gratuita > 0 && (
                       <>
                         <div className="flex justify-end w-full h-auto items-center">
-                          <div className="px-[5px] text-right block flex-[0_0_16%]">
-                            Ope. Gratuita
-                          </div>
+                          <div className="px-[5px] text-right block flex-[0_0_16%]">Ope. Gratuita</div>
                           <div className="px-[5px]">
                             <input
                               className="w-[175px] text-right border p-[4px_8px] text-textDisabled text-shadow-disabled cursor-not-allowed"
                               disabled
                               placeholder="0.00"
-                              value={operacionesProductos.operacion_gratuita.toFixed(
-                                2
-                              )}
+                              value={operacionesProductos.operacion_gratuita.toFixed(2)}
                             />
                           </div>
                         </div>
@@ -1597,9 +1436,7 @@ const FacturaScreen = () => {
                     )}
                   </div>
                   <div className="flex justify-end w-full h-auto items-center">
-                    <div className="px-[5px] text-right block flex-[0_0_16%]">
-                      IGV
-                    </div>
+                    <div className="px-[5px] text-right block flex-[0_0_16%]">IGV</div>
                     <div className="px-[5px]">
                       <input
                         className="w-[175px] text-right border p-[4px_8px] text-textDisabled text-shadow-disabled cursor-not-allowed"
@@ -1610,9 +1447,7 @@ const FacturaScreen = () => {
                     </div>
                   </div>
                   <div className="flex justify-end w-full h-auto items-center">
-                    <div className="px-[5px] text-right block flex-[0_0_16%]">
-                      Importe Total
-                    </div>
+                    <div className="px-[5px] text-right block flex-[0_0_16%]">Importe Total</div>
                     <div className="px-[5px]">
                       <input
                         className="w-[175px] text-right border p-[4px_8px] text-textDisabled text-shadow-disabled cursor-not-allowed"
@@ -1623,9 +1458,7 @@ const FacturaScreen = () => {
                     </div>
                   </div>
                   <div className="flex justify-end w-full h-auto items-center mt-4">
-                    <div className="px-[5px] text-right block">
-                      Forma de pago
-                    </div>
+                    <div className="px-[5px] text-right block">Forma de pago</div>
                     <div className="px-[5px]">
                       <Controller
                         name="forma_pago"
@@ -1638,10 +1471,7 @@ const FacturaScreen = () => {
                             isSearchable={false}
                             placeholder="Forma de pago"
                             isLoading={isLoadingFormaPagos}
-                            value={formaPagos.find(
-                              ({ value }) =>
-                                String(value) === String(field.value)
-                            )}
+                            value={formaPagos.find(({ value }) => String(value) === String(field.value))}
                             options={formaPagos}
                             onChange={(e: any) => {
                               field.onChange(e.value);
@@ -1653,18 +1483,13 @@ const FacturaScreen = () => {
                   </div>
                 </div>
 
-                <Divider
-                  orientation="horizontal"
-                  sx={{ marginTop: 0.5, marginBottom: 0.5 }}
-                />
+                <Divider orientation="horizontal" sx={{ marginTop: 0.5, marginBottom: 0.5 }} />
 
                 {/* CAJA IMPORTE EN LETRAS Y OBSERVACIONES */}
                 <div className="flex flex-col flex-1">
                   {/* IMPORTE EN LETRAS  0.000118*/}
                   <div className="flex w-full border">
-                    <span className="px-2 w-auto whitespace-nowrap">
-                      IMPORTE EN LETRAS
-                    </span>
+                    <span className="px-2 w-auto whitespace-nowrap">IMPORTE EN LETRAS</span>
                     <Divider orientation="vertical" />
                     <span className="px-2 bg-bgDisabled w-full text-textDisabled text-shadow-disabled cursor-not-allowed">
                       {numeroALetras(operacionesProductos.operacion_total)}
@@ -1676,21 +1501,13 @@ const FacturaScreen = () => {
                     {fieldsObs.map((obs, i) => {
                       return (
                         <div key={obs.uuid}>
-                          <Divider
-                            orientation="horizontal"
-                            sx={{ marginTop: 0.5, marginBottom: 0.5 }}
-                          />
+                          <Divider orientation="horizontal" sx={{ marginTop: 0.5, marginBottom: 0.5 }} />
                           <div className="flex w-full">
                             <div className="border w-full bg-bgDisabled text-textDisabled text-shadow-disabled cursor-not-allowed">
-                              <span className="px-2 w-auto">
-                                {obs.observacion}
-                              </span>
+                              <span className="px-2 w-auto">{obs.observacion}</span>
                             </div>
                             <div className="w-[60px] flex justify-center items-center">
-                              <button
-                                type="button"
-                                onClick={() => removeObs(i)}
-                              >
+                              <button type="button" onClick={() => removeObs(i)}>
                                 <FaTrashAlt className="cursor-pointer" />
                               </button>
                             </div>
@@ -1732,8 +1549,7 @@ const FacturaScreen = () => {
                         )(e) */}
                       {isDraft && loading ? (
                         <span>
-                          GUARDANDO BORRADOR...{" "}
-                          <CachedIcon className="animate-spin" />
+                          GUARDANDO BORRADOR... <CachedIcon className="animate-spin" />
                         </span>
                       ) : (
                         "GUARDAR COMO BORRADOR"
@@ -1751,8 +1567,7 @@ const FacturaScreen = () => {
                     >
                       {!isDraft && loading ? (
                         <span>
-                          Emitiendo factura...{" "}
-                          <CachedIcon className="animate-spin" />
+                          Emitiendo factura... <CachedIcon className="animate-spin" />
                         </span>
                       ) : (
                         "Emitir Factura"

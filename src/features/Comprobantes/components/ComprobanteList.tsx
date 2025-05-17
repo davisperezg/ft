@@ -22,10 +22,7 @@ import { listInvoices } from "../services/invoice";
 import CPEButtonEnviarSunat from "./ComprobanteButtonEnviarSunat";
 import dayjs from "dayjs";
 import { fixed } from "../../../utils/functions.utils";
-import {
-  IQueryInvoice,
-  IQueryInvoiceList,
-} from "../../../interfaces/models/invoices/invoice.interface";
+import { IQueryInvoice, IQueryInvoiceList } from "../../../interfaces/models/invoices/invoice.interface";
 import { usePaginationStore } from "../../../store/zustand/pagination-zustand";
 import { IPagination } from "../../../components/common/Table/types";
 import { useInvoices } from "../hooks/useInvoices";
@@ -34,6 +31,7 @@ import { DataTable2 } from "../../../components/common/Table/DataTable2";
 import { useReactTable } from "@tanstack/react-table";
 import { VisibilityState } from "@tanstack/react-table";
 import { BasicFeature } from "../../../components/common/Table/features/basic";
+import { SendModeSunat } from "../../../types/enums/send_mode_sunat.enum";
 
 interface ILog {
   type: string;
@@ -56,12 +54,8 @@ const CPEList = () => {
   const [minimizar, setMinimizar] = useState<boolean>(true);
   const DECIMAL = 6;
 
-  const configuracionesEstablecimiento =
-    userGlobal?.empresaActual?.establecimiento?.configuraciones ?? [];
-
-  const ENVIA_DIRECTO_SUNAT = configuracionesEstablecimiento?.some(
-    (config) => config.enviar_inmediatamente_a_sunat
-  );
+  const configEstablishment = userGlobal?.empresaActual?.establecimiento?.configuraciones?.[0];
+  const ENVIA_SUNAT = configEstablishment?.envio_sunat_modo !== SendModeSunat.NO_ENVIA;
 
   const { isPending, data, isFetching, isPlaceholderData } = useInvoices(
     Number(empresa),
@@ -155,18 +149,10 @@ const CPEList = () => {
         header: () => <div className="text-center w-full">Total</div>,
         cell: ({ row }) => {
           //sumar todos los montos menos gratuitos ni igv_gratuitas
-          const mto_operaciones_gravadas = Number(
-            row.original.mto_operaciones_gravadas
-          );
-          const mto_operaciones_exoneradas = Number(
-            row.original.mto_operaciones_exoneradas
-          );
-          const mto_operaciones_inafectas = Number(
-            row.original.mto_operaciones_inafectas
-          );
-          const mto_operaciones_exportacion = Number(
-            row.original.mto_operaciones_exportacion
-          );
+          const mto_operaciones_gravadas = Number(row.original.mto_operaciones_gravadas);
+          const mto_operaciones_exoneradas = Number(row.original.mto_operaciones_exoneradas);
+          const mto_operaciones_inafectas = Number(row.original.mto_operaciones_inafectas);
+          const mto_operaciones_exportacion = Number(row.original.mto_operaciones_exportacion);
           const mto_igv = Number(row.original.mto_igv);
 
           //SUMAR TODOS LOS MONTOS + EL IGV
@@ -268,7 +254,7 @@ const CPEList = () => {
           //const estadoAnul = Number(row.original.estado_anulacion); //null-no enviado, 1-enviado con ticket, 2-aceptado, 3-rechazado
           return (
             <div className="text-[16px] text-center flex justify-center w-full">
-              {!ENVIA_DIRECTO_SUNAT ? (
+              {!ENVIA_SUNAT ? (
                 <>{"-"}</>
               ) : status ? (
                 <ToolTipIconButton titleTooltip="Descargar XML firmado">
@@ -286,8 +272,8 @@ const CPEList = () => {
         minSize: 28,
         enableResizing: false,
         enableSorting: false,
-        visible: ENVIA_DIRECTO_SUNAT,
-        enableHiding: ENVIA_DIRECTO_SUNAT,
+        visible: ENVIA_SUNAT,
+        enableHiding: ENVIA_SUNAT,
       },
       {
         id: "cdr",
@@ -326,17 +312,13 @@ const CPEList = () => {
         minSize: 28,
         enableResizing: false,
         enableSorting: false,
-        visible: ENVIA_DIRECTO_SUNAT,
-        enableHiding: ENVIA_DIRECTO_SUNAT,
+        visible: ENVIA_SUNAT,
+        enableHiding: ENVIA_SUNAT,
       },
       {
         id: "sunat",
         accessorKey: "sunat",
-        header: () => (
-          <div className="text-center w-full">
-            {ENVIA_DIRECTO_SUNAT ? "SUNAT" : ""}
-          </div>
-        ),
+        header: () => <div className="text-center w-full">{ENVIA_SUNAT ? "SUNAT" : ""}</div>,
         cell: ({ row }) => {
           return (
             <div className="text-center w-full">
@@ -378,38 +360,19 @@ const CPEList = () => {
         enableHiding: false,
       },
     ];
-  }, [ENVIA_DIRECTO_SUNAT, DECIMAL, comunicatBaja]);
+  }, [ENVIA_SUNAT, DECIMAL, comunicatBaja]);
 
   // Prefetch múltiples páginas
   useEffect(() => {
     if (!isPlaceholderData && data?.rowCount) {
       queryClient.prefetchQuery({
-        queryKey: [
-          "invoices",
-          empresa,
-          establecimiento,
-          pagination.pageIndex + 1,
-          pagination.pageSize,
-        ],
+        queryKey: ["invoices", empresa, establecimiento, pagination.pageIndex + 1, pagination.pageSize],
         queryFn: () =>
-          listInvoices(
-            Number(empresa),
-            Number(establecimiento),
-            pagination.pageIndex + 1,
-            pagination.pageSize
-          ),
+          listInvoices(Number(empresa), Number(establecimiento), pagination.pageIndex + 1, pagination.pageSize),
         staleTime: 1000 * 60 * 5,
       });
     }
-  }, [
-    data,
-    pagination.pageIndex,
-    pagination.pageSize,
-    empresa,
-    establecimiento,
-    isPlaceholderData,
-    queryClient,
-  ]);
+  }, [data, pagination.pageIndex, pagination.pageSize, empresa, establecimiento, isPlaceholderData, queryClient]);
 
   useEffect(() => {
     if (socket) {
@@ -449,9 +412,7 @@ const CPEList = () => {
           ],
           (prevInvoices: IQueryInvoice) => {
             // Verificar si algún elemento del array items coincide con data.correlativo
-            const hasCorrelativo = prevInvoices.items.find(
-              (item) => item.correlativo === data.correlativo
-            );
+            const hasCorrelativo = prevInvoices.items.find((item) => item.correlativo === data.correlativo);
 
             // Si no hay ningún elemento con el mismo correlativo, agregar data al array items
             if (!hasCorrelativo) {
@@ -470,8 +431,7 @@ const CPEList = () => {
                 // Si ya existe un elemento con el mismo correlativo y cambia de estado, actualizamos files y respuesta sunat
                 if (
                   item.correlativo === data.correlativo &&
-                  (item.estado_operacion !== data.estado_operacion ||
-                    item.estado_operacion === data.estado_operacion)
+                  (item.estado_operacion !== data.estado_operacion || item.estado_operacion === data.estado_operacion)
                 ) {
                   return {
                     ...item,
@@ -481,12 +441,10 @@ const CPEList = () => {
                     mto_operaciones_gravadas: data.mto_operaciones_gravadas,
                     mto_operaciones_exoneradas: data.mto_operaciones_exoneradas,
                     mto_operaciones_inafectas: data.mto_operaciones_inafectas,
-                    mto_operaciones_exportacion:
-                      data.mto_operaciones_exportacion,
+                    mto_operaciones_exportacion: data.mto_operaciones_exportacion,
                     mto_igv: data.mto_igv,
                     respuesta_sunat_codigo: data.respuesta_sunat_codigo,
-                    respuesta_sunat_descripcion:
-                      data.respuesta_sunat_descripcion,
+                    respuesta_sunat_descripcion: data.respuesta_sunat_descripcion,
                     observaciones_sunat: data.observaciones_sunat,
                     estado_operacion: data.estado_operacion,
                     status: data.status,
@@ -513,32 +471,17 @@ const CPEList = () => {
         socket.off("server::newInvoice", receiveInvoice);
       };
     }
-  }, [
-    socket,
-    queryClient,
-    empresa,
-    establecimiento,
-    pagination.pageIndex,
-    pagination.pageSize,
-  ]);
+  }, [socket, queryClient, empresa, establecimiento, pagination.pageIndex, pagination.pageSize]);
 
   useEffect(() => {
     if (socket) {
       const receiveComuBaja = (data: any) => {
         queryClient.setQueryData(
-          [
-            "invoices",
-            empresa,
-            establecimiento,
-            pagination.pageIndex,
-            pagination.pageSize,
-          ],
+          ["invoices", empresa, establecimiento, pagination.pageIndex, pagination.pageSize],
           (prevInvoices: IQueryInvoice) => {
             if (data.invoice) {
               // Verificar si algún elemento del array items coincide con data.correlativo
-              const hasCorrelativo = prevInvoices.items.find(
-                (item) => item.correlativo === data.invoice.correlativo
-              );
+              const hasCorrelativo = prevInvoices.items.find((item) => item.correlativo === data.invoice.correlativo);
 
               // Si ya existe un elemento con el mismo correlativo validamos su cambio de estado
               if (hasCorrelativo) {
@@ -551,10 +494,8 @@ const CPEList = () => {
                     ) {
                       return {
                         ...item,
-                        respuesta_anulacion_codigo:
-                          data.invoice.respuesta_anulacion_codigo,
-                        respuesta_anulacion_descripcion:
-                          data.invoice.respuesta_anulacion_descripcion,
+                        respuesta_anulacion_codigo: data.invoice.respuesta_anulacion_codigo,
+                        respuesta_anulacion_descripcion: data.invoice.respuesta_anulacion_descripcion,
                         observaciones_sunat: data.invoice.observaciones_sunat,
                         estado_anulacion: data.invoice.estado_anulacion,
                         status: data.invoice.status,
@@ -577,37 +518,23 @@ const CPEList = () => {
         socket.off("server::comuBaja", receiveComuBaja);
       };
     }
-  }, [
-    queryClient,
-    socket,
-    empresa,
-    establecimiento,
-    pagination.pageIndex,
-    pagination.pageSize,
-  ]);
+  }, [queryClient, socket, empresa, establecimiento, pagination.pageIndex, pagination.pageSize]);
 
-  const initialVisibleColumn: VisibilityState = columns.reduce(
-    (acc: VisibilityState, item) => {
-      const visible = item.visible ?? true;
-      if (item.id) {
-        acc[item.id] = visible;
-      }
-      return acc;
-    },
-    {}
-  );
-  const [columnVisibility, setColumnVisibility] =
-    useState<VisibilityState>(initialVisibleColumn);
+  const initialVisibleColumn: VisibilityState = columns.reduce((acc: VisibilityState, item) => {
+    const visible = item.visible ?? true;
+    if (item.id) {
+      acc[item.id] = visible;
+    }
+    return acc;
+  }, {});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(initialVisibleColumn);
 
-  const initialSortColumn: SortingState = columns.reduce(
-    (acc: SortingState, item) => {
-      if (item.sortDescFirst && initialVisibleColumn[String(item.id)]) {
-        acc.push({ id: String(item.id), desc: item.sortDescFirst });
-      }
-      return acc;
-    },
-    []
-  );
+  const initialSortColumn: SortingState = columns.reduce((acc: SortingState, item) => {
+    if (item.sortDescFirst && initialVisibleColumn[String(item.id)]) {
+      acc.push({ id: String(item.id), desc: item.sortDescFirst });
+    }
+    return acc;
+  }, []);
   const [sorting, setSorting] = useState<SortingState>(initialSortColumn);
 
   const table = useReactTable({
@@ -643,8 +570,8 @@ const CPEList = () => {
       {reconnecting && (
         <Alert severity="error">
           <strong>
-            Se produjo un error en el servidor. Estamos trabajando para
-            solucionarlo. Por favor, inténtalo de nuevo más tarde.
+            Se produjo un error en el servidor. Estamos trabajando para solucionarlo. Por favor, inténtalo de nuevo más
+            tarde.
           </strong>
         </Alert>
       )}
@@ -654,10 +581,7 @@ const CPEList = () => {
       <div className="flex flex-col mt-2">
         <div className="rounded-[4px] flex flex-row w-full bg-bgDefault p-2 justify-between items-center ">
           <span className="text-default font-bold">Historial</span>
-          <span
-            className="text-default font-bold cursor-pointer"
-            onClick={() => setMinimizar(!minimizar)}
-          >
+          <span className="text-default font-bold cursor-pointer" onClick={() => setMinimizar(!minimizar)}>
             {minimizar ? <FaMinus /> : <FaPlus />}
           </span>
         </div>

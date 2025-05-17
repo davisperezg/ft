@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { schemaFormComuBaja } from "../validations/comunicacion-baja.schema";
 import { IQueryInvoiceList } from "../../../interfaces/models/invoices/invoice.interface";
 import { useUserStore } from "../../../store/zustand/user-zustand";
+import { SendModeSunat } from "../../../types/enums/send_mode_sunat.enum";
 
 interface CPEAcctionListProps {
   row: Row<IQueryInvoiceList>;
@@ -55,12 +56,9 @@ const CPEAcctionList = ({ row, comunicatBaja }: CPEAcctionListProps) => {
   const { socket } = useSocketInvoice();
   const [notify, setNotify] = useState(initialNotify);
   const userGlobal = useUserStore((state) => state.userGlobal);
-  const configuracionesEstablecimiento =
-    userGlobal?.empresaActual?.establecimiento?.configuraciones ?? [];
 
-  const ENVIA_DIRECTO_SUNAT = configuracionesEstablecimiento.some(
-    (config) => config.enviar_inmediatamente_a_sunat
-  );
+  const configEstablishment = userGlobal?.empresaActual?.establecimiento?.configuraciones?.[0];
+  const ENVIA_SUNAT = configEstablishment?.envio_sunat_modo !== SendModeSunat.NO_ENVIA;
 
   const methods = useForm<IComuBaja>({
     defaultValues: {
@@ -89,7 +87,7 @@ const CPEAcctionList = ({ row, comunicatBaja }: CPEAcctionListProps) => {
     [row.index]
   );
 
-  const handleOpenMotivo = useCallback(() => {
+  const handleOpenBaja = useCallback(() => {
     setOpenMotivo(true);
     handleClose();
     setNotify(initialNotify);
@@ -105,15 +103,15 @@ const CPEAcctionList = ({ row, comunicatBaja }: CPEAcctionListProps) => {
     async (values) => {
       setNotify((prev) => ({ ...prev, loading: true }));
       if (comunicatBaja) {
-        comunicatBaja(
-          String(row.original.serie),
-          String(row.original.correlativo),
-          values.motivo
-        );
+        comunicatBaja(String(row.original.serie), String(row.original.correlativo), values.motivo);
       }
     },
     [comunicatBaja, row.original.serie, row.original.correlativo]
   );
+
+  const handleOpenAnular = useCallback(() => {
+    alert("venta");
+  }, []);
 
   useEffect(() => {
     if (socket) {
@@ -124,32 +122,20 @@ const CPEAcctionList = ({ row, comunicatBaja }: CPEAcctionListProps) => {
           mensaje: data.mensaje,
         });
 
-        if (
-          data.estado === "success" &&
-          data.correlativo === row.original.correlativo
-        ) {
+        if (data.estado === "success" && data.correlativo === row.original.correlativo) {
           toast.success(`${data.correlativo}-${data.mensaje}`);
         }
 
-        if (
-          data.estado === "successfull" &&
-          data.correlativo === row.original.correlativo
-        ) {
+        if (data.estado === "successfull" && data.correlativo === row.original.correlativo) {
           toast.success(`${data.correlativo}-${data.mensaje}`);
           handleCloseMotivo();
         }
 
-        if (
-          data.estado === "warning" &&
-          data.correlativo === row.original.correlativo
-        ) {
+        if (data.estado === "warning" && data.correlativo === row.original.correlativo) {
           toast.error(`${data.correlativo}-${data.mensaje}`);
         }
 
-        if (
-          data.estado === "excepcion" &&
-          data.correlativo === row.original.correlativo
-        ) {
+        if (data.estado === "excepcion" && data.correlativo === row.original.correlativo) {
           toast.error(`${data.correlativo}-${data.mensaje}`);
         }
       };
@@ -202,27 +188,27 @@ const CPEAcctionList = ({ row, comunicatBaja }: CPEAcctionListProps) => {
             <MenuItem onClick={handleClose} disableRipple>
               <MdOutlineContentCopy className="text-[18px] mr-1" /> Copiar en...
             </MenuItem>
-            {/*
-            {row.original.estado_anulacion === 2 ||
-            row.original.estado_anulacion === 3 ||
-            row.original.estado_operacion !== 2 ? null : (
-              <MenuItem onClick={handleOpenMotivo} disableRipple>
-                <MdOutlineSettingsBackupRestore className="text-[18px] mr-1" />{" "}
-                Comunicar de baja
+            {ENVIA_SUNAT ? ( //INMEDIATO, MANUAL, PROGRAMADO
+              row.original.estado_operacion === 0 ? ( //MANUAL, PROGRAMADO
+                <MenuItem onClick={handleOpenAnular} disableRipple>
+                  <MdOutlineSettingsBackupRestore className="text-[18px] mr-1" /> Anular
+                </MenuItem>
+              ) : row.original.estado_operacion === 2 && !row.original.estado_anulacion ? ( //SOLO BAJA PARA DOCS ACEPTADOS
+                <MenuItem onClick={handleOpenBaja} disableRipple>
+                  <MdOutlineSettingsBackupRestore className="text-[18px] mr-1" /> Comunicar de baja
+                </MenuItem>
+              ) : null
+            ) : (
+              //NO_ENVIA
+              <MenuItem onClick={handleOpenAnular} disableRipple>
+                <MdOutlineSettingsBackupRestore className="text-[18px] mr-1" /> Anular
               </MenuItem>
             )}
-            */}
-            {ENVIA_DIRECTO_SUNAT ? (
-              <MenuItem onClick={handleOpenMotivo} disableRipple>
-                <MdOutlineSettingsBackupRestore className="text-[18px] mr-1" />{" "}
-                Comunicar de baja
-              </MenuItem>
-            ) : null}
           </MenuDropdown>
         )}
       </div>
 
-      {ENVIA_DIRECTO_SUNAT ? (
+      {ENVIA_SUNAT ? (
         <DialogBeta
           open={openMotivo}
           TransitionComponent={Transition}
@@ -261,38 +247,24 @@ const CPEAcctionList = ({ row, comunicatBaja }: CPEAcctionListProps) => {
           <DialogContentBeta sx={{ padding: 2 }}>
             <div className="flex flex-col">
               <form className="flex flex-col gap-3">
-                <Alert
-                  className="flex justify-center items-center"
-                  severity="warning"
-                >
+                <Alert className="flex justify-center items-center" severity="warning">
                   <div className="flex-col">
-                    <strong className="w-full flex justify-center items-center">
-                      MUY IMPORTANTE:
-                    </strong>
+                    <strong className="w-full flex justify-center items-center">MUY IMPORTANTE:</strong>
                     <span className="flex justify-center items-center text-center">
-                      Si la Comunicación de Baja es rechazada se deberá emitir
-                      una Nota de Crédito para anular el comprobante que no se
-                      pudo anular usando esta opción. Las comunicaciones de baja
-                      de las Boletas de Venta o notas asociadas son enviadas a
-                      la SUNAT o al OSE luego de que el comprobantes asociado
-                      sea aceptada. Esto ocurre normalmente al día siguiente. Si
-                      la Boleta de Venta o nota es rechazada la comunicación de
-                      baja no tiene ningún efecto.
+                      Si la Comunicación de Baja es rechazada se deberá emitir una Nota de Crédito para anular el
+                      comprobante que no se pudo anular usando esta opción. Las comunicaciones de baja de las Boletas de
+                      Venta o notas asociadas son enviadas a la SUNAT o al OSE luego de que el comprobantes asociado sea
+                      aceptada. Esto ocurre normalmente al día siguiente. Si la Boleta de Venta o nota es rechazada la
+                      comunicación de baja no tiene ningún efecto.
                     </span>
                   </div>
                 </Alert>
 
-                {(errors.motivo ??
-                  (notify.estado === "error" ||
-                    notify.estado === "excepcion")) && (
-                  <Alert severity="error">
-                    {errors?.motivo?.message ?? notify.mensaje}
-                  </Alert>
+                {(errors.motivo ?? (notify.estado === "error" || notify.estado === "excepcion")) && (
+                  <Alert severity="error">{errors?.motivo?.message ?? notify.mensaje}</Alert>
                 )}
 
-                {notify.estado === "warning" && (
-                  <Alert severity="info">{notify.mensaje}</Alert>
-                )}
+                {notify.estado === "warning" && <Alert severity="info">{notify.mensaje}</Alert>}
 
                 <div className="w-full">
                   <Controller
@@ -317,9 +289,7 @@ const CPEAcctionList = ({ row, comunicatBaja }: CPEAcctionListProps) => {
                   variant="contained"
                   onClick={(e) => handleSubmit(onSubmit)(e)}
                 >
-                  {notify.loading
-                    ? "Comunicando la baja..."
-                    : "Crear Comunicación de baja"}
+                  {notify.loading ? "Comunicando la baja..." : "Crear Comunicación de baja"}
                 </Button>
               </form>
             </div>

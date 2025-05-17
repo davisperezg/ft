@@ -5,10 +5,7 @@ import { IMoneda } from "../tipo-moneda/moneda.interface";
 import { IFormaPagos } from "../forma-pagos/forma_pagos.interface";
 import { IEntidad } from "../entidad/entidad.interface";
 import { ICPEType } from "../tipo-docs-cpe/tipo-docs.interface";
-import {
-  IInvoiceDetails,
-  IQueryDetailsInvoice,
-} from "./invoice-details.interface";
+import { IInvoiceDetails, IQueryDetailsInvoice } from "./invoice-details.interface";
 import { IPos } from "../pos/pos.interface";
 
 export interface IInvoice {
@@ -50,6 +47,7 @@ export interface IInvoice {
   borrador?: boolean;
   invoices_details: IInvoiceDetails[];
   pos: IPos;
+  envio_sunat_modo: string;
 }
 
 export interface IQueryInvoice {
@@ -80,6 +78,7 @@ export interface IQueryInvoiceList
       | "respuesta_sunat_codigo"
       | "respuesta_sunat_descripcion"
       | "borrador"
+      | "envio_sunat_modo"
     >
   > {
   cliente: string;
@@ -88,6 +87,7 @@ export interface IQueryInvoiceList
   cliente_direccion: string;
   empresa: number;
   establecimiento: number;
+  pos: number;
   moneda_abrstandar: string;
   moneda_simbolo: string;
   forma_pago: string;
@@ -116,7 +116,7 @@ export interface IDTOQueryInvoiceRegistered {
   aceptada_sunat: string;
   borrador: boolean;
   cdr: string;
-  codigo_sunat: number;
+  codigo_sunat: string;
   correlativo_registrado: string;
   correlativo_registradoConCeros: string;
   documento: string;

@@ -8,26 +8,22 @@ import { TiCancel } from "react-icons/ti";
 import ButtonSimple from "../../../components/Material/Button/ButtonSimple";
 import dayjs from "dayjs";
 import { IQueryInvoiceList } from "../../../interfaces/models/invoices/invoice.interface";
-import { useUserStore } from "../../../store/zustand/user-zustand";
 import { usePageStore } from "../../../store/zustand/page-zustand";
 import { PageEnum } from "../../../types/enums/page.enum";
 import { IFeatureInvoice } from "../../../interfaces/features/invoices/invoice.interface";
+import { SendModeSunat } from "../../../types/enums/send_mode_sunat.enum";
+import { useSocketInvoice } from "../../../hooks/useSocket";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 interface IProps {
   row: Row<IQueryInvoiceList>;
 }
 
 const CPEButtonEnviarSunat = ({ row }: IProps) => {
-  const userGlobal = useUserStore((state) => state.userGlobal);
   const setPage = usePageStore((state) => state.setPage);
-
-  const configuracionesEstablecimiento =
-    userGlobal?.empresaActual?.establecimiento?.configuraciones ?? [];
-
-  const ENVIA_DIRECTO_SUNAT = configuracionesEstablecimiento.some(
-    (config) => config.enviar_inmediatamente_a_sunat
-  );
-
+  const { socket } = useSocketInvoice();
+  const sendModeSunat = row.original.envio_sunat_modo;
   const estadoOpe = Number(row.original.estado_operacion); //0-creado, 1-enviando, 2-aceptado, 3-rechazado
   const estadoAnul = Number(row.original.estado_anulacion); //null-no enviado, 1-enviado con ticket, 2-aceptado, 3-rechazado
   const mensajeSunat = row.original.respuesta_sunat_descripcion;
@@ -47,14 +43,13 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
     id: row.original.id,
     empresa: row.original.empresa,
     establecimiento: row.original.establecimiento,
+    pos: row.original.pos,
     tipo_documento: row.original.tipo_documento,
     serie: row.original.serie,
     numero: row.original.correlativo,
     numeroConCeros: row.original.correlativo,
     fecha_emision: dayjs(row.original.fecha_emision),
-    fecha_vencimiento: row.original.fecha_vencimiento
-      ? dayjs(row.original.fecha_vencimiento)
-      : undefined,
+    fecha_vencimiento: row.original.fecha_vencimiento ? dayjs(row.original.fecha_vencimiento) : undefined,
     ruc: row.original.cliente_num_doc,
     cliente: row.original.cliente,
     direccion: row.original.cliente_direccion,
@@ -64,7 +59,7 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
     forma_pago: row.original.forma_pago,
     borrador: row.original.borrador,
     producto: undefined,
-    details: row.original.details.map((item) => {
+    details: row.original.details?.map((item) => {
       return {
         id: item.id,
         posicionTabla: item.posicionTabla,
@@ -89,10 +84,22 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
     observacion: undefined,
   };
 
-  const handleEnviaSunat = () => {
-    if (!ENVIA_DIRECTO_SUNAT) return;
-    alert("Enviando a sunat...");
+  const handleEnviaSunat = (invoiceId: number) => {
+    socket?.volatile.emit("client::sendInvoice", invoiceId);
   };
+
+  useEffect(() => {
+    if (socket) {
+      socket.on("exception", (data: any) => {
+        toast.error(data.message);
+      });
+
+      return () => {
+        socket.off("error");
+        socket.off("exception");
+      };
+    }
+  }, [socket]);
 
   return (
     <div className="p-[4px] pb-[4px] text-[14px] text-center flex justify-center">
@@ -102,10 +109,7 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
             <ToolTipIconButton
               titleTooltip={
                 <div className="flex flex-col">
-                  <>
-                    CUIDADO: Los borradores NO se envían automáticamente a la
-                    SUNAT.
-                  </>
+                  <>CUIDADO: Los borradores NO se envían automáticamente a la SUNAT.</>
                   <div className="flex justify-center items-center">
                     <ButtonSimple
                       onClick={() => {
@@ -125,24 +129,21 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
                 </div>
               }
             >
-              <a
-                type="button"
-                className="bg-danger text-[10px] text-white px-[5px] rounded-full hover:text-white"
-              >
+              <a type="button" className="bg-danger text-[10px] text-white px-[5px] rounded-full hover:text-white">
                 Borrador
               </a>
             </ToolTipIconButton>
-          ) : ENVIA_DIRECTO_SUNAT ? (
+          ) : sendModeSunat === SendModeSunat.MANUAL ? (
             <ToolTipIconButton
               component={"button"}
-              titleTooltip="Enviar a sunat"
-              onClick={handleEnviaSunat}
+              titleTooltip="Enviar a SUNAT"
+              onClick={() => handleEnviaSunat(row.original.id)}
             >
-              <img
-                src={SunatLogo}
-                alt="Sunat"
-                className="w-6 h-6 cursor-pointer"
-              />
+              <img src={SunatLogo} alt="Sunat" className="w-6 h-6 cursor-pointer" />
+            </ToolTipIconButton>
+          ) : sendModeSunat === SendModeSunat.PROGRAMADO || sendModeSunat === SendModeSunat.INMEDIATO ? (
+            <ToolTipIconButton titleTooltip={`Envio a SUNAT con envio ${SendModeSunat.INMEDIATO}`}>
+              <AiOutlineLoading3Quarters className="text-black-700 animate-spin" />
             </ToolTipIconButton>
           ) : (
             <a
@@ -154,11 +155,9 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
           )}
         </>
       ) : estadoOpe === 1 || estadoAnul === 1 ? (
-        <>
-          <ToolTipIconButton titleTooltip="Enviando a sunat">
-            <AiOutlineLoading3Quarters className="text-black-700 animate-spin" />
-          </ToolTipIconButton>
-        </>
+        <ToolTipIconButton titleTooltip="Enviando a SUNAT">
+          <AiOutlineLoading3Quarters className="text-black-700 animate-spin" />
+        </ToolTipIconButton>
       ) : estadoOpe === 2 ? (
         <>
           {estadoAnul === 2 ? (
@@ -241,41 +240,51 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
             </ToolTipIconButton>
           )}
         </>
-      ) : (
-        (estadoOpe === 3 || estadoOpe === 4) && (
-          <div>
-            <ToolTipIconButton
-              titleTooltip={
-                <>
-                  <div className="flex flex-col">
-                    <span>
-                      Estado:
-                      {estadoOpe === 3
-                        ? "Rechazado"
-                        : "Excepcion - Error del Contribuyente"}
-                    </span>
-                    <span>Código: {codigoSunat}</span>
-                    <span>Mensaje: {mensajeSunat}</span>
-                    <div className="flex flex-row">
-                      Observaciones:{" "}
-                      {observaciones.length > 0 ? (
-                        <div>
-                          {" ["}
-                          {observaciones.map((obs) => obs).join(",")}
-                          {"]"}
-                        </div>
-                      ) : (
-                        "Ninguna"
-                      )}
-                    </div>
+      ) : estadoOpe === 3 || estadoOpe === 4 ? (
+        <div>
+          <ToolTipIconButton
+            titleTooltip={
+              <>
+                <div className="flex flex-col">
+                  <span>
+                    Estado:
+                    {estadoOpe === 3 ? "Rechazado" : "Excepcion - Error del Contribuyente"}
+                  </span>
+                  <span>Código: {codigoSunat}</span>
+                  <span>Mensaje: {mensajeSunat}</span>
+                  <div className="flex flex-row">
+                    Observaciones:{" "}
+                    {observaciones.length > 0 ? (
+                      <div>
+                        {" ["}
+                        {observaciones.map((obs) => obs).join(",")}
+                        {"]"}
+                      </div>
+                    ) : (
+                      "Ninguna"
+                    )}
                   </div>
-                </>
-              }
-            >
-              <TiCancel className="cursor-pointer" />
-            </ToolTipIconButton>
-          </div>
-        )
+                </div>
+              </>
+            }
+          >
+            <TiCancel className="cursor-pointer" />
+          </ToolTipIconButton>
+        </div>
+      ) : (
+        <ToolTipIconButton
+          titleTooltip={
+            <>
+              <div className="flex flex-col">
+                <span>Estado: En Bull</span>
+                <span>Código: {codigoSunat}</span>
+                <span>Mensaje: {mensajeSunat}</span>
+              </div>
+            </>
+          }
+        >
+          <AiOutlineLoading3Quarters className="text-black-700 animate-spin" />
+        </ToolTipIconButton>
       )}
     </div>
   );

@@ -186,24 +186,32 @@ const UserEditAsignarEmpresa = ({ isLoading, error }: Props) => {
                                                 true
                                               );
                                             } else {
-                                              //Si todos los POS estan desmarcados, se desmarca el establecimiento
-                                              const posEstablecimiento =
+                                              const establishments = getValues(
+                                                `empresasAsign.${indexEmpresa}.establecimientos`
+                                              );
+                                              const posEstablishment =
                                                 getValues(
                                                   `empresasAsign.${indexEmpresa}.establecimientos.${indexEstablecimiento}.pos`
                                                 );
-                                              const posCheckedsFiltered =
-                                                posEstablecimiento.filter(
-                                                  (pos) => pos.checked === true
-                                                );
 
-                                              //Si todos los POS estan desmarcados, se desmarca el establecimiento
+                                              // Si todos los POS están desmarcados, se desmarca el establecimiento
                                               if (
-                                                posCheckedsFiltered.length === 0
+                                                !posEstablishment.some(
+                                                  ({ checked }) => checked
+                                                )
                                               ) {
                                                 setValue(
                                                   `empresasAsign.${indexEmpresa}.establecimientos.${indexEstablecimiento}.checked`,
                                                   false
                                                 );
+                                              }
+
+                                              // Si todos los establecimientos están desmarcados, se desmarca la empresa
+                                              if (
+                                                !establishments.some(
+                                                  ({ checked }) => checked
+                                                )
+                                              ) {
                                                 setValue(
                                                   `empresasAsign.${indexEmpresa}.checked`,
                                                   false
