@@ -21,12 +21,7 @@ const EmpresaEditContactos = () => {
             control={control}
             name="correo"
             render={({ field }) => (
-              <InputText
-                {...field}
-                variant="filled"
-                error={!!errors.correo}
-                helperText={errors.correo?.message}
-              />
+              <InputText {...field} variant="filled" error={!!errors.correo} helperText={errors.correo?.message} />
             )}
           />
         </Grid>

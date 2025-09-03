@@ -1,9 +1,4 @@
-import {
-  SubmitHandler,
-  useForm,
-  FormProvider,
-  Resolver,
-} from "react-hook-form";
+import { SubmitHandler, useForm, FormProvider, Resolver } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { isError } from "../../../utils/functions.utils";
@@ -27,10 +22,7 @@ import TabModalPanel from "../../../components/Material/Tab/TabModalPanel";
 import { yupResolver } from "@hookform/resolvers/yup";
 import LoadingTotal from "../../../components/common/Loadings/LoadingTotal";
 import { FORM_INITIAL_EMPRESA_UPDATE } from "../../../config/constants";
-import {
-  _schemaFormEmpresaUpdate,
-  schemaFormEmpresaUpdate,
-} from "../validations/empresa.schema";
+import { _schemaFormEmpresaUpdate, schemaFormEmpresaUpdate } from "../validations/empresa.schema";
 import { IFeatureEmpresaUpdate } from "../../../interfaces/features/empresa/empresa.interface";
 import { IFormEmpresaUpdate } from "../../../interfaces/forms/empresa/empresa.interface";
 import { IDTOEmpresa } from "../../../interfaces/models/empresa/empresa.interface";
@@ -46,11 +38,7 @@ interface Props {
 }
 
 const EmpresaEdit = ({ state, closeEdit }: Props) => {
-  const {
-    isLoading: isLoadingGet,
-    data: dataGetEmpresa,
-    error: errorGetEmpresa,
-  } = useEmpresa(Number(state.row.id));
+  const { isLoading: isLoadingGet, data: dataGetEmpresa, error: errorGetEmpresa } = useEmpresa(Number(state.row.id));
   const [value, setValue] = useState(0);
 
   const methods = useForm<IFeatureEmpresaUpdate>({
@@ -111,22 +99,18 @@ const EmpresaEdit = ({ state, closeEdit }: Props) => {
           web_service: dataGetEmpresa.web_service,
           usu_secundario_user: dataGetEmpresa.usu_secundario_user,
           usu_secundario_password: dataGetEmpresa.usu_secundario_password,
-          usu_secundario_ose_password:
-            dataGetEmpresa.usu_secundario_ose_password,
+          usu_secundario_ose_password: dataGetEmpresa.usu_secundario_ose_password,
           usu_secundario_ose_user: dataGetEmpresa.usu_secundario_ose_user,
         }
       : FORM_INITIAL_EMPRESA_UPDATE,
-    resolver: yupResolver(
-      schemaFormEmpresaUpdate
-    ) as Resolver<_schemaFormEmpresaUpdate>,
+    resolver: yupResolver(schemaFormEmpresaUpdate) as Resolver<_schemaFormEmpresaUpdate>,
     mode: "onChange",
     resetOptions: {
       keepDirtyValues: true,
     },
   });
 
-  const { mutateAsync: mutateEmpresaAsync, isPending: isLoadingEmpresa } =
-    useEditEmpresa();
+  const { mutateAsync: mutateEmpresaAsync, isPending: isLoadingEmpresa } = useEditEmpresa();
 
   const {
     handleSubmit,
@@ -138,19 +122,11 @@ const EmpresaEdit = ({ state, closeEdit }: Props) => {
       try {
         const formData = new FormData();
 
-        if (
-          values.logo &&
-          values.logo?.length > 0 &&
-          values.logo[0].name !== dataGetEmpresa.logo?.[0].name
-        ) {
+        if (values.logo && values.logo?.length > 0 && values.logo[0].name !== dataGetEmpresa.logo?.[0].name) {
           formData.append("logo", values.logo[0]);
         }
 
-        if (
-          values.cert &&
-          values?.cert?.length > 0 &&
-          values.cert[0].name !== dataGetEmpresa.cert?.[0].name
-        ) {
+        if (values.cert && values?.cert?.length > 0 && values.cert[0].name !== dataGetEmpresa.cert?.[0].name) {
           formData.append("certificado", values.cert[0]);
         }
 
@@ -178,8 +154,7 @@ const EmpresaEdit = ({ state, closeEdit }: Props) => {
             if (
               establecimiento.id &&
               establecimiento.logo &&
-              establecimiento.logo?.[0].name !==
-                dataGetEmpresa.establecimientos?.[i].logo?.[0].name
+              establecimiento.logo?.[0].name !== dataGetEmpresa.establecimientos?.[i].logo?.[0].name
             ) {
               formData.append(
                 `establecimientos`,
@@ -233,9 +208,7 @@ const EmpresaEdit = ({ state, closeEdit }: Props) => {
         formData.append("data", JSON.stringify(senData));
 
         if (values.modo === 1 && dataGetEmpresa.modo === 0) {
-          const produccion = confirm(
-            "La empresa está cambiando a modo PRODUCCIÓN ya no podras volver a modo BETA!."
-          );
+          const produccion = confirm("La empresa está cambiando a modo PRODUCCIÓN ya no podras volver a modo BETA!.");
           if (produccion) {
             const res = await mutateEmpresaAsync({
               body: formData as any,
@@ -260,8 +233,7 @@ const EmpresaEdit = ({ state, closeEdit }: Props) => {
     }
   };
 
-  const handleChange = (_event: React.SyntheticEvent, newValue: number) =>
-    setValue(newValue);
+  const handleChange = (_event: React.SyntheticEvent, newValue: number) => setValue(newValue);
 
   const closeModal = () => {
     closeEdit();
@@ -279,9 +251,7 @@ const EmpresaEdit = ({ state, closeEdit }: Props) => {
         <LoadingTotal fullscreen />
       ) : errorGetEmpresa ? null : (
         <DialogBeta open={state.visible}>
-          <DialogTitleBeta>
-            Edit empresa {state.row.razon_social}
-          </DialogTitleBeta>
+          <DialogTitleBeta>Edit empresa {state.row.razon_social}</DialogTitleBeta>
           <IconButton
             aria-label="close"
             onClick={closeModal}
@@ -298,11 +268,7 @@ const EmpresaEdit = ({ state, closeEdit }: Props) => {
             <CloseIcon sx={{ width: "16px", height: "16px" }} />
           </IconButton>
 
-          <TabsModal
-            aria-label="BasicTabsEdit"
-            value={value}
-            onChange={handleChange}
-          >
+          <TabsModal aria-label="BasicTabsEdit" value={value} onChange={handleChange}>
             <TabModal label="General" index={0} />
             <TabModal label="Configuraciones" index={1} />
             <TabModal label="Documentos" index={2} />
@@ -338,13 +304,7 @@ const EmpresaEdit = ({ state, closeEdit }: Props) => {
             </Box>
           </DialogContentBeta>
           <DialogActionsBeta>
-            <Button
-              size="small"
-              className="text-default"
-              variant="text"
-              color="secondary"
-              onClick={closeModal}
-            >
+            <Button size="small" className="text-default" variant="text" color="secondary" onClick={closeModal}>
               Cancelar
             </Button>
             <Button

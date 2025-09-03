@@ -1,8 +1,4 @@
-import {
-  useDisableDocumento,
-  useEnableDocumento,
-  useTipoDocs,
-} from "../../../TiposDocsCpes/hooks/useTipoDocs";
+import { useDisableDocumento, useEnableDocumento, useTipoDocs } from "../../../TiposDocsCpes/hooks/useTipoDocs";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { Grid } from "@mui/material";
 import { SelectSimple } from "../../../../components/common/Selects/SelectSimple";
@@ -55,11 +51,7 @@ const EmpresaEditDocumentos = () => {
     //Si encuentra un documento agregamos
     if (documento) {
       //Evitar agregar duplicado
-      const foundDoc = fields.some(
-        (item) =>
-          item.nombre.toLowerCase().trim() ===
-          documento.text.toLowerCase().trim()
-      );
+      const foundDoc = fields.some((item) => item.nombre.toLowerCase().trim() === documento.text.toLowerCase().trim());
       if (foundDoc) {
         alert("El documento ya está agregado. ");
         return;
@@ -151,18 +143,11 @@ const EmpresaEditDocumentos = () => {
               <div className="w-full flex flex-col">
                 {fields.map((item, index) => {
                   return (
-                    <div
-                      key={index + 1}
-                      className={`w-full flex gap-1 ${
-                        index === 0 ? "mt-3 py-1" : "py-1"
-                      } border-t`}
-                    >
+                    <div key={index + 1} className={`w-full flex gap-1 ${index === 0 ? "mt-3 py-1" : "py-1"} border-t`}>
                       <div className="w-1/12 flex justify-center items-center">
                         <strong>{index + 1}</strong>
                       </div>
-                      <div className="w-8/12 flex justify-center items-center">
-                        {item.nombre}
-                      </div>
+                      <div className="w-8/12 flex justify-center items-center">{item.nombre}</div>
                       <div className="w-3/12 flex text-center justify-center">
                         {item.estado ? (
                           <CheckIcon
