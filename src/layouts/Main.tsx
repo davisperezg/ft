@@ -86,35 +86,50 @@ const Main = () => {
   useEffect(() => {
     if (userGlobal && (userGlobal?.rol?.modulos?.length ?? 0) > 0) {
       const primerModulo = userGlobal?.rol?.modulos[0];
+
       const primerMenu = primerModulo?.menus?.[0];
-      setMenuSelected(String(primerMenu?.nombre ?? ""));
-      setTabs([
-        {
-          index: 0,
-          modulo: {
-            estado: true,
-            nombre: String(primerModulo?.nombre),
+
+      // ✅ Solo establecer el menú si NO hay uno ya seleccionado (persistido)
+      if (!menuSelected || menuSelected === "") {
+        setMenuSelected(String(primerMenu?.nombre ?? ""));
+      }
+
+      // ✅ Solo establecer tabs si no hay tabs o está vacío
+      if (tabs.length === 0) {
+        setTabs([
+          {
+            index: 0,
+            modulo: {
+              estado: true,
+              nombre: String(primerModulo?.nombre),
+            },
+            moduloAux: {
+              estado: true,
+              nombre: String(primerModulo?.nombre),
+            },
+            menuAux: {
+              estado: true,
+              nombre: String(primerMenu?.nombre),
+            },
+            menu: {
+              estado: true,
+              nombre: String(primerMenu?.nombre),
+            },
           },
-          moduloAux: {
-            estado: true,
-            nombre: String(primerModulo?.nombre),
-          },
-          menuAux: {
-            estado: true,
-            nombre: String(primerMenu?.nombre),
-          },
-          menu: {
-            estado: true,
-            nombre: String(primerMenu?.nombre),
-          },
-        },
-      ]);
+        ]);
+      }
+
+      //   setPage({
+      //     namePage: String(primerMenu?.nombre ?? "") as any,
+      //     open: true,
+      //     pageComplete: false,
+      //   });
     }
-  }, [userGlobal, setMenuSelected, setTabs]);
+  }, [userGlobal, setMenuSelected, setTabs, setPage, menuSelected, tabs]);
 
   return (
     <>
-      {page.pageComplete && page.namePage === PageEnum.SCREEN_FACTURA && (
+      {/* {page.pageComplete && page.namePage === PageEnum.SCREEN_FACTURA && (
         // <FacturaScreen /> bg-[#EDF1F4] border borders min-h-[100vh] flex justify-center pt-[60px]
         <div className="bg-[#F8F8F8] min-h-[100vh] min-w-max">
           <div className="min-w-[1050px] relative mt-[60px] mx-auto">
@@ -138,51 +153,46 @@ const Main = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
-      {page.namePage === PageEnum.INIT && (
-        <div className="flex absolute top-[60px] bottom-[10px] left-[10px] right-[10px]">
-          <NavLeft clicked={clicked} />
-          <div className="flex flex-[1_1_auto] relative">
-            <div className="flex absolute h-full w-full top-0 left-0 flex-col">
-              <div className="flex relative flex-col flex-[1_1_auto] pl-[8px] min-h-0">
-                <div className="flex flex-[1_1_auto] min-h-0 flex-col">
-                  <ul className="m-0 flex-[0_0_auto] list-none after:block content-[' '] clear-both">
-                    {/* LISTA DE TABS */}
-                    {tabs.map((tab, i) => {
-                      return (
-                        <TabItem
-                          key={i + 1}
-                          onclick={() => handleToggleTab(tab.index)}
-                          active={clicked === tab.index}
-                          onClose={() => removeTab(tab.index)}
-                          entity={tab}
-                        />
-                      );
-                    })}
-                    {/* AGREGAR MAS TABS */}
-                    {tabs.length <= 4 ? (
-                      <li
-                        onClick={addTab}
-                        className="select-none float-left m-[0_8px_4px_0] cursor-pointer"
-                      >
-                        <a className="hover:bg-bgDefault flex justify-center items-center top-0 p-[4px_8px] hover:no-underline rounded-[4px] relative z-[2]  font-bold leading-[20px] text-center no-underline select-none whitespace-nowrap">
-                          <label className="text-[24px] font-bold text-center align-middle cursor-pointer inline-block after:content-['+'] text-green-600"></label>
-                        </a>
-                      </li>
-                    ) : null}
-                  </ul>
-                  <div className="flex flex-col min-h-0 min-w-0 flex-[1_1_auto] p-0 h-auto">
-                    <div className="flex flex-col flex-[1_1_auto] relative text-[#000] overflow-hidden select-text">
-                      <DynamicComponentLoader nombreMenu={menuSelected} />
-                    </div>
+      <div className="flex absolute top-[60px] bottom-[10px] left-[10px] right-[10px]">
+        <NavLeft clicked={clicked} />
+        <div className="flex flex-[1_1_auto] relative">
+          <div className="flex absolute h-full w-full top-0 left-0 flex-col">
+            <div className="flex relative flex-col flex-[1_1_auto] pl-[8px] min-h-0">
+              <div className="flex flex-[1_1_auto] min-h-0 flex-col">
+                <ul className="m-0 flex-[0_0_auto] list-none after:block content-[' '] clear-both">
+                  {/* LISTA DE TABS */}
+                  {tabs.map((tab, i) => {
+                    return (
+                      <TabItem
+                        key={i + 1}
+                        onclick={() => handleToggleTab(tab.index)}
+                        active={clicked === tab.index}
+                        onClose={() => removeTab(tab.index)}
+                        entity={tab}
+                      />
+                    );
+                  })}
+                  {/* AGREGAR MAS TABS */}
+                  {tabs.length <= 4 ? (
+                    <li onClick={addTab} className="select-none float-left m-[0_8px_4px_0] cursor-pointer">
+                      <a className="hover:bg-bgDefault flex justify-center items-center top-0 p-[4px_8px] hover:no-underline rounded-[4px] relative z-[2]  font-bold leading-[20px] text-center no-underline select-none whitespace-nowrap">
+                        <label className="text-[24px] font-bold text-center align-middle cursor-pointer inline-block after:content-['+'] text-green-600"></label>
+                      </a>
+                    </li>
+                  ) : null}
+                </ul>
+                <div className="flex flex-col min-h-0 min-w-0 flex-[1_1_auto] p-0 h-auto">
+                  <div className="flex flex-col flex-[1_1_auto] relative text-[#000] overflow-hidden select-text">
+                    <DynamicComponentLoader nombreMenu={menuSelected} />
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* {dialogState.open && (
         <div className="absolute transition-all duration-1000 ease-in-out overflow-hidden w-full h-full top-0 left-0 bg-dialog z-[11]"></div>

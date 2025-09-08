@@ -246,11 +246,7 @@ const Header = ({ result }: IHeader) => {
   return (
     <>
       {/* absolute */}
-      <header
-        className={`bg-white w-full flex h-[60px] p-[10px] dark:bg-gray-700 ${
-          page.pageComplete && page.namePage === PageEnum.SCREEN_FACTURA ? "shadow-lg z-[1] fixed" : "relative"
-        }`}
-      >
+      <header className={`bg-white w-full flex h-[60px] p-[10px] dark:bg-gray-700 relative`}>
         <div className={`w-full flex justify-between`}>
           <h1 className="font-bold dark:text-white text-">
             <img src={logo} width={130} height={50} />
