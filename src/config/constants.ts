@@ -2,17 +2,11 @@ import { DialogState } from "../interfaces/common/dialog.interface";
 import { PageState } from "../interfaces/common/page.interface";
 import { IPaginationTable } from "../interfaces/common/pagination.interface";
 import { ITabItem } from "../interfaces/components/tab-top/tab.interface";
-import {
-  IFeatureEmpresaCreate,
-  IFeatureEmpresaUpdate,
-} from "../interfaces/features/empresa/empresa.interface";
+import { IFeatureEmpresaCreate, IFeatureEmpresaUpdate } from "../interfaces/features/empresa/empresa.interface";
 import { IFeatureInvoice } from "../interfaces/features/invoices/invoice.interface";
 import { IModulosSystem } from "../interfaces/features/modulo/modulo_system.interface";
 import { IRol } from "../interfaces/models/rol/rol.interface";
-import {
-  IUser,
-  IUserWithPassword,
-} from "../interfaces/models/user/user.interface";
+import { IUser, IUserWithPassword } from "../interfaces/models/user/user.interface";
 import { IValidationInvoiceDetails } from "../interfaces/validations/invoice/invoice-detail.interface";
 import { PageEnum } from "../types/enums/page.enum";
 import dayjs from "dayjs";
@@ -227,7 +221,7 @@ export const INITIAL_VALUE_DIALOG: DialogState = {
 export const INITIAL_VALUE_PAGE: PageState = {
   open: false,
   namePage: PageEnum.INIT,
-  pageComplete: true,
+  pageComplete: false,
 };
 
 export const INITIAL_VALUE_TAB: ITabItem = {
