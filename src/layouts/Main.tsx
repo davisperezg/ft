@@ -1,16 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import NavLeft from "../components/common/Navs/NavLeft";
 import TabItem from "../components/common/Tabs/Views/TabItem";
-import FacturaScreen from "../features/Comprobantes/pages/FacturaPage";
-import PaperRounded from "../components/Material/Paper/PaperRounded";
-import { Divider, IconButton, Tooltip, Typography } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { PageEnum } from "../types/enums/page.enum";
 import DynamicComponentLoader from "../utils/render-component-dynamic.utils";
 import { useTabStore } from "../store/zustand/tabs-zustand";
-import { INITIAL_VALUE_PAGE, INITIAL_VALUE_TAB } from "../config/constants";
+import { INITIAL_VALUE_TAB } from "../config/constants";
 import { useUserStore } from "../store/zustand/user-zustand";
 import { usePageStore } from "../store/zustand/page-zustand";
+import { useClickedStore } from "../store/zustand/clicked-tabs-zustand";
+import { PageEnum } from "../types/enums/page.enum";
 
 //https://codesandbox.io/s/dynamic-components-ngtnx7
 const Main = () => {
@@ -18,12 +15,9 @@ const Main = () => {
   const setTabs = useTabStore((state) => state.setTabs);
   const menuSelected = useTabStore((state) => state.menuSelected);
   const setMenuSelected = useTabStore((state) => state.setMenuSelected);
-
-  //console.log(tabs, setTabs);
-  const [clicked, setClicked] = useState<number>(0);
+  const clicked = useClickedStore((state) => state.clicked);
+  const setClicked = useClickedStore((state) => state.setClicked);
   const userGlobal = useUserStore((state) => state.userGlobal);
-
-  const page = usePageStore((state) => state.page);
   const setPage = usePageStore((state) => state.setPage);
 
   //Controlamos los tabs que se encuentran en el top(TabItem)
@@ -89,12 +83,12 @@ const Main = () => {
 
       const primerMenu = primerModulo?.menus?.[0];
 
-      // ✅ Solo establecer el menú si NO hay uno ya seleccionado (persistido)
+      // Solo establecer el menú si NO hay uno ya seleccionado (persistido)
       if (!menuSelected || menuSelected === "") {
         setMenuSelected(String(primerMenu?.nombre ?? ""));
       }
 
-      // ✅ Solo establecer tabs si no hay tabs o está vacío
+      // Solo establecer tabs si no hay tabs o está vacío
       if (tabs.length === 0) {
         setTabs([
           {
@@ -110,53 +104,23 @@ const Main = () => {
             menuAux: {
               estado: true,
               nombre: String(primerMenu?.nombre),
+              page: PageEnum.INIT,
             },
             menu: {
               estado: true,
               nombre: String(primerMenu?.nombre),
+              page: PageEnum.INIT,
             },
           },
         ]);
       }
-
-      //   setPage({
-      //     namePage: String(primerMenu?.nombre ?? "") as any,
-      //     open: true,
-      //     pageComplete: false,
-      //   });
     }
   }, [userGlobal, setMenuSelected, setTabs, setPage, menuSelected, tabs]);
 
   return (
     <>
-      {/* {page.pageComplete && page.namePage === PageEnum.SCREEN_FACTURA && (
-        // <FacturaScreen /> bg-[#EDF1F4] border borders min-h-[100vh] flex justify-center pt-[60px]
-        <div className="bg-[#F8F8F8] min-h-[100vh] min-w-max">
-          <div className="min-w-[1050px] relative mt-[60px] mx-auto">
-            <div className="p-[30px] w-[1050px] mx-auto">
-              <PaperRounded className="!shadow-asun">
-                <div className="pl-[15px] py-[10px] flex justify-start items-center">
-                  <Tooltip title="Regresar" arrow>
-                    <IconButton onClick={() => setPage(INITIAL_VALUE_PAGE)}>
-                      <ArrowBackIcon />
-                    </IconButton>
-                  </Tooltip>{" "}
-                  <Typography variant="h6">
-                    Emitir <small className="text-default">Factura</small>
-                  </Typography>
-                </div>
-                <Divider variant="fullWidth" />
-                <div className="pt-[20px]">
-                  <FacturaScreen />
-                </div>
-              </PaperRounded>
-            </div>
-          </div>
-        </div>
-      )} */}
-
       <div className="flex absolute top-[60px] bottom-[10px] left-[10px] right-[10px]">
-        <NavLeft clicked={clicked} />
+        <NavLeft />
         <div className="flex flex-[1_1_auto] relative">
           <div className="flex absolute h-full w-full top-0 left-0 flex-col">
             <div className="flex relative flex-col flex-[1_1_auto] pl-[8px] min-h-0">
@@ -193,10 +157,6 @@ const Main = () => {
           </div>
         </div>
       </div>
-
-      {/* {dialogState.open && (
-        <div className="absolute transition-all duration-1000 ease-in-out overflow-hidden w-full h-full top-0 left-0 bg-dialog z-[11]"></div>
-      )} */}
     </>
   );
 };

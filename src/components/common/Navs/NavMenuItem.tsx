@@ -20,14 +20,14 @@ import { IFeatureModule } from "../../../interfaces/features/modulo/modulo.inter
 import { useTabStore } from "../../../store/zustand/tabs-zustand";
 import { useUserStore } from "../../../store/zustand/user-zustand";
 import { usePageStore } from "../../../store/zustand/page-zustand";
+import { useClickedStore } from "../../../store/zustand/clicked-tabs-zustand";
 
 interface Props {
   menu: IFeatureMenu;
   modulo: IFeatureModule;
-  clicked: number;
 }
 
-const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
+const NavMenuItem = ({ menu, modulo }: Props) => {
   const { dispatch } = useContext(ModalContext);
   const userGlobal = useUserStore((state) => state.userGlobal);
   const setPage = usePageStore((state) => state.setPage);
@@ -35,6 +35,7 @@ const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
   const tabs = useTabStore((state) => state.tabs);
   const setTabs = useTabStore((state) => state.setTabs);
   const setMenuSelected = useTabStore((state) => state.setMenuSelected);
+  const clicked = useClickedStore((state) => state.clicked);
 
   const documentos = (userGlobal?.empresaActual?.establecimiento?.pos?.documentos as ITipoDocsExtentido[]) ?? [];
 
@@ -59,6 +60,7 @@ const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
                 menu: {
                   estado: true,
                   nombre: menu.nombre,
+                  page: PageEnum.INIT,
                 },
                 moduloAux: {
                   estado: true,
@@ -67,6 +69,7 @@ const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
                 menuAux: {
                   estado: true,
                   nombre: menu.nombre,
+                  page: PageEnum.INIT,
                 },
               };
             }
@@ -227,17 +230,51 @@ const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
                   // Renderizar solo si tiene el permiso
                   if (tienePermiso) {
                     const handleClick = () => {
+                      const tabSelected = tabs.find((a) => a.index === clicked);
+
                       if (DOCUMENTO === "FACTURA") {
+                        const newTab: typeof tabSelected = {
+                          ...tabSelected!,
+                          menu: {
+                            ...tabSelected!.menu,
+                            page: PageEnum.SCREEN_CREATE_INVOICE,
+                          },
+                          menuAux: {
+                            ...tabSelected!.menuAux,
+                            page: PageEnum.SCREEN_CREATE_INVOICE,
+                          },
+                        };
+
                         setPage({
                           open: true,
                           namePage: PageEnum.SCREEN_CREATE_INVOICE,
                           pageComplete: false,
                         });
+
+                        setTabs((currentTabs) => {
+                          return currentTabs.map((tab) => (tab.index === clicked ? newTab : tab));
+                        });
                       } else if (DOCUMENTO === "BOLETA") {
+                        const newTab: typeof tabSelected = {
+                          ...tabSelected!,
+                          menu: {
+                            ...tabSelected!.menu,
+                            page: PageEnum.SCREEN_CREATE_BOLETA,
+                          },
+                          menuAux: {
+                            ...tabSelected!.menuAux,
+                            page: PageEnum.SCREEN_CREATE_BOLETA,
+                          },
+                        };
+
                         setPage({
                           open: true,
                           namePage: PageEnum.SCREEN_CREATE_BOLETA,
                           pageComplete: false,
+                        });
+
+                        setTabs((currentTabs) => {
+                          return currentTabs.map((tab) => (tab.index === clicked ? newTab : tab));
                         });
                       }
                       // Agrega más acciones aquí si es necesario
