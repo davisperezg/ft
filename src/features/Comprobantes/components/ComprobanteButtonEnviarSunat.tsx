@@ -114,7 +114,7 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
                     <ButtonSimple
                       onClick={() => {
                         setPage({
-                          namePage: PageEnum.SCREEN_FACTURA,
+                          namePage: PageEnum.SCREEN_CREATE_INVOICE,
                           payload: { ...formatoEditInvoice },
                           open: true,
                           pageComplete: true,
