@@ -4,29 +4,27 @@ import { IoIosArrowUp } from "react-icons/io";
 import { IoIosArrowDown } from "react-icons/io";
 import { convertirTitulo } from "../../../utils/functions.utils";
 import { useTabStore } from "../../../store/zustand/tabs-zustand";
+import { useClickedStore } from "../../../store/zustand/clicked-tabs-zustand";
+import { PageEnum } from "../../../types/enums/page.enum";
 
 interface Props {
   modulo: IFeatureModule;
-  clicked: number;
   position: number;
 }
 
-const NavModItem = ({ modulo, clicked }: Props) => {
+const NavModItem = ({ modulo }: Props) => {
   const tabs = useTabStore((state) => state.tabs);
   const setTabs = useTabStore((state) => state.setTabs);
   const setMenuSelected = useTabStore((state) => state.setMenuSelected);
+  const clicked = useClickedStore((state) => state.clicked);
 
   const handleModulo = () => {
     // si es el mismo modulo no hace nada
-    const currentModule = tabs.find(
-      (a) => a.index === clicked && a.modulo.nombre === modulo.nombre
-    );
+    const currentModule = tabs.find((a) => a.index === clicked && a.modulo.nombre === modulo.nombre);
     if (currentModule) return;
 
     // si es otro modulo
-    const updateTabWithModuleSelected = tabs.find(
-      (a) => a.modulo.nombre !== modulo.nombre
-    );
+    const updateTabWithModuleSelected = tabs.find((a) => a.modulo.nombre !== modulo.nombre);
     setTabs(
       updateTabWithModuleSelected
         ? tabs.map((tab) => {
@@ -40,6 +38,7 @@ const NavModItem = ({ modulo, clicked }: Props) => {
                 menu: {
                   estado: true,
                   nombre: String(modulo?.menus?.[0].nombre),
+                  page: PageEnum.INIT,
                 },
                 moduloAux: {
                   estado: true,
@@ -48,6 +47,7 @@ const NavModItem = ({ modulo, clicked }: Props) => {
                 menuAux: {
                   estado: true,
                   nombre: String(modulo?.menus?.[0].nombre),
+                  page: PageEnum.INIT,
                 },
               };
             }
@@ -66,18 +66,14 @@ const NavModItem = ({ modulo, clicked }: Props) => {
       <dt
         onClick={handleModulo}
         className={`flex flex-[0_0_auto] font-[500] ${moduloSelected?.modulo.nombre === modulo.nombre ? "border-t " : ""}${
-          moduloSelected?.modulo.nombre === modulo.nombre &&
-          moduloSelected?.modulo.estado
+          moduloSelected?.modulo.nombre === modulo.nombre && moduloSelected?.modulo.estado
             ? "bg-bgDefault hover:bg-bgDefault cursor-default"
             : " hover:bg-bgDefault cursor-pointer border-t border-solid"
         } leading-[20px]  p-[2px_10px] select-none text-default`}
       >
-        <span className="flex-[1_1_auto]">
-          {convertirTitulo(modulo.nombre)}
-        </span>
+        <span className="flex-[1_1_auto]">{convertirTitulo(modulo.nombre)}</span>
         <span className="text-[14px] flex justify-center items-center">
-          {moduloSelected?.modulo.nombre === modulo.nombre &&
-          moduloSelected?.modulo.estado ? (
+          {moduloSelected?.modulo.nombre === modulo.nombre && moduloSelected?.modulo.estado ? (
             <IoIosArrowUp />
           ) : (
             <IoIosArrowDown />
@@ -86,8 +82,7 @@ const NavModItem = ({ modulo, clicked }: Props) => {
       </dt>
       <dd
         className={`transition-all ease-linear duration-[300ms] ${
-          moduloSelected?.modulo.nombre === modulo.nombre &&
-          moduloSelected?.modulo.estado
+          moduloSelected?.modulo.nombre === modulo.nombre && moduloSelected?.modulo.estado
             ? "flex-[1_1_auto] h-[300px]"
             : "flex-none h-0"
         } w-full overflow-hidden bg-[url('https://cms.wialon.us/frontend/static/accounts_bg-57ba306c992683f5882f0eeb2affbf08.svg')] bg-no-repeat bg-bottom hue-rotate-[0deg]`}
@@ -95,14 +90,7 @@ const NavModItem = ({ modulo, clicked }: Props) => {
         <div className="p-[5px]">
           <ol className="font-bold list-decimal pl-3">
             {modulo?.menus?.map((menu, i: number) => {
-              return (
-                <NavMenuItem
-                  key={i}
-                  modulo={modulo}
-                  menu={menu}
-                  clicked={clicked}
-                />
-              );
+              return <NavMenuItem key={i} modulo={modulo} menu={menu} />;
             })}
           </ol>
         </div>

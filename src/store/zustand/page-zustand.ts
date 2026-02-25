@@ -2,6 +2,7 @@ import { devtools } from "zustand/middleware";
 import { create } from "zustand";
 import { INITIAL_VALUE_PAGE } from "../../config/constants";
 import { PageState } from "../../interfaces/common/page.interface";
+import { persist } from "zustand/middleware";
 
 interface PageStoreState {
   page: PageState;
@@ -9,30 +10,30 @@ interface PageStoreState {
 
 interface PageStoreActions {
   setPage: (
-    currentPag:
-      | PageStoreState["page"]
-      | ((currentTab: PageStoreState["page"]) => PageStoreState["page"])
+    currentPag: PageStoreState["page"] | ((currentTab: PageStoreState["page"]) => PageStoreState["page"])
   ) => void;
 }
 
 type PageStore = PageStoreState & PageStoreActions;
 
 export const usePageStore = create<PageStore>()(
-  devtools(
-    (set) => ({
-      page: INITIAL_VALUE_PAGE,
-      setPage: (currentPag) => {
-        set((state) => ({
-          page:
-            typeof currentPag === "function"
-              ? currentPag(state.page)
-              : currentPag,
-        }));
-      },
-    }),
+  persist(
+    devtools(
+      (set) => ({
+        page: INITIAL_VALUE_PAGE,
+        setPage: (currentPag) => {
+          set((state) => ({
+            page: typeof currentPag === "function" ? currentPag(state.page) : currentPag,
+          }));
+        },
+      }),
+      {
+        enabled: true,
+        name: "page store",
+      }
+    ),
     {
-      enabled: true,
-      name: "page store",
+      name: "page-storage",
     }
   )
 );

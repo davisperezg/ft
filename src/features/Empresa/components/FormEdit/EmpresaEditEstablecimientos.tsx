@@ -1,15 +1,6 @@
-import {
-  Controller,
-  useFieldArray,
-  useFormContext,
-  useWatch,
-} from "react-hook-form";
+import { Controller, useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { SelectSimple } from "../../../../components/common/Selects/SelectSimple";
-import {
-  useDepartamentos,
-  useDistritos,
-  useProvincias,
-} from "../../../Entidades/hooks/useEntidades";
+import { useDepartamentos, useDistritos, useProvincias } from "../../../Entidades/hooks/useEntidades";
 import { useRef, useState, ChangeEvent, useCallback, useMemo } from "react";
 import InputText from "../../../../components/Material/Input/InputText";
 import InputFile from "../../../../components/Material/Input/InputFile";
@@ -34,8 +25,7 @@ const EmpresaEditEstablecimientos = () => {
     shouldUnregister: false,
   });
 
-  const { isLoading: isLoadingDepartamentos, data: dataDepartamentos } =
-    useDepartamentos();
+  const { isLoading: isLoadingDepartamentos, data: dataDepartamentos } = useDepartamentos();
 
   const [index, setIndex] = useState(0);
   const refLogo = useRef<HTMLInputElement | null>(null);
@@ -44,17 +34,9 @@ const EmpresaEditEstablecimientos = () => {
     distrito: false,
   });
 
-  const {
-    isLoading: isLoadingProvincias,
-    isFetching: isFetchingProvincias,
-    data: dataProvincias,
-  } = useProvincias();
+  const { isLoading: isLoadingProvincias, isFetching: isFetchingProvincias, data: dataProvincias } = useProvincias();
 
-  const {
-    isLoading: isLoadingDistritos,
-    isFetching: isFetchingDistritos,
-    data: dataDistritos,
-  } = useDistritos();
+  const { isLoading: isLoadingDistritos, isFetching: isFetchingDistritos, data: dataDistritos } = useDistritos();
 
   const listDepartamentos = useMemo(() => {
     return (
@@ -100,9 +82,7 @@ const EmpresaEditEstablecimientos = () => {
           await new Promise((resolve) => setTimeout(resolve, 1000));
 
           //Obtenemos provincia
-          const findLabelProvincia = listProvincias?.find(
-            (item) => item.value === `${event.value}01`
-          );
+          const findLabelProvincia = listProvincias?.find((item) => item.value === `${event.value}01`);
 
           setValueModel(`establecimientos.${index}.provincia`, {
             label: findLabelProvincia?.label ?? "-",
@@ -113,17 +93,12 @@ const EmpresaEditEstablecimientos = () => {
           await new Promise((resolve) => setTimeout(resolve, 1000));
 
           //Obtenemos distrito
-          const findLabelDistrito = listDistritos?.find(
-            (item) => item.value === `${event.value}0101`
-          );
+          const findLabelDistrito = listDistritos?.find((item) => item.value === `${event.value}0101`);
           setValueModel(`establecimientos.${index}.distrito`, {
             label: findLabelDistrito?.label ?? "-",
             value: findLabelDistrito ? `${event.value}0101` : "-",
           });
-          setValueModel(
-            `establecimientos.${index}.ubigeo`,
-            findLabelDistrito ? `${event.value}0101` : "-"
-          );
+          setValueModel(`establecimientos.${index}.ubigeo`, findLabelDistrito ? `${event.value}0101` : "-");
 
           break;
         }
@@ -133,17 +108,12 @@ const EmpresaEditEstablecimientos = () => {
           await new Promise((resolve) => setTimeout(resolve, 1000));
 
           //Obtenemos distrito
-          const findLabel = listDistritos?.find(
-            (item) => item.value === `${event.value}01`
-          );
+          const findLabel = listDistritos?.find((item) => item.value === `${event.value}01`);
           setValueModel(`establecimientos.${index}.distrito`, {
             label: findLabel?.label ?? "-",
             value: findLabel ? `${event.value}01` : "-",
           });
-          setValueModel(
-            `establecimientos.${index}.ubigeo`,
-            findLabel ? `${event.value}01` : "-"
-          );
+          setValueModel(`establecimientos.${index}.ubigeo`, findLabel ? `${event.value}01` : "-");
           break;
         }
         case "DISTRITO": {
@@ -157,11 +127,7 @@ const EmpresaEditEstablecimientos = () => {
     [listDistritos, listProvincias, loading, setValueModel]
   );
 
-  const onChangeFoto = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    field: any,
-    index: number
-  ) => {
+  const onChangeFoto = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, field: any, index: number) => {
     const files = (e.target as HTMLInputElement).files! as FileList;
 
     if (files.length > 0) {
@@ -208,34 +174,24 @@ const EmpresaEditEstablecimientos = () => {
   return (
     <>
       <p>
-        Un establecimiento es una copia de tu empresa a la que puedes ponerle su
-        propia dirección, logo, usuarios, etc. Puedes usar un establecimiento
-        para otro local, punto de venta o para otro negocio que use el mismo
-        RUC.
+        Un establecimiento es una copia de tu empresa a la que puedes ponerle su propia dirección, logo, usuarios, etc.
+        Puedes usar un establecimiento para otro local, punto de venta o para otro negocio que use el mismo RUC.
       </p>
       <div className={`flex justify-end mt-2`}>
-        <button
-          type="button"
-          onClick={addEstablecimiento}
-          className="border px-2 hover:bg-bgDefault"
-        >
+        <button type="button" onClick={addEstablecimiento} className="border px-2 hover:bg-bgDefault">
           Agregar establecimientos
         </button>
       </div>
 
       {fields.map((item, i) => {
-        const departamento =
-          valuesWatch.establecimientos?.[i]?.departamento?.value || "-";
+        const departamento = valuesWatch.establecimientos?.[i]?.departamento?.value || "-";
 
-        const provincia =
-          valuesWatch.establecimientos?.[i]?.provincia?.value || "-";
+        const provincia = valuesWatch.establecimientos?.[i]?.provincia?.value || "-";
 
         return (
           <div key={item.uuid} className="w-full">
             <fieldset className="w-full border rounded-sm p-[8px] mb-2 relative">
-              <legend className="p-[0_12px] dark:text-white">
-                Establecimiento {i + 1}{" "}
-              </legend>
+              <legend className="p-[0_12px] dark:text-white">Establecimiento {i + 1} </legend>
               {item.new && (
                 <span
                   onClick={() => remove(i)}
@@ -260,9 +216,7 @@ const EmpresaEditEstablecimientos = () => {
                           {...field}
                           variant="filled"
                           error={!!errors.establecimientos?.[i]?.codigo}
-                          helperText={
-                            errors.establecimientos?.[i]?.codigo?.message
-                          }
+                          helperText={errors.establecimientos?.[i]?.codigo?.message}
                         />
                       )}
                     />
@@ -284,9 +238,7 @@ const EmpresaEditEstablecimientos = () => {
                           {...field}
                           variant="filled"
                           error={!!errors.establecimientos?.[i]?.denominacion}
-                          helperText={
-                            errors.establecimientos?.[i]?.denominacion?.message
-                          }
+                          helperText={errors.establecimientos?.[i]?.denominacion?.message}
                         />
                       )}
                     />
@@ -311,15 +263,10 @@ const EmpresaEditEstablecimientos = () => {
                           classNamePrefix="select"
                           isSearchable={false}
                           isLoading={isLoadingDepartamentos}
-                          onChange={(event) =>
-                            onChangeEntidad("DEPARTAMENTO", field, i, event)
-                          }
+                          onChange={(event) => onChangeEntidad("DEPARTAMENTO", field, i, event)}
                           options={listDepartamentos}
                           error={!!errors.establecimientos?.[i]?.departamento}
-                          helperText={
-                            errors.establecimientos?.[i]?.departamento?.value
-                              ?.message
-                          }
+                          helperText={errors.establecimientos?.[i]?.departamento?.value?.message}
                         />
                       )}
                     />
@@ -343,29 +290,16 @@ const EmpresaEditEstablecimientos = () => {
                             classNamePrefix="select"
                             isSearchable={false}
                             isDisabled={
-                              index === i &&
-                              (isLoadingProvincias ||
-                                isFetchingProvincias ||
-                                loading.provincia)
+                              index === i && (isLoadingProvincias || isFetchingProvincias || loading.provincia)
                             }
                             isLoading={
-                              index === i &&
-                              (isLoadingProvincias ||
-                                isFetchingProvincias ||
-                                loading.provincia)
+                              index === i && (isLoadingProvincias || isFetchingProvincias || loading.provincia)
                             }
                             loadingMessage={() => "Consulte departamento"}
-                            onChange={(event) =>
-                              onChangeEntidad("PROVINCIA", field, i, event)
-                            }
-                            options={listProvincias.filter((a) =>
-                              a.value.startsWith(departamento)
-                            )}
+                            onChange={(event) => onChangeEntidad("PROVINCIA", field, i, event)}
+                            options={listProvincias.filter((a) => a.value.startsWith(departamento))}
                             error={!!errors.establecimientos?.[i]?.provincia}
-                            helperText={
-                              errors.establecimientos?.[i]?.provincia?.value
-                                ?.message
-                            }
+                            helperText={errors.establecimientos?.[i]?.provincia?.value?.message}
                           />
                         );
                       }}
@@ -388,30 +322,13 @@ const EmpresaEditEstablecimientos = () => {
                           className="distrito-single"
                           classNamePrefix="select"
                           isSearchable={false}
-                          isDisabled={
-                            index === i &&
-                            (isLoadingDistritos ||
-                              isFetchingDistritos ||
-                              loading.distrito)
-                          }
-                          isLoading={
-                            index === i &&
-                            (isLoadingDistritos ||
-                              isFetchingDistritos ||
-                              loading.distrito)
-                          }
+                          isDisabled={index === i && (isLoadingDistritos || isFetchingDistritos || loading.distrito)}
+                          isLoading={index === i && (isLoadingDistritos || isFetchingDistritos || loading.distrito)}
                           loadingMessage={() => "Consulte provincia"}
-                          onChange={(event) =>
-                            onChangeEntidad("DISTRITO", field, i, event)
-                          }
-                          options={listDistritos.filter((a) =>
-                            a.value.startsWith(provincia)
-                          )}
+                          onChange={(event) => onChangeEntidad("DISTRITO", field, i, event)}
+                          options={listDistritos.filter((a) => a.value.startsWith(provincia))}
                           error={!!errors.establecimientos?.[i]?.distrito}
-                          helperText={
-                            errors.establecimientos?.[i]?.distrito?.value
-                              ?.message
-                          }
+                          helperText={errors.establecimientos?.[i]?.distrito?.value?.message}
                         />
                       )}
                     />
@@ -434,9 +351,7 @@ const EmpresaEditEstablecimientos = () => {
                           {...field}
                           variant="filled"
                           error={!!errors.establecimientos?.[i]?.direccion}
-                          helperText={
-                            errors.establecimientos?.[i]?.direccion?.message
-                          }
+                          helperText={errors.establecimientos?.[i]?.direccion?.message}
                         />
                       )}
                     />
@@ -490,9 +405,7 @@ const EmpresaEditEstablecimientos = () => {
                           {...field}
                           variant="filled"
                           error={!!errors.establecimientos?.[i]?.ubigeo}
-                          helperText={
-                            errors.establecimientos?.[i]?.ubigeo?.message
-                          }
+                          helperText={errors.establecimientos?.[i]?.ubigeo?.message}
                         />
                       )}
                     />
@@ -514,19 +427,11 @@ const EmpresaEditEstablecimientos = () => {
                           classNamePrefix="select"
                           isSearchable={false}
                           options={optionsStatus}
-                          value={optionsStatus.find(
-                            ({ value }) =>
-                              value ===
-                              valuesWatch.establecimientos?.[i]?.estado
-                          )}
+                          value={optionsStatus.find(({ value }) => value === valuesWatch.establecimientos?.[i]?.estado)}
                           onChange={(e: any) => {
-                            setValueModel(
-                              `establecimientos.${i}.estado`,
-                              e.value,
-                              {
-                                shouldDirty: true,
-                              }
-                            );
+                            setValueModel(`establecimientos.${i}.estado`, e.value, {
+                              shouldDirty: true,
+                            });
                           }}
                         />
                       )}

@@ -1,9 +1,4 @@
-import {
-  Controller,
-  useFieldArray,
-  useFormContext,
-  useWatch,
-} from "react-hook-form";
+import { Controller, useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import InputText from "../../../../components/Material/Input/InputText";
 import { IFeatureEmpresaUpdate } from "../../../../interfaces/features/empresa/empresa.interface";
 import { useEstablecimientosByEmpresa } from "../../hooks/useEmpresa";
@@ -27,16 +22,12 @@ const EmpresaEditPOS = ({ id }: { id: number }) => {
     shouldUnregister: false,
   });
 
-  const { data: listEstablishment, isPending } =
-    useEstablecimientosByEmpresa(id);
+  const { data: listEstablishment, isPending } = useEstablecimientosByEmpresa(id);
 
   const addPOS = (establecimiento: any, establishmentPOS: any[]) => {
     append({
       id: undefined,
-      nombre:
-        establishmentPOS.length === 0
-          ? `POS Principal - ${establecimiento.codigo}`
-          : "",
+      nombre: establishmentPOS.length === 0 ? `POS Principal - ${establecimiento.codigo}` : "",
       codigo: establishmentPOS.length === 0 ? "001" : "",
       establecimiento: {
         id: establecimiento.id,
@@ -52,10 +43,7 @@ const EmpresaEditPOS = ({ id }: { id: number }) => {
 
   // Agrupar los POS por establecimiento
   const getPOSByEstablishment = (establecimientoId: number) => {
-    return fields.filter(
-      (pos) =>
-        pos.establecimiento && pos.establecimiento.id === establecimientoId
-    );
+    return fields.filter((pos) => pos.establecimiento && pos.establecimiento.id === establecimientoId);
   };
 
   const optionsStatus = [
@@ -89,22 +77,17 @@ const EmpresaEditPOS = ({ id }: { id: number }) => {
                 return (
                   <tr key={indexEst}>
                     <th className="border py-1 px-2 font-normal">
-                      {est.codigo === "0000" ? "PRINCIPAL" : est.codigo} -{" "}
-                      {est.denominacion}
+                      {est.codigo === "0000" ? "PRINCIPAL" : est.codigo} - {est.denominacion}
                     </th>
                     <th className="border py-2 px-2">
                       {establishmentPOS.map((item, posIndex) => {
                         // Encontrar el índice real en el array fields para usar en Controller
-                        const realIndex = fields.findIndex(
-                          (f) => f.uuid === item.uuid
-                        );
+                        const realIndex = fields.findIndex((f) => f.uuid === item.uuid);
 
                         return (
                           <div key={item.uuid} className="w-full">
                             <fieldset className="w-full border rounded-sm p-[8px] mb-2 relative">
-                              <legend className="p-[0_12px] dark:text-white">
-                                POS {posIndex + 1}
-                              </legend>
+                              <legend className="p-[0_12px] dark:text-white">POS {posIndex + 1}</legend>
                               {item.new && (
                                 <span
                                   onClick={() => deletePOS(realIndex)}
@@ -121,19 +104,11 @@ const EmpresaEditPOS = ({ id }: { id: number }) => {
                                     render={({ field }) => (
                                       <InputText
                                         {...field}
-                                        disabled={
-                                          posIndex === 0 &&
-                                          item.codigo === "001"
-                                        }
+                                        disabled={posIndex === 0 && item.codigo === "001"}
                                         placeholder="Código"
                                         variant="filled"
-                                        error={
-                                          !!errors.pos?.[realIndex]?.codigo
-                                        }
-                                        helperText={
-                                          errors.pos?.[realIndex]?.codigo
-                                            ?.message
-                                        }
+                                        error={!!errors.pos?.[realIndex]?.codigo}
+                                        helperText={errors.pos?.[realIndex]?.codigo?.message}
                                       />
                                     )}
                                   />
@@ -145,19 +120,11 @@ const EmpresaEditPOS = ({ id }: { id: number }) => {
                                     render={({ field }) => (
                                       <InputText
                                         {...field}
-                                        disabled={
-                                          posIndex === 0 &&
-                                          item.codigo === "001"
-                                        }
+                                        disabled={posIndex === 0 && item.codigo === "001"}
                                         placeholder="Nombre"
                                         variant="filled"
-                                        error={
-                                          !!errors.pos?.[realIndex]?.nombre
-                                        }
-                                        helperText={
-                                          errors.pos?.[realIndex]?.nombre
-                                            ?.message
-                                        }
+                                        error={!!errors.pos?.[realIndex]?.nombre}
+                                        helperText={errors.pos?.[realIndex]?.nombre?.message}
                                       />
                                     )}
                                   />
@@ -169,27 +136,18 @@ const EmpresaEditPOS = ({ id }: { id: number }) => {
                                     render={({ field }) => (
                                       <SelectSimple
                                         {...field}
-                                        isDisabled={
-                                          posIndex === 0 &&
-                                          item.codigo === "001"
-                                        }
+                                        isDisabled={posIndex === 0 && item.codigo === "001"}
                                         className="status-single"
                                         classNamePrefix="select"
                                         isSearchable={false}
                                         options={optionsStatus}
                                         value={optionsStatus.find(
-                                          ({ value }) =>
-                                            value ===
-                                            valuesWatch.pos?.[realIndex]?.estado
+                                          ({ value }) => value === valuesWatch.pos?.[realIndex]?.estado
                                         )}
                                         onChange={(e: any) => {
-                                          setValue(
-                                            `pos.${realIndex}.estado`,
-                                            e.value,
-                                            {
-                                              shouldDirty: true,
-                                            }
-                                          );
+                                          setValue(`pos.${realIndex}.estado`, e.value, {
+                                            shouldDirty: true,
+                                          });
                                         }}
                                       />
                                     )}

@@ -10,6 +10,7 @@ import {
   MENU_SERIES,
   MENU_USUARIOS,
   MENU_TIPO_DOCUMENTOS,
+  INITIAL_VALUE_PAGE,
 } from "../../../config/constants";
 import { DialogEnum } from "../../../types/enums/dialog.enum";
 import { PageEnum } from "../../../types/enums/page.enum";
@@ -19,14 +20,14 @@ import { IFeatureModule } from "../../../interfaces/features/modulo/modulo.inter
 import { useTabStore } from "../../../store/zustand/tabs-zustand";
 import { useUserStore } from "../../../store/zustand/user-zustand";
 import { usePageStore } from "../../../store/zustand/page-zustand";
+import { useClickedStore } from "../../../store/zustand/clicked-tabs-zustand";
 
 interface Props {
   menu: IFeatureMenu;
   modulo: IFeatureModule;
-  clicked: number;
 }
 
-const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
+const NavMenuItem = ({ menu, modulo }: Props) => {
   const { dispatch } = useContext(ModalContext);
   const userGlobal = useUserStore((state) => state.userGlobal);
   const setPage = usePageStore((state) => state.setPage);
@@ -34,16 +35,14 @@ const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
   const tabs = useTabStore((state) => state.tabs);
   const setTabs = useTabStore((state) => state.setTabs);
   const setMenuSelected = useTabStore((state) => state.setMenuSelected);
+  const clicked = useClickedStore((state) => state.clicked);
 
-  const documentos =
-    (userGlobal?.empresaActual?.establecimiento?.pos
-      ?.documentos as ITipoDocsExtentido[]) ?? [];
+  const documentos = (userGlobal?.empresaActual?.establecimiento?.pos?.documentos as ITipoDocsExtentido[]) ?? [];
 
   const loadMenu = () => {
+    setPage(INITIAL_VALUE_PAGE);
     //Evitar renderizar nuevamante el mismo menu
-    const currentMenu = tabs.find(
-      (a) => a.index === clicked && a.menu.nombre === menu.nombre
-    );
+    const currentMenu = tabs.find((a) => a.index === clicked && a.menu.nombre === menu.nombre);
     if (currentMenu) return;
 
     // si es otro menu renderiza
@@ -61,6 +60,7 @@ const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
                 menu: {
                   estado: true,
                   nombre: menu.nombre,
+                  page: PageEnum.INIT,
                 },
                 moduloAux: {
                   estado: true,
@@ -69,6 +69,7 @@ const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
                 menuAux: {
                   estado: true,
                   nombre: menu.nombre,
+                  page: PageEnum.INIT,
                 },
               };
             }
@@ -85,29 +86,21 @@ const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
   return (
     <>
       <li className="p-1">
-        <a
-          onClick={loadMenu}
-          className="cursor-pointer font-[500] text-default hover:text-default select-none"
-        >
+        <a onClick={loadMenu} className="cursor-pointer font-[500] text-default hover:text-default select-none">
           {menu.nombre}
         </a>
       </li>
       {menuSelected?.menu.estado &&
-        (menuSelected?.menu.nombre === menu.nombre ||
-          menuSelected?.menuAux.nombre === menu.nombre) && (
+        (menuSelected?.menu.nombre === menu.nombre || menuSelected?.menuAux.nombre === menu.nombre) && (
           <fieldset className="border rounded-sm p-[8px]">
             <legend className="font-[500] p-[0_12px] dark:text-white">
-              {menu.nombre === MENU_COMPROBANTES_ELECT
-                ? "Documentos"
-                : "Acciones"}
+              {menu.nombre === MENU_COMPROBANTES_ELECT ? "Documentos" : "Acciones"}
             </legend>
             {menu.nombre === MENU_MODULOS && (
               <div className="p-[10px] text-center">
                 {dataAccess?.some((a) => a === "canCreate_modules") && (
                   <button
-                    onClick={() =>
-                      dispatch({ type: DialogEnum.DIALOG_MODULE_SYSTEM })
-                    }
+                    onClick={() => dispatch({ type: DialogEnum.DIALOG_MODULE_SYSTEM })}
                     type="button"
                     className="font-[500] w-[180px] mb-[5px] border  min-h-[24px] text-primary dark:text-white hover:bg-bgDefault"
                   >
@@ -121,9 +114,7 @@ const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
               <div className="p-[10px] text-center">
                 {dataAccess?.some((a) => a === "canCreate_permisos") && (
                   <button
-                    onClick={() =>
-                      dispatch({ type: DialogEnum.DIALOG_RESORUCE })
-                    }
+                    onClick={() => dispatch({ type: DialogEnum.DIALOG_RESORUCE })}
                     type="button"
                     className="font-[500] w-[180px] mb-[5px] border  min-h-[24px] text-primary dark:text-white hover:bg-bgDefault"
                   >
@@ -165,9 +156,7 @@ const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
               <div className="p-[10px] text-center">
                 {dataAccess?.some((a) => a === "canCreate_users") && (
                   <button
-                    onClick={() =>
-                      dispatch({ type: DialogEnum.DIALOG_TIPODOC })
-                    }
+                    onClick={() => dispatch({ type: DialogEnum.DIALOG_TIPODOC })}
                     type="button"
                     className="font-[500] w-[180px] mb-[5px] border  min-h-[24px] text-primary dark:text-white hover:bg-bgDefault"
                   >
@@ -181,9 +170,7 @@ const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
               <div className="p-[10px] text-center">
                 {dataAccess?.some((a) => a === "canCreate_users") && (
                   <button
-                    onClick={() =>
-                      dispatch({ type: DialogEnum.DIALOG_EMPRESA })
-                    }
+                    onClick={() => dispatch({ type: DialogEnum.DIALOG_EMPRESA })}
                     type="button"
                     className="font-[500] w-[180px] mb-[5px] border  min-h-[24px] text-primary dark:text-white hover:bg-bgDefault"
                   >
@@ -206,9 +193,7 @@ const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
                 )}
                 {dataAccess?.some((a) => a === "canMigrate_series") && (
                   <button
-                    onClick={() =>
-                      dispatch({ type: DialogEnum.DIALOG_SERIES_MIGRATE })
-                    }
+                    onClick={() => dispatch({ type: DialogEnum.DIALOG_SERIES_MIGRATE })}
                     type="button"
                     className="font-[500] w-[180px] mb-[5px] border  min-h-[24px] text-primary dark:text-white hover:bg-bgDefault"
                   >
@@ -224,9 +209,7 @@ const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
                   const DOCUMENTO = documento.nombre.toUpperCase();
 
                   // Definimos los tipos de permisos disponibles
-                  type PermissionType =
-                    | "canCreate_facturas"
-                    | "canCreate_boletas";
+                  type PermissionType = "canCreate_facturas" | "canCreate_boletas";
 
                   // Mapeo de permisos a documentos específicos
                   const permisoPorDocumento: Record<string, PermissionType> = {
@@ -247,17 +230,51 @@ const NavMenuItem = ({ menu, modulo, clicked }: Props) => {
                   // Renderizar solo si tiene el permiso
                   if (tienePermiso) {
                     const handleClick = () => {
+                      const tabSelected = tabs.find((a) => a.index === clicked);
+
                       if (DOCUMENTO === "FACTURA") {
+                        const newTab: typeof tabSelected = {
+                          ...tabSelected!,
+                          menu: {
+                            ...tabSelected!.menu,
+                            page: PageEnum.SCREEN_CREATE_INVOICE,
+                          },
+                          menuAux: {
+                            ...tabSelected!.menuAux,
+                            page: PageEnum.SCREEN_CREATE_INVOICE,
+                          },
+                        };
+
                         setPage({
                           open: true,
-                          namePage: PageEnum.SCREEN_FACTURA,
-                          pageComplete: true,
+                          namePage: PageEnum.SCREEN_CREATE_INVOICE,
+                          pageComplete: false,
+                        });
+
+                        setTabs((currentTabs) => {
+                          return currentTabs.map((tab) => (tab.index === clicked ? newTab : tab));
                         });
                       } else if (DOCUMENTO === "BOLETA") {
+                        const newTab: typeof tabSelected = {
+                          ...tabSelected!,
+                          menu: {
+                            ...tabSelected!.menu,
+                            page: PageEnum.SCREEN_CREATE_BOLETA,
+                          },
+                          menuAux: {
+                            ...tabSelected!.menuAux,
+                            page: PageEnum.SCREEN_CREATE_BOLETA,
+                          },
+                        };
+
                         setPage({
                           open: true,
-                          namePage: PageEnum.SCREEN_BOLETA,
-                          pageComplete: true,
+                          namePage: PageEnum.SCREEN_CREATE_BOLETA,
+                          pageComplete: false,
+                        });
+
+                        setTabs((currentTabs) => {
+                          return currentTabs.map((tab) => (tab.index === clicked ? newTab : tab));
                         });
                       }
                       // Agrega más acciones aquí si es necesario

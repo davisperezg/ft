@@ -427,7 +427,7 @@ const FacturaScreen = () => {
 
           //Reiniciamos valores por defecto excepto la serie y correlativos
           setPage({
-            namePage: PageEnum.SCREEN_FACTURA,
+            namePage: PageEnum.SCREEN_CREATE_INVOICE,
             open: true,
             pageComplete: true,
             payload: null,
@@ -894,7 +894,7 @@ const FacturaScreen = () => {
             )}
 
             {reconnecting || (
-              <Alert severity="warning">
+              <Alert severity="warning" className="mt-2">
                 <span>
                   <strong>DOCUMENTO SIN VALOR:</strong>&nbsp;
                   <span className="text-[#3a3a3a]">

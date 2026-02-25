@@ -73,10 +73,7 @@ const EmpresaEditConfiguraciones = ({ data }: Props) => {
     }
   };
 
-  const onChangeCert = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    field: any
-  ) => {
+  const onChangeCert = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, field: any) => {
     const files = (e.target as HTMLInputElement).files! as FileList;
 
     if (files.length > 0) {
@@ -121,9 +118,7 @@ const EmpresaEditConfiguraciones = ({ data }: Props) => {
                         isSearchable={false}
                         options={optionsModo}
                         placeholder="Seleccione modo"
-                        value={optionsModo.find(
-                          ({ value }) => Number(value) === valuesWatch.modo
-                        )}
+                        value={optionsModo.find(({ value }) => Number(value) === valuesWatch.modo)}
                         onChange={(e) => onChangeModo(e)}
                       />
                     )}
@@ -142,12 +137,7 @@ const EmpresaEditConfiguraciones = ({ data }: Props) => {
                 name="ose_enabled"
                 control={control}
                 render={({ field: { ...rest } }) => {
-                  return (
-                    <InputCheckBox
-                      {...rest}
-                      onChange={(e) => onChangeIsOse(e, rest)}
-                    />
-                  );
+                  return <InputCheckBox {...rest} onChange={(e) => onChangeIsOse(e, rest)} />;
                 }}
               />
             </Grid>
@@ -181,8 +171,7 @@ const EmpresaEditConfiguraciones = ({ data }: Props) => {
 
                 {/* Certificado password*/}
                 <Grid item xs={4}>
-                  Certificado password:{" "}
-                  <strong className="text-danger">*</strong>
+                  Certificado password: <strong className="text-danger">*</strong>
                 </Grid>
 
                 <Grid item xs={8}>
@@ -197,8 +186,7 @@ const EmpresaEditConfiguraciones = ({ data }: Props) => {
                         error={!!errors.cert_password}
                         helperText={
                           errors.cert_password?.message ??
-                          (!valuesWatch.cert &&
-                            "Agrega un certificado válido para ingresar la contraseña.")
+                          (!valuesWatch.cert && "Agrega un certificado válido para ingresar la contraseña.")
                         }
                       />
                     )}
@@ -228,8 +216,7 @@ const EmpresaEditConfiguraciones = ({ data }: Props) => {
                     </Grid>
                     {/* Password OSE */}
                     <Grid item xs={4}>
-                      Usuario password OSE:{" "}
-                      <strong className="text-danger">*</strong>
+                      Usuario password OSE: <strong className="text-danger">*</strong>
                     </Grid>
 
                     <Grid item xs={8}>
@@ -241,9 +228,7 @@ const EmpresaEditConfiguraciones = ({ data }: Props) => {
                             {...field}
                             variant="filled"
                             error={!!errors.usu_secundario_ose_password}
-                            helperText={
-                              errors.usu_secundario_ose_password?.message
-                            }
+                            helperText={errors.usu_secundario_ose_password?.message}
                           />
                         )}
                       />
@@ -272,8 +257,7 @@ const EmpresaEditConfiguraciones = ({ data }: Props) => {
                     </Grid>
                     {/* Password SUNAT */}
                     <Grid item xs={4}>
-                      Usuario password SUNAT:{" "}
-                      <strong className="text-danger">*</strong>
+                      Usuario password SUNAT: <strong className="text-danger">*</strong>
                     </Grid>
 
                     <Grid item xs={8}>
@@ -319,8 +303,7 @@ const EmpresaEditConfiguraciones = ({ data }: Props) => {
                     </Grid>
                     {/* Usuario OSE */}
                     <Grid item xs={4}>
-                      Usuario OSE{" "}
-                      <strong className="text-danger">(BETA)</strong>:{" "}
+                      Usuario OSE <strong className="text-danger">(BETA)</strong>:{" "}
                       <strong className="text-danger">*</strong>
                     </Grid>
 
@@ -341,8 +324,7 @@ const EmpresaEditConfiguraciones = ({ data }: Props) => {
 
                     {/* Password OSE */}
                     <Grid item xs={4}>
-                      Usuario password OSE{" "}
-                      <strong className="text-danger">(BETA)</strong>:{" "}
+                      Usuario password OSE <strong className="text-danger">(BETA)</strong>:{" "}
                       <strong className="text-danger">*</strong>
                     </Grid>
 
@@ -355,9 +337,7 @@ const EmpresaEditConfiguraciones = ({ data }: Props) => {
                             {...field}
                             variant="filled"
                             error={!!errors.usu_secundario_ose_password}
-                            helperText={
-                              errors.usu_secundario_ose_password?.message
-                            }
+                            helperText={errors.usu_secundario_ose_password?.message}
                           />
                         )}
                       />
@@ -383,16 +363,12 @@ const EmpresaEditConfiguraciones = ({ data }: Props) => {
               >
                 {(valuesWatch.cert?.length ?? 0) > 0 ? (
                   <img
-                    src={
-                      "https://solcainformatica.es/wp-content/uploads/certificados-instalados-ordenador.png"
-                    }
+                    src={"https://solcainformatica.es/wp-content/uploads/certificados-instalados-ordenador.png"}
                     alt="Certificado Preview"
                     className="w-[100%] h-[100%] object-contain block m-auto"
                   />
                 ) : (
-                  <WorkspacePremiumIcon
-                    sx={{ height: "100%", width: "100%" }}
-                  />
+                  <WorkspacePremiumIcon sx={{ height: "100%", width: "100%" }} />
                 )}
               </Button>
               <span className="text-center">{valuesWatch.cert?.[0].name}</span>

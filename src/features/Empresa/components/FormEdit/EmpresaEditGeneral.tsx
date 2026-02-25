@@ -27,10 +27,7 @@ const EmpresaEditGeneral = () => {
 
   const refLogo = useRef<HTMLInputElement | null>(null);
 
-  const onChangeFoto = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    field: any
-  ) => {
+  const onChangeFoto = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, field: any) => {
     const files = (e.target as HTMLInputElement).files! as FileList;
 
     if (files.length > 0) {
@@ -249,9 +246,7 @@ const EmpresaEditGeneral = () => {
                 />
               )}
             </Button>
-            <span className="text-center break-words">
-              {valuesWatch.logo?.[0].name}
-            </span>
+            <span className="text-center break-words">{valuesWatch.logo?.[0].name}</span>
             <Controller
               name="logo"
               control={control}
