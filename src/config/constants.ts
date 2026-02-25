@@ -178,6 +178,7 @@ export const FORM_MODAL_PRODUCT_INVOICE: IValidationInvoiceDetails = {
 export const FORM_INITIAL_INVOICE: IFeatureInvoice = {
   empresa: 0,
   establecimiento: 0,
+  pos: 0,
   tipo_documento: "01", //boleta(03), factura(01)
   serie: "",
   numero: "",
@@ -231,6 +232,7 @@ export const INITIAL_VALUE_TAB: ITabItem = {
     nombre: "Pestaña",
   },
   menu: {
+    page: "",
     estado: true,
     nombre: "DEFAULT",
   },
@@ -239,6 +241,7 @@ export const INITIAL_VALUE_TAB: ITabItem = {
     nombre: "Pestaña",
   },
   menuAux: {
+    page: "",
     estado: true,
     nombre: "DEFAULT",
   },
