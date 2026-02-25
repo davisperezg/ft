@@ -1,4 +1,4 @@
-import { io, Socket, ManagerOptions, SocketOptions } from "socket.io-client";
+import { io, ManagerOptions, SocketOptions } from "socket.io-client";
 import { BASE_URL_WS } from "../config/constants";
 import { storage } from "../utils/storage.utils";
 

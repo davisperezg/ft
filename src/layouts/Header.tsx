@@ -1,23 +1,19 @@
 import { ChangeEvent, Fragment, useEffect, useRef, useState } from "react";
 import logo from "../assets/images/logo_systemfact.png";
 import { storage } from "../utils/storage.utils";
-import { PageEnum } from "../types/enums/page.enum";
 import {
   IAuthEmpresa,
   IAuthEmpresas,
   IAuthEstablecimiento,
-  IAuthPOS,
   IAuthPayload,
 } from "../interfaces/models/auth/auth.interface";
 import { useUserStore } from "../store/zustand/user-zustand";
-import { usePageStore } from "../store/zustand/page-zustand";
 
 interface IHeader {
   result: IAuthPayload | undefined;
 }
 
 const Header = ({ result }: IHeader) => {
-  const page = usePageStore((state) => state.page);
   const setUserGlobal = useUserStore((state) => state.setUserGlobal);
   const userGlobal = useUserStore((state) => state.userGlobal);
   const [isDropdown, setDropdown] = useState(false);
@@ -98,7 +94,7 @@ const Header = ({ result }: IHeader) => {
           const empresaData = empresasAsignadas.find((emp) => emp.id === empresaSeleccion.id)!;
           //setEmpresaActual(empresaData);
 
-          const establecimientosAsignadas = (empresaData?.establecimientos! as IAuthEstablecimiento[]) ?? [];
+          const establecimientosAsignadas = (empresaData.establecimientos! as IAuthEstablecimiento[]) ?? [];
           //setEstablecimientosAsignadas(establecimientosAsignadas);
 
           const hayEstablecimientosInactivas = establecimientosAsignadas?.every((emp) => !emp.estado);
