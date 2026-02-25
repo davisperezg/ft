@@ -18,8 +18,8 @@ const CPEScreen = () => {
 
   // Componente de layout reutilizable para documentos
   const DocumentLayout = ({ children }: { children: React.ReactNode }) => (
-    <div className="bg-[#F8F8F8] overflow-y-auto min-h-dvh">
-      <div className="min-w-[1050px] relative mx-auto">
+    <div className="bg-[#F8F8F8] overflow-y-auto h-full">
+      <div className="min-w-[1050px] relative mx-auto ">
         <div className="p-[30px] w-[1050px] mx-auto">
           <PaperRounded className="!shadow-asun">{children}</PaperRounded>
         </div>
