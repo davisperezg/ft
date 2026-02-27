@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSocketInvoice } from "../../../hooks/useSocket";
+import { useSocket, useSocketInvoice } from "../../../hooks/useSocket";
 import {
   ExtendedColumnDef,
   SortingState,
@@ -44,6 +44,7 @@ const CPEList = () => {
   const queryClient = useQueryClient();
   const userGlobal = useUserStore((state) => state.userGlobal);
   const { socket, reconnecting } = useSocketInvoice();
+  const { socket: socketNotaVenta } = useSocket("nota-ventas");
   const pagination = usePaginationStore((state) => state.pagination);
   const setPagination = usePaginationStore((state) => state.setPagination);
   const empresa = userGlobal?.empresaActual?.id;
@@ -57,12 +58,17 @@ const CPEList = () => {
   const configEstablishment = userGlobal?.empresaActual?.establecimiento?.configuraciones?.[0];
   const ENVIA_SUNAT = configEstablishment?.envio_sunat_modo !== SendModeSunat.NO_ENVIA;
 
-  const { isPending, data, isFetching, isPlaceholderData } = useInvoices(
+  const { isPending, data, isFetching, isPlaceholderData, refetch } = useInvoices(
     Number(empresa),
     Number(establecimiento),
     pagination.pageIndex,
     pagination.pageSize
   );
+
+  useEffect(() => {
+    refetch();
+    setPagination({ pageIndex: 0, pageSize: 10 });
+  }, [refetch, setPagination]);
 
   const { dataInvoices, dataProps } = useMemo<{
     dataInvoices: IQueryInvoiceList[];
@@ -130,7 +136,7 @@ const CPEList = () => {
 
           return `${comprobante}:${serie}-${correlativo}`;
         },
-        size: 180,
+        size: 230,
         minSize: 31,
       },
       {
@@ -202,23 +208,26 @@ const CPEList = () => {
         accessorKey: "pdf",
         header: () => <div className="text-center w-full">PDF</div>,
         cell: ({ row }) => {
+          const pdf58mm = row.original.pdf58mm;
+          const pdf80mm = row.original.pdf80mm;
           const pdfA4 = row.original.pdfA4;
           const status = row.original.status;
           return (
             <div className="text-[16px] text-center flex justify-center w-full">
-              {status ? (
-                <ToolTipIconButton titleTooltip="Descargar PDF formato A4">
-                  <a target="_blank" rel="noopener noreferrer" href={pdfA4}>
-                    <FaRegFilePdf className="text-danger cursor-pointer" />
-                  </a>
-                </ToolTipIconButton>
-              ) : (
-                <FaRegFilePdf className="text-danger" />
-              )}
+              {pdfA4 &&
+                (status ? (
+                  <ToolTipIconButton titleTooltip="Descargar PDF formato A4">
+                    <a target="_blank" rel="noopener noreferrer" href={pdfA4}>
+                      <FaRegFilePdf className="text-danger cursor-pointer" />
+                    </a>
+                  </ToolTipIconButton>
+                ) : (
+                  <FaRegFilePdf className="text-danger" />
+                ))}
 
               {status ? (
                 <ToolTipIconButton titleTooltip="PDF formato Ticket 58mm">
-                  <a target="_blank" rel="noopener noreferrer" href={pdfA4}>
+                  <a target="_blank" rel="noopener noreferrer" href={pdf58mm}>
                     <TfiTicket className="text-blue-700 cursor-pointer" />
                   </a>
                 </ToolTipIconButton>
@@ -228,7 +237,7 @@ const CPEList = () => {
 
               {status ? (
                 <ToolTipIconButton titleTooltip="PDF formato Ticket 80mm">
-                  <a target="_blank" rel="noopener noreferrer" href={pdfA4}>
+                  <a target="_blank" rel="noopener noreferrer" href={pdf80mm}>
                     <TfiTicket className="text-blue-900 cursor-pointer" />
                   </a>
                 </ToolTipIconButton>
@@ -248,13 +257,14 @@ const CPEList = () => {
         accessorKey: "xml",
         header: () => <div className="text-center w-full">XML</div>,
         cell: ({ row }) => {
+          //const tipo_comprobante = row.original.tipo_comprobante;
           const xmlSigned = row.original.xml;
           const status = row.original.status;
           //const estadoOpe = Number(row.original.estado_operacion); //0-creado, 1-enviando, 2-aceptado, 3-rechazado
           //const estadoAnul = Number(row.original.estado_anulacion); //null-no enviado, 1-enviado con ticket, 2-aceptado, 3-rechazado
           return (
             <div className="text-[16px] text-center flex justify-center w-full">
-              {!ENVIA_SUNAT ? (
+              {!ENVIA_SUNAT || xmlSigned === null || xmlSigned === undefined ? (
                 <>{"-"}</>
               ) : status ? (
                 <ToolTipIconButton titleTooltip="Descargar XML firmado">
@@ -472,6 +482,63 @@ const CPEList = () => {
       };
     }
   }, [socket, queryClient, empresa, establecimiento, pagination.pageIndex, pagination.pageSize]);
+
+  useEffect(() => {
+    if (!socketNotaVenta) return;
+
+    const receiveLogs = (log: any) => {
+      setLogs((prev) => {
+        const exists = prev.reduce((acc, curr) => {
+          if (acc) return true;
+          return curr.correlativo === log.correlativo;
+        }, false);
+        if (exists) return prev;
+        return [...prev, { type: log.type, time: log.time, correlativo: log.correlativo, message: log.message }];
+      });
+    };
+
+    const receiveNotaVenta = (data: IQueryInvoiceList) => {
+      console.log("receiveNotaVenta", data);
+      queryClient.setQueryData(
+        ["invoices", empresa, establecimiento, 0, pagination.pageSize],
+        (prevInvoices: IQueryInvoice) => {
+          const hasCorrelativo = prevInvoices.items.find((item) => item.correlativo === data.correlativo);
+          if (!hasCorrelativo) {
+            return { ...prevInvoices, items: [data, ...prevInvoices.items] };
+          }
+          return {
+            ...prevInvoices,
+            items: prevInvoices.items.map((item) =>
+              item.correlativo === data.correlativo
+                ? {
+                    ...item,
+                    fecha_emision: data.fecha_emision,
+                    cliente: data.cliente,
+                    moneda: data.moneda_abrstandar,
+                    mto_operaciones_gravadas: data.mto_operaciones_gravadas,
+                    mto_operaciones_exoneradas: data.mto_operaciones_exoneradas,
+                    mto_operaciones_inafectas: data.mto_operaciones_inafectas,
+                    mto_operaciones_exportacion: data.mto_operaciones_exportacion,
+                    mto_igv: data.mto_igv,
+                    estado_operacion: data.estado_operacion,
+                    status: data.status,
+                  }
+                : item
+            ),
+          };
+        }
+      );
+    };
+
+    socketNotaVenta.on("server::newNotaVenta", receiveNotaVenta);
+    socketNotaVenta.on("server::notifyNotaVenta", receiveLogs);
+    socketNotaVenta.on("exception", receiveLogs);
+    return () => {
+      socketNotaVenta.off("server::newNotaVenta", receiveNotaVenta);
+      socketNotaVenta.off("server::notifyNotaVenta", receiveLogs);
+      socketNotaVenta.off("exception", receiveLogs);
+    };
+  }, [socketNotaVenta, queryClient, empresa, establecimiento, pagination.pageSize]);
 
   useEffect(() => {
     if (socket) {

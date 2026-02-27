@@ -3,14 +3,13 @@ import { Socket } from "socket.io-client";
 import { storage } from "../utils/storage.utils";
 import { toast } from "sonner";
 import { getRefresh } from "../features/Authentication/services/auth.service";
-import { refreshSocketConnection, setupSocket, socketInvoices } from "../lib/socketsInstance";
+import { getSocketInstance, refreshSocketConnection, setupSocket } from "../lib/socketsInstance";
 
-export const useSocketInvoice = () => {
+export const useSocket = (namespace: string) => {
   const [reconnecting, setReconnecting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [socket, setSocket] = useState<Socket | null>(null);
 
-  // Update token periodically or when needed
   const updateToken = useCallback(async () => {
     try {
       setLoading(true);
@@ -25,11 +24,8 @@ export const useSocketInvoice = () => {
       const resToken = await getRefresh(String(user.usuario), String(refreshToken));
 
       if (resToken.status === 201) {
-        const newToken = resToken.data.access_token;
-        storage.setItem("access_token", newToken, "SESSION");
-
-        // Refresh socket connection with new token
-        await refreshSocketConnection();
+        storage.setItem("access_token", resToken.data.access_token, "SESSION");
+        refreshSocketConnection(namespace);
         return true;
       }
 
@@ -40,23 +36,17 @@ export const useSocketInvoice = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [namespace]);
 
-  // Initialize socket on component mount
+  // Initialize socket on mount
   useEffect(() => {
-    const initializeSocket = () => {
-      const isSetup = setupSocket();
-      if (isSetup) {
-        setSocket(socketInvoices);
-      } else {
-        // If setup failed due to missing credentials, try getting a fresh token
-        updateToken();
-      }
-    };
+    const isSetup = setupSocket(namespace);
+    if (isSetup) {
+      setSocket(getSocketInstance(namespace));
+    } else {
+      updateToken();
+    }
 
-    initializeSocket();
-
-    // Check if we have the required storage data
     const checkStorageData = setInterval(() => {
       const hasToken = !!storage.getItem("access_token", "SESSION");
       const hasEmpresa = !!storage.getItem("empresaActual", "SESSION");
@@ -66,80 +56,54 @@ export const useSocketInvoice = () => {
         storage.clear("SESSION");
         window.location.reload();
       }
-    }, 60000); // Check every minute
+    }, 60000);
 
-    return () => {
-      clearInterval(checkStorageData);
-    };
-  }, [updateToken]);
+    return () => clearInterval(checkStorageData);
+  }, [namespace, updateToken]);
 
-  // Set up socket event listeners
+  // Socket lifecycle event handlers
   useEffect(() => {
     if (!socket) return;
 
-    const handleReconnectAttempt = (attempt: number) => {
-      console.log(`Socket reconnection attempt: ${attempt}`);
-      setReconnecting(true);
-    };
+    const handleReconnectAttempt = () => setReconnecting(true);
 
-    const handleReconnect = (attempt: number) => {
-      console.log(`Socket reconnected after ${attempt} attempts`);
+    const handleReconnect = () => {
       setReconnecting(false);
-      // We successfully reconnected, so make sure our token is up to date
       updateToken();
     };
 
     const handleDisconnect = (reason: string) => {
-      console.log(`Socket disconnected: ${reason}`);
-
-      // If the server closed the connection, try to reconnect with fresh credentials
-      if (reason === "io server disconnect") {
-        refreshSocketConnection();
-      }
-
-      // If the socket disconnected due to transport close (server restart)
-      if (reason === "transport close") {
-        // Socket.IO will automatically try to reconnect
-        setReconnecting(true);
-      }
+      if (reason === "io server disconnect") refreshSocketConnection(namespace);
+      if (reason === "transport close") setReconnecting(true);
     };
 
     const handleConnectError = (error: Error) => {
-      console.error("Socket connection error:", error.message);
-
-      // If we get authentication errors, try refreshing the token
       if (error.message.includes("auth") || error.message.includes("jwt")) {
         updateToken();
       }
     };
 
     const handleError = (data: any) => {
-      console.error("Socket error:", data);
-
       if (data.message === "jwt expired") {
         toast.warning("Your session has expired. Refreshing...");
         updateToken().then((success) => {
           if (!success) {
-            // If token refresh failed, redirect to login
             storage.clear("SESSION");
             window.location.reload();
           }
         });
       }
-
       if (data.message === "Unauthorized access") {
         toast.error("Unauthorized access");
       }
     };
 
-    // Register event handlers
     socket.io.on("reconnect_attempt", handleReconnectAttempt);
     socket.io.on("reconnect", handleReconnect);
     socket.on("disconnect", handleDisconnect);
     socket.on("connect_error", handleConnectError);
     socket.on("error", handleError);
 
-    // Clean up
     return () => {
       socket.io.off("reconnect_attempt", handleReconnectAttempt);
       socket.io.off("reconnect", handleReconnect);
@@ -147,23 +111,16 @@ export const useSocketInvoice = () => {
       socket.off("connect_error", handleConnectError);
       socket.off("error", handleError);
     };
-  }, [socket, updateToken]);
+  }, [socket, namespace, updateToken]);
 
-  // Refresh token periodically
+  // Refresh token every 23 hours
   useEffect(() => {
-    // Refresh token every 23 hours to avoid expiration
-    const tokenRefreshInterval = setInterval(
-      () => {
-        console.log("Performing scheduled token refresh");
-        updateToken();
-      },
-      23 * 60 * 60 * 1000
-    );
-
-    return () => {
-      clearInterval(tokenRefreshInterval);
-    };
+    const interval = setInterval(() => updateToken(), 23 * 60 * 60 * 1000);
+    return () => clearInterval(interval);
   }, [updateToken]);
 
   return { socket, reconnecting, loading };
 };
+
+// Named aliases — backward compatibility
+export const useSocketInvoice = () => useSocket("invoices");

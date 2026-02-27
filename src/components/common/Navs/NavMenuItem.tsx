@@ -40,10 +40,28 @@ const NavMenuItem = ({ menu, modulo }: Props) => {
   const documentos = (userGlobal?.empresaActual?.establecimiento?.pos?.documentos as ITipoDocsExtentido[]) ?? [];
 
   const loadMenu = () => {
-    setPage(INITIAL_VALUE_PAGE);
-    //Evitar renderizar nuevamante el mismo menu
     const currentMenu = tabs.find((a) => a.index === clicked && a.menu.nombre === menu.nombre);
-    if (currentMenu) return;
+    if (currentMenu) {
+      // Mismo menú: solo resetear si hay una página activa (evita re-render innecesario)
+      if (currentMenu.menu.page !== PageEnum.INIT) {
+        setPage({ ...INITIAL_VALUE_PAGE, open: true });
+        setTabs(
+          tabs.map((tab) =>
+            tab.index === clicked
+              ? {
+                  ...tab,
+                  menu: { ...tab.menu, page: PageEnum.INIT },
+                  menuAux: { ...tab.menuAux, page: PageEnum.INIT },
+                }
+              : tab
+          )
+        );
+      }
+      return;
+    }
+
+    // Menú diferente: actualizar page y tab
+    setPage({ ...INITIAL_VALUE_PAGE, open: true });
 
     // si es otro menu renderiza
     const updateTabWithModuleSelected = tabs.find((a) => a.index === clicked);
@@ -209,12 +227,13 @@ const NavMenuItem = ({ menu, modulo }: Props) => {
                   const DOCUMENTO = documento.nombre.toUpperCase();
 
                   // Definimos los tipos de permisos disponibles
-                  type PermissionType = "canCreate_facturas" | "canCreate_boletas";
+                  type PermissionType = "canCreate_facturas" | "canCreate_boletas" | "canCreate_nota_venta";
 
                   // Mapeo de permisos a documentos específicos
                   const permisoPorDocumento: Record<string, PermissionType> = {
                     FACTURA: "canCreate_facturas",
                     BOLETA: "canCreate_boletas",
+                    "NOTA DE VENTA": "canCreate_nota_venta",
                     // Add more documents and their permissions here if needed
                   };
 
@@ -270,6 +289,28 @@ const NavMenuItem = ({ menu, modulo }: Props) => {
                         setPage({
                           open: true,
                           namePage: PageEnum.SCREEN_CREATE_BOLETA,
+                          pageComplete: false,
+                        });
+
+                        setTabs((currentTabs) => {
+                          return currentTabs.map((tab) => (tab.index === clicked ? newTab : tab));
+                        });
+                      } else if (DOCUMENTO === "NOTA DE VENTA") {
+                        const newTab: typeof tabSelected = {
+                          ...tabSelected!,
+                          menu: {
+                            ...tabSelected!.menu,
+                            page: PageEnum.SCREEN_CREATE_NOTA_VENTA,
+                          },
+                          menuAux: {
+                            ...tabSelected!.menuAux,
+                            page: PageEnum.SCREEN_CREATE_NOTA_VENTA,
+                          },
+                        };
+
+                        setPage({
+                          open: true,
+                          namePage: PageEnum.SCREEN_CREATE_NOTA_VENTA,
                           pageComplete: false,
                         });
 

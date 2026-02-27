@@ -23,6 +23,7 @@ import { schemaFormComuBaja } from "../validations/comunicacion-baja.schema";
 import { IQueryInvoiceList } from "../../../interfaces/models/invoices/invoice.interface";
 import { useUserStore } from "../../../store/zustand/user-zustand";
 import { SendModeSunat } from "../../../types/enums/send_mode_sunat.enum";
+import { useAnularNotaVenta } from "../hooks/useNotaVenta";
 
 interface CPEAcctionListProps {
   row: Row<IQueryInvoiceList>;
@@ -51,11 +52,13 @@ const initialNotify = {
 const CPEAcctionList = ({ row, comunicatBaja }: CPEAcctionListProps) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openMotivo, setOpenMotivo] = useState<boolean>(false);
+  const [openAnular, setOpenAnular] = useState<boolean>(false);
   const open = Boolean(anchorEl);
   const [isActiveOpt, setActiveOpt] = useState<null | number>(null);
   const { socket } = useSocketInvoice();
   const [notify, setNotify] = useState(initialNotify);
   const userGlobal = useUserStore((state) => state.userGlobal);
+  const { mutate: anularNV, isPending: isAnulando } = useAnularNotaVenta();
 
   const configEstablishment = userGlobal?.empresaActual?.establecimiento?.configuraciones?.[0];
   const ENVIA_SUNAT = configEstablishment?.envio_sunat_modo !== SendModeSunat.NO_ENVIA;
@@ -81,10 +84,11 @@ const CPEAcctionList = ({ row, comunicatBaja }: CPEAcctionListProps) => {
 
   const handleClick = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
+      if (row.original.tipo_comprobante === "nota_venta" && row.original.estado_anulacion === 2) return;
       setActiveOpt(row.index);
       setAnchorEl(event.currentTarget);
     },
-    [row.index]
+    [row.index, row.original.estado_anulacion, row.original.tipo_comprobante]
   );
 
   const handleOpenBaja = useCallback(() => {
@@ -110,8 +114,22 @@ const CPEAcctionList = ({ row, comunicatBaja }: CPEAcctionListProps) => {
   );
 
   const handleOpenAnular = useCallback(() => {
-    alert("venta");
+    setOpenAnular(true);
+    handleClose();
+  }, [handleClose]);
+
+  const handleCloseAnular = useCallback(() => {
+    setOpenAnular(false);
   }, []);
+
+  const handleConfirmAnular = useCallback(() => {
+    if (row.original.tipo_comprobante === "nota_venta") {
+      anularNV(row.original.id, {
+        onSuccess: () => handleCloseAnular(),
+        onError: () => handleCloseAnular(),
+      });
+    }
+  }, [anularNV, row.original.id, row.original.tipo_comprobante, handleCloseAnular]);
 
   useEffect(() => {
     if (socket) {
@@ -182,31 +200,96 @@ const CPEAcctionList = ({ row, comunicatBaja }: CPEAcctionListProps) => {
             open={open}
             onClose={handleClose}
           >
-            <MenuItem onClick={handleClose} disableRipple>
-              <MdIosShare className="text-[18px] mr-1" /> Compartir
-            </MenuItem>
-            <MenuItem onClick={handleClose} disableRipple>
-              <MdOutlineContentCopy className="text-[18px] mr-1" /> Copiar en...
-            </MenuItem>
-            {ENVIA_SUNAT ? ( //INMEDIATO, MANUAL, PROGRAMADO
-              row.original.estado_operacion === 0 ? ( //MANUAL, PROGRAMADO
-                <MenuItem onClick={handleOpenAnular} disableRipple>
-                  <MdOutlineSettingsBackupRestore className="text-[18px] mr-1" /> Anular
+            {row.original.tipo_comprobante === "invoice" ? (
+              <>
+                <MenuItem onClick={handleClose} disableRipple>
+                  <MdIosShare className="text-[18px] mr-1" /> Compartir
                 </MenuItem>
+                <MenuItem onClick={handleClose} disableRipple>
+                  <MdOutlineContentCopy className="text-[18px] mr-1" /> Copiar en...
+                </MenuItem>
+              </>
+            ) : null}
+
+            {ENVIA_SUNAT ? ( //INMEDIATO, MANUAL, PROGRAMADO
+              row.original.estado_operacion === 0 ? ( //MANUAL, PROGRAMADO;
+                // SI ES NOTA DE VENTA ANULADA NO MOSTRAR LA OPCION DE ANULAR
+                <div>
+                  {(row.original.tipo_comprobante === "nota_venta" && row.original.estado_anulacion === 2) || (
+                    <MenuItem onClick={handleOpenAnular} disableRipple>
+                      <MdOutlineSettingsBackupRestore className="text-[18px] mr-1" /> Anular
+                    </MenuItem>
+                  )}
+                </div>
               ) : row.original.estado_operacion === 2 && !row.original.estado_anulacion ? ( //SOLO BAJA PARA DOCS ACEPTADOS
                 <MenuItem onClick={handleOpenBaja} disableRipple>
                   <MdOutlineSettingsBackupRestore className="text-[18px] mr-1" /> Comunicar de baja
                 </MenuItem>
               ) : null
             ) : (
-              //NO_ENVIA
-              <MenuItem onClick={handleOpenAnular} disableRipple>
-                <MdOutlineSettingsBackupRestore className="text-[18px] mr-1" /> Anular
-              </MenuItem>
+              //NO_ENVIA;
+              // SI ES NOTA DE VENTA ANULADA NO MOSTRAR LA OPCION DE ANULAR
+              <div>
+                {(row.original.tipo_comprobante === "nota_venta" && row.original.estado_anulacion === 2) || (
+                  <MenuItem onClick={handleOpenAnular} disableRipple>
+                    <MdOutlineSettingsBackupRestore className="text-[18px] mr-1" /> Anular
+                  </MenuItem>
+                )}
+              </div>
             )}
           </MenuDropdown>
         )}
       </div>
+
+      <DialogBeta
+        open={openAnular}
+        TransitionComponent={Transition}
+        aria-describedby="alert-dialog-slide-anular"
+        keepMounted
+        PaperProps={{
+          sx: {
+            "&.MuiDialog-paper": {
+              overflow: "hidden",
+              height: "auto",
+              backgroundColor: "#fff",
+              width: "450px",
+            },
+          },
+        }}
+      >
+        <DialogTitleBeta>
+          Anular {row.original.serie}-{row.original.correlativo}
+        </DialogTitleBeta>
+        <IconButton
+          aria-label="close"
+          onClick={handleCloseAnular}
+          disabled={isAnulando}
+          sx={{
+            position: "absolute",
+            right: 8,
+            top: 8,
+            padding: "3px",
+            height: 18,
+            fontSize: "16px",
+            color: "#fff",
+          }}
+        >
+          <CloseIcon sx={{ width: "16px", height: "16px" }} />
+        </IconButton>
+        <DialogContentBeta sx={{ padding: 2 }}>
+          <div className="flex flex-col gap-3">
+            <Alert severity="warning">¿Está seguro de anular este comprobante? Esta acción no se puede deshacer.</Alert>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outlined" onClick={handleCloseAnular} disabled={isAnulando}>
+                Cancelar
+              </Button>
+              <Button variant="contained" color="error" onClick={handleConfirmAnular} disabled={isAnulando}>
+                {isAnulando ? "Anulando..." : "Confirmar anulación"}
+              </Button>
+            </div>
+          </div>
+        </DialogContentBeta>
+      </DialogBeta>
 
       {ENVIA_SUNAT ? (
         <DialogBeta
