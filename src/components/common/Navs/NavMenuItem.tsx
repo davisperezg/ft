@@ -227,13 +227,13 @@ const NavMenuItem = ({ menu, modulo }: Props) => {
                   const DOCUMENTO = documento.nombre.toUpperCase();
 
                   // Definimos los tipos de permisos disponibles
-                  type PermissionType = "canCreate_facturas" | "canCreate_boletas" | "canCreate_nota_venta";
+                  type PermissionType = "canCreate_facturas" | "canCreate_boletas" | "canCreate_notaventas";
 
                   // Mapeo de permisos a documentos específicos
                   const permisoPorDocumento: Record<string, PermissionType> = {
                     FACTURA: "canCreate_facturas",
                     BOLETA: "canCreate_boletas",
-                    "NOTA DE VENTA": "canCreate_nota_venta",
+                    "NOTA DE VENTA": "canCreate_notaventas",
                     // Add more documents and their permissions here if needed
                   };
 
