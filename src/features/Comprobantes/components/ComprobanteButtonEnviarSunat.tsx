@@ -145,6 +145,13 @@ const CPEButtonEnviarSunat = ({ row }: IProps) => {
             <ToolTipIconButton titleTooltip={`Envio a SUNAT con envio ${SendModeSunat.INMEDIATO}`}>
               <AiOutlineLoading3Quarters className="text-black-700 animate-spin" />
             </ToolTipIconButton>
+          ) : row.original.tipo_comprobante === "nota_venta" && row.original.estado_anulacion === 2 ? (
+            <a
+              type="button"
+              className="bg-red-700 text-[10px] text-white px-[5px] py-[2px] rounded-full hover:text-white"
+            >
+              Anulado
+            </a>
           ) : (
             <a
               type="button"

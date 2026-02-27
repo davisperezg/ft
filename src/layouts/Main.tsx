@@ -3,7 +3,7 @@ import NavLeft from "../components/common/Navs/NavLeft";
 import TabItem from "../components/common/Tabs/Views/TabItem";
 import DynamicComponentLoader from "../utils/render-component-dynamic.utils";
 import { useTabStore } from "../store/zustand/tabs-zustand";
-import { INITIAL_VALUE_TAB } from "../config/constants";
+import { INITIAL_VALUE_TAB, INITIAL_VALUE_PAGE } from "../config/constants";
 import { useUserStore } from "../store/zustand/user-zustand";
 import { usePageStore } from "../store/zustand/page-zustand";
 import { useClickedStore } from "../store/zustand/clicked-tabs-zustand";
@@ -26,7 +26,14 @@ const Main = () => {
     setClicked(index);
     const tabSelected = tabs.find((a) => a.index === index);
     if (tabSelected) {
-      setMenuSelected(tabSelected?.menu.nombre);
+      setMenuSelected(tabSelected.menu.nombre);
+      // Sincronizar el page store con la página guardada en el tab activo
+      const tabPage = tabSelected.menu.page as PageEnum;
+      setPage(
+        tabPage && tabPage !== PageEnum.INIT
+          ? { open: true, namePage: tabPage, pageComplete: false }
+          : INITIAL_VALUE_PAGE
+      );
     }
   };
 
@@ -35,6 +42,8 @@ const Main = () => {
     const endTab = tabs[tabs.length - 1];
     const getTab = endTab.index + 1;
     setClicked(getTab);
+    // Tab nuevo siempre empieza sin página activa
+    setPage(INITIAL_VALUE_PAGE);
 
     //Al agregar nuevo tab se clona la información del tab seleccionado
     const tabSelected = tabs.find((a) => a.index === clicked);
@@ -68,9 +77,17 @@ const Main = () => {
 
       //Es otro tab seleccionado avanza hacia adelante
       const rest = newTabs.slice(0, findIndex);
-      setMenuSelected(rest[rest.length - 1].menu.nombre);
-      setClicked(rest[rest.length - 1].index);
+      const previousTab = rest[rest.length - 1];
+      setMenuSelected(previousTab.menu.nombre);
+      setClicked(previousTab.index);
       setTabs(newTabs);
+      // Sincronizar page con la página del tab que queda activo
+      const tabPage = previousTab.menu.page as PageEnum;
+      setPage(
+        tabPage && tabPage !== PageEnum.INIT
+          ? { open: true, namePage: tabPage, pageComplete: false }
+          : INITIAL_VALUE_PAGE
+      );
     } else {
       //Si el tab eliminado no es el seleccionado, el tab seleccionado se mantiene
       setTabs(newTabs);

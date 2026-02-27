@@ -104,6 +104,9 @@ export interface IQueryInvoiceList
   xml?: string;
   cdr?: string;
   pdfA4?: string;
+  pdf58mm?: string;
+  pdf80mm?: string;
+  tipo_comprobante?: string;
   fecha_registro: Date;
   fecha_emision: Date;
   details: IQueryDetailsInvoice[];

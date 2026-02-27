@@ -2,58 +2,53 @@ import { io, ManagerOptions, SocketOptions } from "socket.io-client";
 import { BASE_URL_WS } from "../config/constants";
 import { storage } from "../utils/storage.utils";
 
-const URL = BASE_URL_WS;
-
 type SocketOption = Partial<ManagerOptions & SocketOptions>;
 
-// Better reconnection settings
 const options: SocketOption = {
-  autoConnect: false, // We'll connect manually when we have all data
+  autoConnect: false,
   reconnection: true,
-  reconnectionAttempts: Infinity, // Keep trying to reconnect
-  reconnectionDelay: 1000, // Start with 1s delay
-  reconnectionDelayMax: 5000, // Max 5s between retries
-  timeout: 20000, // Longer timeout for initial connection
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  timeout: 20000,
 };
 
-// Create socket instance but don't connect yet
-export const socketInvoices = io(`${URL}/invoices`, options);
+// Singleton registry: one instance per namespace
+const instances = new Map<string, ReturnType<typeof io>>();
 
-// Setup socket with authentication and connection management
-export const setupSocket = () => {
-  // Get latest credentials
+export const getSocketInstance = (namespace: string) => {
+  if (!instances.has(namespace)) {
+    instances.set(namespace, io(`${BASE_URL_WS}/${namespace}`, options));
+  }
+  return instances.get(namespace)!;
+};
+
+export const setupSocket = (namespace: string) => {
   const token = storage.getItem("access_token", "SESSION");
   const empresa = JSON.parse(String(storage.getItem("empresaActual", "SESSION") || "{}"));
 
   if (!token || !empresa?.id) {
-    console.warn("Missing authentication data for socket connection");
+    console.warn(`[socket/${namespace}] Missing authentication data`);
     return false;
   }
 
-  // Set auth data
-  socketInvoices.auth = {
-    token: `Bearer ${token}`,
-  };
+  const socket = getSocketInstance(namespace);
 
-  // Set query parameters
-  socketInvoices.io.opts.query = {
+  socket.auth = { token: `Bearer ${token}` };
+  socket.io.opts.query = {
     "empresa-id": String(empresa?.id),
     "establecimiento-id": String(empresa?.establecimiento?.id),
   };
 
-  // Connect if not already connected
-  if (socketInvoices.disconnected) {
-    socketInvoices.connect();
-    console.log("Socket connecting with fresh credentials");
+  if (socket.disconnected) {
+    socket.connect();
   }
 
   return true;
 };
 
-// Reset and reconnect socket with fresh credentials
-export const refreshSocketConnection = async () => {
-  if (socketInvoices.connected) {
-    socketInvoices.disconnect();
-  }
-  return setupSocket();
+export const refreshSocketConnection = (namespace: string) => {
+  const socket = getSocketInstance(namespace);
+  if (socket.connected) socket.disconnect();
+  return setupSocket(namespace);
 };

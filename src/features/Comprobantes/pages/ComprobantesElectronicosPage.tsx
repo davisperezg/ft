@@ -1,20 +1,12 @@
-import { useMemo } from "react";
 import CPEList from "../components/ComprobanteList";
 import { PageEnum } from "../../../types/enums/page.enum";
 import FacturaScreen from "./FacturaPage";
 import PaperRounded from "../../../components/Material/Paper/PaperRounded";
-import { useTabStore } from "../../../store/zustand/tabs-zustand";
-import { useClickedStore } from "../../../store/zustand/clicked-tabs-zustand";
+import NotaVentaScreen from "./NotaVentaPage";
+import { usePageStore } from "../../../store/zustand/page-zustand";
 
 const CPEScreen = () => {
-  const tabs = useTabStore((state) => state.tabs);
-  const clicked = useClickedStore((state) => state.clicked);
-
-  // Memoizar la página actual para evitar cálculos innecesarios
-  const currentPage = useMemo((): string => {
-    const currentTab = tabs.find((a) => a.index === clicked);
-    return currentTab ? currentTab.menu.page : PageEnum.INIT;
-  }, [tabs, clicked]);
+  const currentPage = usePageStore((state) => state.page.namePage);
 
   // Componente de layout reutilizable para documentos
   const DocumentLayout = ({ children }: { children: React.ReactNode }) => (
@@ -45,7 +37,14 @@ const CPEScreen = () => {
           </DocumentLayout>
         );
 
-      case PageEnum.INIT:
+      case PageEnum.SCREEN_CREATE_NOTA_VENTA:
+        return (
+          <DocumentLayout>
+            <NotaVentaScreen />
+          </DocumentLayout>
+        );
+
+      case PageEnum.SCREEN_LIST_INVOICE:
         return <CPEList />;
 
       default:

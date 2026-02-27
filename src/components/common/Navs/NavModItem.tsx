@@ -21,6 +21,7 @@ const NavModItem = ({ modulo }: Props) => {
   const handleModulo = () => {
     // si es el mismo modulo no hace nada
     const currentModule = tabs.find((a) => a.index === clicked && a.modulo.nombre === modulo.nombre);
+
     if (currentModule) return;
 
     // si es otro modulo
