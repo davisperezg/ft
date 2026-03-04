@@ -9,15 +9,7 @@ import {
   Row,
   VisibilityState,
 } from "@tanstack/react-table";
-import {
-  useState,
-  useMemo,
-  useRef,
-  UIEvent,
-  useEffect,
-  useLayoutEffect,
-  ReactNode,
-} from "react";
+import { useState, useMemo, useRef, UIEvent, useEffect, useLayoutEffect, ReactNode } from "react";
 import type { TableProps } from "./types";
 import { IoClose } from "react-icons/io5";
 import { FaUndo } from "react-icons/fa";
@@ -40,22 +32,13 @@ interface PropsTableCell<T extends object> {
   onRowClick?: (row: T) => void;
 }
 
-function TableCell<T extends object>({
-  cell,
-  row,
-  children,
-  onRowClick,
-}: PropsTableCell<T>) {
+function TableCell<T extends object>({ cell, row, children, onRowClick }: PropsTableCell<T>) {
   return (
     <td
       id={cell.id}
       className="overflow-hidden flex whitespace-nowrap  align-middle p-0"
       onClick={() => {
-        if (
-          row.original.estado &&
-          cell.id !== row.id + "_select" &&
-          cell.id !== row.id + "_select2"
-        ) {
+        if (row.original.estado && cell.id !== row.id + "_select" && cell.id !== row.id + "_select2") {
           onRowClick?.(row.original);
         }
       }}
@@ -120,9 +103,7 @@ export function DataTable<T extends object>({
         const sortedRows = table.getSortedRowModel().rows;
 
         // Encontrar el índice de la fila actual en las filas ordenadas
-        const sortedIndex = sortedRows.findIndex(
-          (sortedRow) => sortedRow.id === row.id
-        );
+        const sortedIndex = sortedRows.findIndex((sortedRow) => sortedRow.id === row.id);
 
         // Calcular el índice final considerando la paginación
         result = pagination.pageIndex * pagination.pageSize + sortedIndex + 1;
@@ -153,41 +134,28 @@ export function DataTable<T extends object>({
       minSize: 28,
     };
 
-    return selects
-      ? [indexColumn, selectColumn, ...userColumns]
-      : [indexColumn, ...userColumns];
+    return selects ? [indexColumn, selectColumn, ...userColumns] : [indexColumn, ...userColumns];
   }, [userColumns, pagination.pageIndex, pagination.pageSize, selects]);
 
-  const indexClicked = columns.findIndex(
-    (item) =>
-      item.id !== "index" && item.id !== "select" && item.id !== "estado"
-  );
+  const indexClicked = columns.findIndex((item) => item.id !== "index" && item.id !== "select" && item.id !== "estado");
 
   const [clicked, setClicked] = useState<number>(indexClicked);
-  const initialVisibleColumn: VisibilityState = columns.reduce(
-    (acc: VisibilityState, item) => {
-      const visible = item.visible ?? true;
-      acc[String(item.id)] = visible;
-      return acc;
-    },
-    {}
-  );
-  const [columnVisibility, setColumnVisibility] =
-    useState<VisibilityState>(initialVisibleColumn);
+  const initialVisibleColumn: VisibilityState = columns.reduce((acc: VisibilityState, item) => {
+    const visible = item.visible ?? true;
+    acc[String(item.id)] = visible;
+    return acc;
+  }, {});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(initialVisibleColumn);
 
-  const initialSortColumn: SortingState = columns.reduce(
-    (acc: SortingState, item) => {
-      if (item.id && initialVisibleColumn[String(item.id)]) {
-        acc.push({ id: String(item.id), desc: Boolean(item.sortDescFirst) });
-      }
-      return acc;
-    },
-    []
-  );
+  const initialSortColumn: SortingState = columns.reduce((acc: SortingState, item) => {
+    if (item.id && initialVisibleColumn[String(item.id)]) {
+      acc.push({ id: String(item.id), desc: Boolean(item.sortDescFirst) });
+    }
+    return acc;
+  }, []);
 
   const validSortColumns = initialSortColumn.filter(
-    (item) =>
-      item.id !== "index" && item.id !== "select" && item.id !== "estado"
+    (item) => item.id !== "index" && item.id !== "select" && item.id !== "estado"
   );
 
   const [sorting, setSorting] = useState<SortingState>([
@@ -252,9 +220,7 @@ export function DataTable<T extends object>({
     return colSizes;
   }, [table]);
 
-  const itemsSelecteds = table
-    .getSelectedRowModel()
-    .flatRows.map((a) => a.original) as any[];
+  const itemsSelecteds = table.getSelectedRowModel().flatRows.map((a) => a.original) as any[];
 
   // Añade un estado para las posiciones
   const [showOptPositions, setShowOptPositions] = useState<ShowOptPositions>({
@@ -268,9 +234,10 @@ export function DataTable<T extends object>({
       // Calculamos la posición antes de mostrar el menú
       const header = refSizeHeader.current;
       if (header) {
-        const anchoTotalColumnas = Array.from(
-          header.querySelectorAll("th")
-        ).reduce((acc, th) => acc + th.getBoundingClientRect().width, 0);
+        const anchoTotalColumnas = Array.from(header.querySelectorAll("th")).reduce(
+          (acc, th) => acc + th.getBoundingClientRect().width,
+          0
+        );
 
         setShowOptPositions({
           left: anchoTotalColumnas - 28,
@@ -282,20 +249,15 @@ export function DataTable<T extends object>({
   };
 
   useLayoutEffect(() => {
-    if (
-      !isLoading &&
-      refShowColumns.current &&
-      showOptions &&
-      refSizeHeader.current &&
-      refHeader.current
-    ) {
+    if (!isLoading && refShowColumns.current && showOptions && refSizeHeader.current && refHeader.current) {
       const medidas = {
         anchoVentana: window.innerWidth,
         anchoMenu: refShowColumns.current.offsetWidth,
         anchoHeader: refHeader.current.clientWidth,
-        anchoTotalColumnas: Array.from(
-          refSizeHeader.current.querySelectorAll("th")
-        ).reduce((acc, th) => acc + th.getBoundingClientRect().width, 0),
+        anchoTotalColumnas: Array.from(refSizeHeader.current.querySelectorAll("th")).reduce(
+          (acc, th) => acc + th.getBoundingClientRect().width,
+          0
+        ),
       };
 
       let nuevaPosicion: ShowOptPositions;
@@ -371,9 +333,7 @@ export function DataTable<T extends object>({
       className="flex flex-col flex-[1_1_auto] overflow-hidden border border-solid relative rounded-[4px]"
     >
       {isLoading ? (
-        <div className="flex h-full justify-center items-center">
-          Por favor, espere, buscando...
-        </div>
+        <div className="flex h-full justify-center items-center">Por favor, espere, buscando...</div>
       ) : (
         <>
           {/* SELECTION SHOW COLUMN */}
@@ -403,10 +363,7 @@ export function DataTable<T extends object>({
                 }
 
                 return (
-                  <div
-                    key={column.id}
-                    className={`cursor-pointer p-[8px] hover:bg-[#EDEDEF] ${i === 0 ? "mt-1" : ""}`}
-                  >
+                  <div key={column.id} className={`cursor-pointer p-[8px] hover:bg-[#EDEDEF] ${i === 0 ? "mt-1" : ""}`}>
                     <label className="select-none block pl-[15px] indent-[-15px] cursor-pointer">
                       <input
                         {...{
@@ -447,11 +404,7 @@ export function DataTable<T extends object>({
                     return (
                       <tr key={headerGroup.id} className="flex">
                         {headerGroup.headers.map((header) => (
-                          <th
-                            key={header.id}
-                            colSpan={header.colSpan}
-                            className="relative flex whitespace-nowrap p-0"
-                          >
+                          <th key={header.id} colSpan={header.colSpan} className="relative flex whitespace-nowrap p-0">
                             <div
                               {...{
                                 style: {
@@ -473,17 +426,13 @@ export function DataTable<T extends object>({
                                       // Usar la referencia del evento actual
                                       const refTableHead = refHeader.current;
                                       const refTableBody = refBody.current;
-                                      const refTableResizer =
-                                        refResizer.current;
+                                      const refTableResizer = refResizer.current;
                                       const resizer = e.currentTarget;
-                                      const getWidthCol =
-                                        refTableHead?.style.getPropertyValue(
-                                          `--header-${header?.id}-size`
-                                        );
+                                      const getWidthCol = refTableHead?.style.getPropertyValue(
+                                        `--header-${header?.id}-size`
+                                      );
 
-                                      const currenSize = getWidthCol
-                                        ? parseInt(getWidthCol)
-                                        : Number(header.getSize());
+                                      const currenSize = getWidthCol ? parseInt(getWidthCol) : Number(header.getSize());
 
                                       // Variables para el arrastre
                                       let isDragging = true;
@@ -532,25 +481,13 @@ export function DataTable<T extends object>({
                                         );
 
                                         // Remover listeners globales
-                                        document.removeEventListener(
-                                          "mousemove",
-                                          onMouseMove
-                                        );
-                                        document.removeEventListener(
-                                          "mouseup",
-                                          onMouseUp
-                                        );
+                                        document.removeEventListener("mousemove", onMouseMove);
+                                        document.removeEventListener("mouseup", onMouseUp);
                                       };
 
                                       // Añadir listeners globales de documento
-                                      document.addEventListener(
-                                        "mousemove",
-                                        onMouseMove
-                                      );
-                                      document.addEventListener(
-                                        "mouseup",
-                                        onMouseUp
-                                      );
+                                      document.addEventListener("mousemove", onMouseMove);
+                                      document.addEventListener("mouseup", onMouseUp);
                                     },
                                   }}
                                 ></div>
@@ -601,8 +538,7 @@ export function DataTable<T extends object>({
                             return;
 
                           // Recuperar el ID de la columna que se está arrastrando
-                          const draggedColumnId =
-                            event.dataTransfer.getData("columnId");
+                          const draggedColumnId = event.dataTransfer.getData("columnId");
                           // Obtener todas las columnas de la tabla
                           const currentColumns = table.getAllLeafColumns();
 
@@ -617,26 +553,18 @@ export function DataTable<T extends object>({
                           );
 
                           // Verificar que ambos índices sean válidos
-                          if (
-                            draggedColumnIndex !== -1 &&
-                            targetColumnIndex !== -1
-                          ) {
+                          if (draggedColumnIndex !== -1 && targetColumnIndex !== -1) {
                             // Reordenar columnas
                             const newColumnOrder = [...currentColumns];
 
                             // Intercambiar las columnas
-                            [
-                              newColumnOrder[draggedColumnIndex],
-                              newColumnOrder[targetColumnIndex],
-                            ] = [
+                            [newColumnOrder[draggedColumnIndex], newColumnOrder[targetColumnIndex]] = [
                               newColumnOrder[targetColumnIndex],
                               newColumnOrder[draggedColumnIndex],
                             ];
 
                             // Actualizar el orden de las columnas
-                            table.setColumnOrder(
-                              newColumnOrder.map((col) => col.id)
-                            );
+                            table.setColumnOrder(newColumnOrder.map((col) => col.id));
                           }
                         }}
                       >
@@ -646,24 +574,14 @@ export function DataTable<T extends object>({
                               id={header.id}
                               key={header.id}
                               colSpan={header.colSpan}
-                              draggable={
-                                header.id !== "show_columns" &&
-                                header.id !== "acciones" &&
-                                !resizing
-                              }
+                              draggable={header.id !== "show_columns" && header.id !== "acciones" && !resizing}
                               onDragStart={(event) => {
-                                event.dataTransfer.setData(
-                                  "columnId",
-                                  header.id
-                                );
+                                event.dataTransfer.setData("columnId", header.id);
                               }}
                               className="relative flex hover:!bg-[#e2e2e2] cursor-pointer h-[28px] whitespace-nowrap p-0 text-left font-[500]"
                               {...{
                                 style: {
-                                  backgroundColor:
-                                    clicked === header.index
-                                      ? "#e2e2e2"
-                                      : "#EDEDEF",
+                                  backgroundColor: clicked === header.index ? "#e2e2e2" : "#EDEDEF",
                                 },
                               }}
                             >
@@ -676,26 +594,16 @@ export function DataTable<T extends object>({
                                   className: `${
                                     {
                                       asc: `before:content-['▼'] before:text-center before:text-default before:text-[7px] ${
-                                        header.column.getIsSorted()
-                                          ? "pl-[5px] flex items-center"
-                                          : ""
+                                        header.column.getIsSorted() ? "pl-[5px] flex items-center" : ""
                                       }`,
                                       desc: `before:content-['▲'] before:text-center before:text-default before:text-[7px] ${
-                                        header.column.getIsSorted()
-                                          ? "pl-[5px] flex items-center"
-                                          : ""
+                                        header.column.getIsSorted() ? "pl-[5px] flex items-center" : ""
                                       }`,
-                                    }[header.column.getIsSorted() as string] ??
-                                    ""
+                                    }[header.column.getIsSorted() as string] ?? ""
                                   } select-none overflow-hidden px-[5px] flex items-center ${clicked === header.index ? "" : "border-r"}`,
                                   onClick: (e) => {
-                                    if (
-                                      header.id !== "show_columns" &&
-                                      header.id !== "acciones"
-                                    ) {
-                                      header.column.getToggleSortingHandler()?.(
-                                        e
-                                      );
+                                    if (header.id !== "show_columns" && header.id !== "acciones") {
+                                      header.column.getToggleSortingHandler()?.(e);
                                       changeClicked(header.index);
                                     } else if (header.id === "show_columns") {
                                       //setShowOptions(!showOptions);
@@ -706,10 +614,7 @@ export function DataTable<T extends object>({
                               >
                                 {header.isPlaceholder
                                   ? null
-                                  : flexRender(
-                                      header.column.columnDef.header,
-                                      header.getContext()
-                                    )}
+                                  : flexRender(header.column.columnDef.header, header.getContext())}
                               </div>
                             </th>
                           );
@@ -746,24 +651,14 @@ export function DataTable<T extends object>({
                         backgroundColor: i % 2 !== 0 ? "#f5f5f5" : "#fff",
                       }}
                       className={`flex ${
-                        !row.original.estado
-                          ? " text-borders cursor-default"
-                          : "hover:!bg-bgDefaultAux"
+                        !row.original.estado ? " text-borders cursor-default" : "hover:!bg-bgDefaultAux"
                       }`}
                       // [#e2e2e2]
                     >
                       {row.getVisibleCells().map((cell) => {
                         return (
-                          <TableCell
-                            cell={cell}
-                            row={row}
-                            key={cell.id}
-                            onRowClick={onRowClick}
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
-                            )}
+                          <TableCell cell={cell} row={row} key={cell.id} onRowClick={onRowClick}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </TableCell>
                         );
                       })}
@@ -782,20 +677,14 @@ export function DataTable<T extends object>({
                   <div className="float-left bg-none h-[24px] m-[0_10px_0_0] align-middle whitespace-nowrap flex items-center">
                     <label
                       className={`${
-                        itemsSelecteds.filter((a) => !a.estado).length > 0 ||
-                        itemsSelecteds.length === 0
+                        itemsSelecteds.filter((a) => !a.estado).length > 0 || itemsSelecteds.length === 0
                           ? "text-borders cursor-default"
                           : "text-danger cursor-pointer"
                       } text-[16px]`}
                       onClick={() => {
-                        if (
-                          itemsSelecteds.length > 0 &&
-                          !itemsSelecteds.find((a) => !a.estado)
-                        ) {
+                        if (itemsSelecteds.length > 0 && !itemsSelecteds.find((a) => !a.estado)) {
                           if (getItemsRemoves) {
-                            return getItemsRemoves(
-                              table.getSelectedRowModel().flatRows
-                            );
+                            return getItemsRemoves(table.getSelectedRowModel().flatRows);
                           }
                         }
                       }}
@@ -809,20 +698,14 @@ export function DataTable<T extends object>({
                   <div className="float-left bg-none h-[24px] m-[0_10px_0_0] align-middle whitespace-nowrap flex items-center">
                     <label
                       className={`${
-                        itemsSelecteds.filter((a) => a.estado).length > 0 ||
-                        itemsSelecteds.length === 0
+                        itemsSelecteds.filter((a) => a.estado).length > 0 || itemsSelecteds.length === 0
                           ? "text-borders cursor-default"
                           : "text-default cursor-pointer"
                       }`}
                       onClick={() => {
-                        if (
-                          itemsSelecteds.length > 0 &&
-                          !itemsSelecteds.find((a) => a.estado)
-                        ) {
+                        if (itemsSelecteds.length > 0 && !itemsSelecteds.find((a) => a.estado)) {
                           if (getItemsRestores) {
-                            return getItemsRestores(
-                              table.getSelectedRowModel().flatRows
-                            );
+                            return getItemsRestores(table.getSelectedRowModel().flatRows);
                           }
                         }
                       }}
@@ -878,16 +761,12 @@ export function DataTable<T extends object>({
                                 type="number"
                                 min="1"
                                 max={table.getPageCount()}
-                                value={
-                                  table.getState().pagination.pageIndex + 1
-                                }
+                                value={table.getState().pagination.pageIndex + 1}
                                 // defaultValue={
                                 //   table.getState().pagination.pageIndex + 1
                                 // }
                                 onChange={(e) => {
-                                  const page = e.target.value
-                                    ? Number(e.target.value) - 1
-                                    : 0;
+                                  const page = e.target.value ? Number(e.target.value) - 1 : 0;
                                   if (page + 1 > table.getPageCount()) return;
                                   table.setPageIndex(page);
                                 }}
@@ -897,9 +776,7 @@ export function DataTable<T extends object>({
                               <b id="of" className="font-light">
                                 de{" "}
                               </b>
-                              <span>
-                                {table.getPageCount().toLocaleString()}
-                              </span>
+                              <span>{table.getPageCount().toLocaleString()}</span>
                             </td>
                           </tr>
                         </tbody>
@@ -924,13 +801,8 @@ export function DataTable<T extends object>({
                   </div>
                   <div className="float-left bg-none text-default h-[24px] m-[0_5px] align-middle text-[14px] flex items-center justify-center">
                     <label>
-                      Mostrando de{" "}
-                      {table.getState().pagination.pageSize *
-                        table.getState().pagination.pageIndex +
-                        1}{" "}
-                      a{" "}
-                      {table.getState().pagination.pageSize *
-                        table.getState().pagination.pageIndex +
+                      Mostrando de {table.getState().pagination.pageSize * table.getState().pagination.pageIndex + 1} a{" "}
+                      {table.getState().pagination.pageSize * table.getState().pagination.pageIndex +
                         itemsCurrent.length}{" "}
                       de {table.getRowCount()} elementos.
                     </label>
