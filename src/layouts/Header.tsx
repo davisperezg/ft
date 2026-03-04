@@ -1,5 +1,5 @@
 import { ChangeEvent, Fragment, useEffect, useRef, useState } from "react";
-import logo from "../assets/images/logo_systemfact.png";
+import logo from "../assets/images/LogoFactux.png";
 import { storage } from "../utils/storage.utils";
 import {
   IAuthEmpresa,
@@ -32,6 +32,7 @@ const Header = ({ result }: IHeader) => {
 
   const closeApp = () => {
     storage.clear("SESSION");
+    storage.clear("LOCAL");
     location.reload();
   };
 
@@ -244,9 +245,9 @@ const Header = ({ result }: IHeader) => {
       {/* absolute */}
       <header className={`bg-white w-full flex h-[60px] p-[10px] dark:bg-gray-700 relative`}>
         <div className={`w-full flex justify-between`}>
-          <h1 className="font-bold dark:text-white text-">
-            <img src={logo} width={130} height={50} />
-          </h1>
+          <div className="w-[150px] h-full">
+            <img src={logo} className="object-contain w-full h-full" />
+          </div>
           <div className="flex flex-row select-none">
             {EMPRESAS_ASIGNADAS?.length === 0 ? (
               (!userGlobal?.empresas && !userGlobal?.empresaActual) || (
@@ -319,9 +320,9 @@ const Header = ({ result }: IHeader) => {
                 </>
               )}
 
-            <div>
+            {/* <div>
               <label className="mr-[10px] dark:text-white font-bold">17:52:46 (-5)</label>
-            </div>
+            </div> */}
             <div>
               <label
                 ref={labelRef}
@@ -335,9 +336,9 @@ const Header = ({ result }: IHeader) => {
           {isDropdown && (
             <div className="bg-white absolute whitespace-nowrap min-w-[150px] w-auto right-[20px] top-[30px] shadow-[0_4px_8px_rgba(0,0,0,.3)] z-[2]">
               <ul className="mt-1 mb-1 select-none">
-                <li className="p-1 pl-2 pr-2 hover:bg-bgDefault cursor-pointer">Configuración de usuario</li>
+                {/* <li className="p-1 pl-2 pr-2 hover:bg-bgDefault cursor-pointer">Configuración de usuario</li> */}
                 <li onClick={closeApp} className="p-1 pl-2 pr-2 hover:bg-bgDefault cursor-pointer border-t">
-                  Logout
+                  Cerrar sesión
                 </li>
               </ul>
             </div>

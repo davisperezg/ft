@@ -2,7 +2,7 @@ import { devtools } from "zustand/middleware";
 import { create } from "zustand";
 import { INITIAL_VALUE_PAGE } from "../../config/constants";
 import { PageState } from "../../interfaces/common/page.interface";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 interface PageStoreState {
   page: PageState;
@@ -34,6 +34,7 @@ export const usePageStore = create<PageStore>()(
     ),
     {
       name: "page-storage",
+      storage: createJSONStorage(() => sessionStorage),
     }
   )
 );

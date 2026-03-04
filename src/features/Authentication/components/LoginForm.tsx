@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import { storage } from "../../../utils/storage.utils";
 //import { v4 as uuidv4 } from "uuid";
+import logo from "../../../assets/images/LogoFactux.png";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { schemaFormLogin } from "../validations/auth.schema";
 import { IAuthUser } from "../../../interfaces/features/auth/auth.interface";
@@ -15,9 +16,9 @@ const LoginForm = () => {
     formState: { errors },
   } = useForm<IAuthUser>({
     defaultValues: {
-      username: storage.getItem("username", "LOCAL") ?? "",
-      password: storage.getItem("password", "LOCAL") ?? "",
-      checkbox: storage.getItem("username", "LOCAL") ? true : false,
+      username: storage.getItem("username", "SESSION") ?? "",
+      password: storage.getItem("password", "SESSION") ?? "",
+      checkbox: storage.getItem("username", "SESSION") ? true : false,
     },
     resolver: yupResolver(schemaFormLogin),
   });
@@ -35,18 +36,18 @@ const LoginForm = () => {
       storage.setItem("access_token", access_token, "SESSION");
       storage.setItem("refresh_token", refresh_token, "SESSION");
       //storage.setItem("uid", uid, "SESSION");
-      storage.removeItem("c_session", "LOCAL");
+      storage.removeItem("c_session", "SESSION");
       // if (data.checkbox) {
-      //   storage.setItem("username", data.username, "LOCAL");
-      //   storage.setItem("password", data.password, "LOCAL");
-      //   storage.setItem("uuid", uid, "LOCAL");
+      //   storage.setItem("username", data.username, "SESSION");
+      //   storage.setItem("password", data.password, "SESSION");
+      //   storage.setItem("uuid", uid, "SESSION");
       // } else {
-      //   storage.removeItem("username", "LOCAL");
-      //   storage.removeItem("password", "LOCAL");
-      //   storage.removeItem("uuid", "LOCAL");
+      //   storage.removeItem("username", "SESSION");
+      //   storage.removeItem("password", "SESSION");
+      //   storage.removeItem("uuid", "SESSION");
       // }
 
-      storage.removeItem("c_server", "LOCAL");
+      storage.removeItem("c_server", "SESSION");
       location.reload();
     } catch (error: any) {
       setDisabled(false);
@@ -62,9 +63,10 @@ const LoginForm = () => {
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="mt-[45px] text-center">
-        <h1 className="text-[20px] font-[700] overflow-hidden whitespace-nowrap text-ellipsis">
-          Acceso al sistema
-        </h1>
+        <div className="w-full flex flex-row justify-center mb-5">
+          <img src={logo} />
+        </div>
+        {/* <h1 className="text-[20px] font-[700] overflow-hidden whitespace-nowrap text-ellipsis">Acceso al sistema</h1> */}
       </div>
       <div className="flex flex-[1_1_auto] flex-col mt-10">
         <div>
@@ -126,16 +128,12 @@ const LoginForm = () => {
               />
             </div>
           </div>
-          <div className="p-[0px_30px_8px_30px] flex flex-row w-full">
-            <a className="text-[12  px] text-default cursor-pointer select-none">
-              Olvidaste tu contraseña?
-            </a>
+          {/* <div className="p-[0px_30px_8px_30px] flex flex-row w-full">
+            <a className="text-[12  px] text-default cursor-pointer select-none">Olvidaste tu contraseña?</a>
           </div>
           <div className="p-[0px_30px_8px_30px] flex flex-row w-full">
-            <a className=" text-default cursor-pointer select-none">
-              ©&nbsp;davisperezg
-            </a>
-          </div>
+            <a className=" text-default cursor-pointer select-none">©&nbsp;davisperezg</a>
+          </div> */}
         </div>
       </div>
       <div className="flex flex-row justify-center mt-5">

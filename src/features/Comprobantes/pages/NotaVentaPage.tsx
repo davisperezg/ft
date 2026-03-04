@@ -42,7 +42,6 @@ import {
 } from "../types/nota-venta.types";
 import { schemaFormNotaVenta } from "../validations/nota-venta.schema";
 import { StatusInvoice } from "../../../interfaces/components/invoices/status-invoices.interface";
-import { DevTool } from "@hookform/devtools";
 import ModalObservacion from "../components/NotaVenta/NotaVentaModalObservacion";
 import ModalProductos from "../components/NotaVenta/NotaVentaModalProducto";
 
@@ -536,7 +535,6 @@ const NotaVentaScreen = () => {
 
   return (
     <>
-      <DevTool control={control} />
       <div className="flex flex-col flex-1 w-full">
         {confirmDialog ? (
           <Dialog

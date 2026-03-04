@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { ITabItem } from "../../interfaces/components/tab-top/tab.interface";
 import { devtools } from "zustand/middleware";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 interface TabStoreState {
   tabs: ITabItem[];
@@ -42,7 +42,8 @@ export const useTabStore = create<TabStore>()(
       }
     ),
     {
-      name: "tab-storage", // unique name
+      name: "tab-storage",
+      storage: createJSONStorage(() => sessionStorage),
     }
   )
 );

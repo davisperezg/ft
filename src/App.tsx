@@ -43,8 +43,8 @@ function App() {
       return () => clearInterval(interval);
     }
 
-    if (storage.getItem("c_server", "LOCAL")) {
-      storage.removeItem("c_server", "LOCAL");
+    if (storage.getItem("c_server", "SESSION")) {
+      storage.removeItem("c_server", "SESSION");
     }
   }, []);
 
@@ -56,9 +56,7 @@ function App() {
   }, [refetch]);
 
   if (window.location.pathname.toString().substring(1)) {
-    return (
-      <h1 className="p-5 font-bold tracking-tighter">Archivo no encontrado</h1>
-    );
+    return <h1 className="p-5 font-bold tracking-tighter">Archivo no encontrado</h1>;
   }
 
   if (isLoading) {
@@ -75,7 +73,7 @@ function App() {
       if (sid?.length === 176 && sid.toString() !== token.toString()) {
         storage.clear("SESSION");
         setSession(false);
-        storage.setItem("c_session", "close.app", "LOCAL");
+        storage.setItem("c_session", "close.app", "SESSION");
       } else {
         window.history.pushState({ path: nuevaURL }, "", nuevaURL);
       }
