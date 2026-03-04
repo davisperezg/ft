@@ -26,18 +26,15 @@ export function jwtInterceptor() {
     },
     async function (error) {
       if (error.code === "ERR_NETWORK" || error.code === "ECONNREFUSED") {
-        storage.setItem("c_server", "close.app", "LOCAL");
+        storage.setItem("c_server", "close.app", "SESSION");
         storage.clear("SESSION");
         location.reload();
       }
 
       const originalRequest = error.config;
 
-      if (
-        error.response.status === 401 &&
-        originalRequest.url === `${BASE_API}/api/v1/auth/token`
-      ) {
-        storage.setItem("c_server", "close.app", "LOCAL");
+      if (error.response.status === 401 && originalRequest.url === `${BASE_API}/api/v1/auth/token`) {
+        storage.setItem("c_server", "close.app", "SESSION");
         storage.clear("SESSION");
         location.reload();
         return Promise.reject(error);
@@ -49,19 +46,11 @@ export function jwtInterceptor() {
           const user = JSON.parse(String(storage.getItem("user", "SESSION")));
 
           const refreshToken = storage.getItem("refresh_token", "SESSION");
-          const resToken: any = await getRefresh(
-            String(user.usuario),
-            String(refreshToken)
-          );
+          const resToken: any = await getRefresh(String(user.usuario), String(refreshToken));
           if (resToken.status === 201) {
-            storage.setItem(
-              "access_token",
-              resToken.data.access_token,
-              "SESSION"
-            );
+            storage.setItem("access_token", resToken.data.access_token, "SESSION");
             const token = storage.getItem("access_token", "SESSION");
-            axios.defaults.headers.common[AUTHORIZATION_HEADER] =
-              "Bearer " + token;
+            axios.defaults.headers.common[AUTHORIZATION_HEADER] = "Bearer " + token;
             return axios(originalRequest);
           }
         } catch (_) {

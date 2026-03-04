@@ -1,6 +1,6 @@
 import { devtools } from "zustand/middleware";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 interface ClickedStoreState {
   clicked: number;
@@ -34,6 +34,7 @@ export const useClickedStore = create<ClickedStore>()(
     ),
     {
       name: "clicked-storage",
+      storage: createJSONStorage(() => sessionStorage),
     }
   )
 );

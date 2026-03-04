@@ -1,5 +1,6 @@
 import { ITabItem } from "../../../../interfaces/components/tab-top/tab.interface";
 import { convertirTitulo } from "../../../../utils/functions.utils";
+import { GrFormClose } from "react-icons/gr";
 
 interface Props {
   onclick: () => void;
@@ -23,8 +24,7 @@ const TabItem = (props: Props) => {
       >
         <span className="flex items-center bg-none w-auto h-auto">
           <label className="flex-[1_1_auto] align-middle cursor-pointer relative">
-            {convertirTitulo(entity.modulo.nombre) ===
-            convertirTitulo(entity.moduloAux.nombre)
+            {convertirTitulo(entity.modulo.nombre) === convertirTitulo(entity.moduloAux.nombre)
               ? convertirTitulo(entity.modulo.nombre)
               : convertirTitulo(entity.moduloAux.nombre)}
           </label>
@@ -34,11 +34,11 @@ const TabItem = (props: Props) => {
               onClose();
             }}
             className={`align-middle ${
-              active
-                ? "!text-[#fff] font-bold"
-                : "text-secondary hover:text-primary"
-            } text-center cursor-pointer icon-remove ml-[4px]`}
-          ></label>
+              active ? "!text-[#fff] font-bold" : "text-secondary hover:text-primary"
+            } text-center cursor-pointer ml-[4px]`}
+          >
+            <GrFormClose size={20} />
+          </label>
         </span>
       </a>
     </li>

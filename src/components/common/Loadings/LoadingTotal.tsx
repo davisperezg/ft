@@ -1,4 +1,4 @@
-import logo from "../../../assets/images/logo_systemfact.png";
+import logo from "../../../assets/images/LogoFactux.png";
 
 interface Props {
   fullscreen?: boolean;
