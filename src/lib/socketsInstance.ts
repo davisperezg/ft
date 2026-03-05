@@ -11,6 +11,7 @@ const options: SocketOption = {
   reconnectionDelay: 1000,
   reconnectionDelayMax: 5000,
   timeout: 20000,
+  transports: ["websocket"],
 };
 
 // Singleton registry: one instance per namespace
